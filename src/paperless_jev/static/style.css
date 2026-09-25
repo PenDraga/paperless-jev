@@ -105,3 +105,14 @@ table.jobs .badge { white-space: normal; }
 .view-btn { width: 100%; max-width: 14rem; padding: .4rem .6rem; font-size: .9rem; text-align: center; }
 .view-btn-inline { padding: .3rem .8rem; margin-left: .5rem; }
 .eye { text-decoration: none; margin-left: .2rem; }
+
+/* --- Einzeltest ------------------------------------------------------------ */
+.test-box { padding: .8rem 1rem; }
+.test-form label { margin-bottom: .4rem; }
+.test-form label small { display: block; }
+.test-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.test-row input { flex: 1 1 16rem; margin: 0; }
+.test-row select { flex: 0 1 10rem; margin: 0; }
+.test-row button { flex: 0 0 auto; margin: 0; }
+.flash.info { background: #e3ecfa; color: #1f4b8f; }
+.job-actions { display: flex; gap: .5rem; flex-wrap: wrap; }

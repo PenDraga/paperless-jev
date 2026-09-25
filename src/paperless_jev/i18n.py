@@ -62,6 +62,17 @@ EN: dict[str, str] = {
     "Ollama": "Ollama",
     "OpenAI-kompatibel (SGLang, vLLM, LM Studio …)": "OpenAI-compatible (SGLang, vLLM, LM Studio …)",
     "Dokument ansehen": "View document",
+    "Einzelnes Dokument testen": "Test a single document",
+    "ID oder Paperless-Link – schreibt nichts nach Paperless": "ID or Paperless link – writes nothing to Paperless",
+    "z. B. 2474 oder https://paperless…/documents/2474/details": "e.g. 2474 or https://paperless…/documents/2474/details",
+    "Testen": "Test",
+    "Bitte eine Dokument-ID oder einen Paperless-Link angeben": "Please enter a document ID or a Paperless link",
+    "Test abgeschlossen – nichts wurde in Paperless geändert": "Test finished – nothing was changed in Paperless",
+    "Test – dieses Ergebnis wurde nicht in Paperless geschrieben. Passt es, kannst du es unten von Hand übernehmen.":
+        "Test – this result was not written to Paperless. If it fits, you can apply it manually below.",
+    "Erneut testen": "Test again",
+    "Sofort neu bewerten, ohne etwas zu schreiben": "Re-evaluate immediately without writing anything",
+    "Einreihen und im aktuellen Modus verarbeiten": "Queue and process in the current mode",
     "Schliessen": "Close",
     "In neuem Tab öffnen": "Open in new tab",
     # --- Job-Fehler, die im Protokoll stehen --------------------------------------

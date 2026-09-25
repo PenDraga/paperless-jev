@@ -12,5 +12,6 @@
   </select>
   <button type="submit">{{ _("Filtern") }}</button>
 </form>
+{% if instances %}{% include "_test_form.html" with context %}{% endif %}
 {% include "_jobs_table.html" with context %}
 {% endblock %}

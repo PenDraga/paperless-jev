@@ -18,6 +18,7 @@ from .titles import generate_title
 log = logging.getLogger("paperless_jev")
 
 ACTIVE = ("queued", "running")
+TEST = "test"  # Quelle für Einzeltests: schreibt nie, zählt nicht fürs Polling
 META_TTL = 300
 EXAMPLES_TTL = 3600
 MAX_ERRORS = 3
@@ -87,9 +88,11 @@ class Processor:
     # --- Einreihen ------------------------------------------------------
 
     async def enqueue(self, instance_id: int, doc_id: int, source: str, force: bool = False) -> int | None:
+        # Einzeltests zählen nicht: sonst würde das Polling ein getestetes Dokument überspringen
         last = self.db.one(
-            "SELECT id, status FROM jobs WHERE instance_id = ? AND doc_id = ? ORDER BY id DESC LIMIT 1",
-            (instance_id, doc_id),
+            "SELECT id, status FROM jobs WHERE instance_id = ? AND doc_id = ? AND source != ?"
+            " ORDER BY id DESC LIMIT 1",
+            (instance_id, doc_id, TEST),
         )
         if last and last["status"] in ACTIVE:
             return None
@@ -102,6 +105,16 @@ class Processor:
                 return None
         job_id = self.db.create_job(instance_id, doc_id, source)
         await self.queue.put(job_id)
+        return job_id
+
+    async def test_document(self, instance_id: int, doc_id: int) -> int:
+        """Klassifiziert ein Dokument sofort als Probelauf und liefert die Job-ID."""
+        job_id = self.db.create_job(instance_id, doc_id, TEST)
+        try:
+            await self.process(job_id)
+        except Exception as e:
+            log.exception("Test von Dokument %s fehlgeschlagen", doc_id)
+            self.db.update_job(job_id, status="error", error=str(e))
         return job_id
 
     async def poll_once(self, instance_id: int | None = None, force: bool = False) -> int:
@@ -199,7 +212,7 @@ class Processor:
                     input_tokens=result["usage"].get("input_tokens"),
                 )
 
-                mode = cfg["mode"]
+                mode = "dry_run" if job["source"] == TEST else cfg["mode"]
                 if mode == "dry_run":
                     self.db.update_job(job_id, status="dry_run")
                 elif mode == "review" or decision["needs_review"]:

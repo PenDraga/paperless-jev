@@ -6,7 +6,11 @@
   · {{ _("Quelle") }} {{ job.source }} · {{ _("Modell") }} {{ job.model or "–" }} · {{ job.input_tokens or 0 }} Tokens
   {% if job.result %}· {{ _("{n} Fragen", n=job.result.question_count) }}{% endif %}</p>
 {% if job.error %}<p class="flash bad">{{ _(job.error) }}</p>{% endif %}
-<form method="post" action="/jobs/{{ job.id }}/retry" class="inline"><button type="submit" class="secondary">{{ _("Neu klassifizieren") }}</button></form>
+{% if job.source == "test" %}<p class="flash info">{{ _("Test – dieses Ergebnis wurde nicht in Paperless geschrieben. Passt es, kannst du es unten von Hand übernehmen.") }}</p>{% endif %}
+<div class="job-actions">
+  <form method="post" action="/jobs/{{ job.id }}/test" class="inline"><button type="submit" class="secondary" onclick="this.setAttribute('aria-busy','true')" title="{{ _('Sofort neu bewerten, ohne etwas zu schreiben') }}">{{ _("Erneut testen") }}</button></form>
+  <form method="post" action="/jobs/{{ job.id }}/retry" class="inline"><button type="submit" class="secondary outline" title="{{ _('Einreihen und im aktuellen Modus verarbeiten') }}">{{ _("Neu klassifizieren") }}</button></form>
+</div>
 {% if not job.result %}<a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary outline view-btn-inline" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">👁 {{ _("Dokument ansehen") }}</a>{% endif %}
 
 {% if job.result %}

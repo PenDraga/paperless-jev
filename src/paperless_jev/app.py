@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import re
 import logging
 import os
 import secrets
@@ -276,13 +277,44 @@ async def _evaluation(request: Request) -> dict[str, Any] | None:
 @app.get("/log", response_class=HTMLResponse)
 async def job_log(request: Request, status: str | None = None, q: str | None = None, limit: int = 200):
     jobs = await _jobs(request, status or None, limit=min(limit, 2000), q=q or None)
-    return _render(request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit)
+    return _render(
+        request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit, instances=_cfg(request).instances()
+    )
 
 
 @app.post("/run")
 async def run_now(request: Request, instance_id: int = Form(0), force: bool = Form(False)):
     count = await _proc(request).poll_once(instance_id or None, force=force)
     return _redirect("/", msg=_("{n} Dokument(e) eingereiht", n=count))
+
+
+def _parse_doc_id(raw: str) -> int | None:
+    """Dokument-ID aus Zahl oder Paperless-Link (…/documents/2474/details)."""
+    raw = raw.strip()
+    if raw.lstrip("#").isdigit():
+        return int(raw.lstrip("#"))
+    match = re.search(r"/documents/(\d+)", raw)
+    return int(match.group(1)) if match else None
+
+
+@app.post("/test")
+async def test_document(request: Request, doc: str = Form(""), instance_id: int = Form(0)):
+    doc_id = _parse_doc_id(doc)
+    instances = _cfg(request).instances()
+    inst = next((i for i in instances if i.id == instance_id), instances[0] if instances else None)
+    if doc_id is None or not inst:
+        return _redirect("/", err=_("Bitte eine Dokument-ID oder einen Paperless-Link angeben"))
+    job_id = await _proc(request).test_document(inst.id, doc_id)
+    return _redirect(f"/jobs/{job_id}", msg=_("Test abgeschlossen – nichts wurde in Paperless geändert"))
+
+
+@app.post("/jobs/{job_id}/test")
+async def test_job(request: Request, job_id: int):
+    job = request.app.state.db.job(job_id)
+    if not job:
+        raise HTTPException(404)
+    new_id = await _proc(request).test_document(job["instance_id"], job["doc_id"])
+    return _redirect(f"/jobs/{new_id}", msg=_("Test abgeschlossen – nichts wurde in Paperless geändert"))
 
 
 @app.post("/jobs/{job_id}/retry")

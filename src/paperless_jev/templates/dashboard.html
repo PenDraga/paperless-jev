@@ -8,6 +8,8 @@
  · {{ _("Modell") }} <code>{{ cfg.model }}</code> · {% if cfg.poll_minutes > 0 %}{{ _("Polling alle {n} min", n=cfg.poll_minutes) }}{% else %}{{ _("Polling aus") }}{% endif %}
  · {{ _("Warteschlange") }}: {{ queue_size }}</p>
 
+{% if instances %}{% include "_test_form.html" with context %}{% endif %}
+
 <div class="stats">
   <article><span class="num">{{ counts.get("review", 0) }}</span><a href="/review">{{ _("in Review") }}</a></article>
   <article><span class="num">{{ counts.get("done", 0) }}</span>{{ _("erledigt") }}</article>

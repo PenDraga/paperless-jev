@@ -1,0 +1,11 @@
+<article class="test-box">
+  <form method="post" action="/test" class="test-form">
+    <label for="test-doc"><strong>{{ _("Einzelnes Dokument testen") }}</strong>
+      <small class="muted">{{ _("ID oder Paperless-Link – schreibt nichts nach Paperless") }}</small></label>
+    <div class="test-row">
+      <input id="test-doc" name="doc" required inputmode="text" placeholder="{{ _('z. B. 2474 oder https://paperless…/documents/2474/details') }}">
+      {% if instances|length > 1 %}<select name="instance_id">{% for i in instances %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}</select>{% endif %}
+      <button type="submit" onclick="this.setAttribute('aria-busy','true')">{{ _("Testen") }}</button>
+    </div>
+  </form>
+</article>

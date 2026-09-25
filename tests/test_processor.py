@@ -243,3 +243,32 @@ def test_document_preview_is_proxied(client, monkeypatch):
     client.post("/run", data={"instance_id": "0"})
     _wait(client)
     assert 'href="/doc/1/42"' in client.get("/jobs/1").text
+
+
+
+def test_single_document_test_never_writes_and_does_not_block_polling(client):
+    # Modus "auto" aus der Fixture - ein Test darf trotzdem nichts schreiben
+    FakeJev.response["answers"]["correspondent"]["confidence"] = 0.95
+    r = client.post("/test", data={"doc": "https://paperless.example/documents/42/details"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/jobs/")
+    job = client.app.state.db.one("SELECT * FROM jobs")
+    assert (job["source"], job["status"]) == ("test", "dry_run")
+    assert job["result"]["fields"]["correspondent"]["value"] == 1
+    assert FakePaperless.patches == []
+    page = client.get(r.headers["location"]).text
+    assert "nicht in Paperless geschrieben" in page
+
+    # Das normale Polling verarbeitet das Dokument danach trotzdem
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    assert client.app.state.db.one("SELECT COUNT(*) AS n FROM jobs WHERE source = 'manual' OR source = 'poll'")["n"] == 1
+    assert FakePaperless.patches
+
+
+def test_parse_doc_id():
+    from paperless_jev.app import _parse_doc_id
+
+    assert _parse_doc_id(" 2474 ") == 2474
+    assert _parse_doc_id("#12") == 12
+    assert _parse_doc_id("https://paperless.example.com/documents/2474/details") == 2474
+    assert _parse_doc_id("abc") is None
