@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Beschreibungen</h2>
-<p><small>Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich –
-  am besten <strong>auf Englisch</strong> und präzise, z. B. Dokumenttyp „Rechnung“: <em>An invoice requesting payment for goods or services</em>.
+<p><small>Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich.
+  Schreib wie eine Regel: was dazugehört und was ausdrücklich nicht, z. B. Dokumenttyp „Kontoauszug“:
+  <em>Bankbelege zu Kontobewegungen: Kontoauszüge, Gutschrifts- und Belastungsanzeigen. Keine Jahres- oder Steuerbescheinigungen.</em>
+  {% if can_translate %}Es genügen <strong>deutsche Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>.
+  Beim Speichern baut das Sprachmodell geänderte Einträge zu einer englischen Beschreibung aus (Jev versteht Englisch am besten) und nutzt dafür auch die Titel
+  bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.
+  {% else %}Am besten auf Englisch – oder unter <a href="/rules">Regeln</a> ein Sprachmodell einrichten, dann genügen deutsche Stichworte.{% endif %}
   Deaktivierte Einträge schlägt Jev nie vor.</small></p>
 {% if not instances %}<p class="bad">Zuerst unter <a href="/setup">Setup</a> eine Instanz anlegen.</p>{% else %}
 <form method="get" action="/descriptions" class="grid">
@@ -24,8 +29,9 @@
     {% for r in rows %}
       <tr>
         <td class="desc-active"><input type="hidden" name="ids" value="{{ r.id }}"><label><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}><span class="show-mobile-inline"> aktiv</span></label></td>
-        <td class="card-title">{{ r.name }}</td>
-        <td class="desc-text"><textarea name="text_{{ r.id }}" rows="1" placeholder="optional">{{ r.text }}</textarea></td>
+        <td class="card-title">{{ r.name }}<input type="hidden" name="name_{{ r.id }}" value="{{ r.name }}"></td>
+        <td class="desc-text"><textarea name="text_{{ r.id }}" rows="1" placeholder="{{ 'Stichworte, optional' if can_translate else 'optional' }}">{{ r.source }}</textarea>
+          {% if r.text and r.text != r.source %}<small class="muted translation" title="An Jev gesendet">EN: {{ r.text }}</small>{% endif %}</td>
       </tr>
     {% else %}
       <tr><td colspan="3" class="muted">Keine Einträge.</td></tr>
@@ -33,7 +39,9 @@
     </tbody>
   </table>
   </div>
-  {% if rows %}<div class="sticky-actions"><button type="submit">Speichern</button></div>{% endif %}
+  {% if rows %}<div class="sticky-actions">
+    {% if can_translate %}<label class="translate-toggle"><input type="checkbox" name="expand" checked> geänderte Einträge mit dem Sprachmodell zu einer englischen Beschreibung ausbauen</label>{% endif %}
+    <button type="submit" aria-busy="false" onclick="this.setAttribute('aria-busy','true')">Speichern</button></div>{% endif %}
 </form>
 {% endif %}
 {% endblock %}

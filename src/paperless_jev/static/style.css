@@ -87,3 +87,5 @@ table.jobs .badge { white-space: normal; }
   article { padding: 1rem; }
 }
 @media (min-width: 761px) { table.jobs td[data-label="Datum"] .badge { white-space: nowrap; } }
+.translation { display: block; margin-top: .25rem; line-height: 1.3; }
+.translate-toggle { font-size: .85rem; margin-bottom: .4rem; }

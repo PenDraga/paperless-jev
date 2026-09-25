@@ -23,7 +23,8 @@ from .db import Database
 from .jev import USD_PER_MTOK, JevClient, JevError
 from .paperless import Metadata, PaperlessClient, PaperlessError
 from .processor import Processor
-from .titles import TitleError, list_models
+from .llm import LLM, PROVIDERS, LLMError, list_models
+from .titles import describe_category
 from .vault import Vault
 
 log = logging.getLogger("paperless_jev")
@@ -434,7 +435,7 @@ async def test_instance(request: Request, instance_id: int):
 
 @app.get("/rules", response_class=HTMLResponse)
 async def rules_page(request: Request):
-    return _render(request, "rules.html", cfg=_cfg(request).all())
+    return _render(request, "rules.html", cfg=_cfg(request).all(), providers=PROVIDERS)
 
 
 @app.post("/rules")
@@ -469,10 +470,12 @@ async def save_rules(request: Request):
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),
             "tag_ignore": str(form.get("tag_ignore") or cfg["tag_ignore"]).strip(),
-            "title_mode": mode_title if (mode_title := str(form.get("title_mode", "off"))) in ("off", "template", "ollama") else "off",
+            "title_mode": mode_title if (mode_title := str(form.get("title_mode", "off"))) in ("off", "template", "llm") else "off",
             "title_template": str(form.get("title_template") or cfg["title_template"]),
-            "ollama_url": str(form.get("ollama_url") or "").strip().rstrip("/"),
-            "ollama_model": str(form.get("ollama_model") or cfg["ollama_model"]).strip(),
+            "llm_provider": provider if (provider := str(form.get("llm_provider", "ollama"))) in PROVIDERS else "ollama",
+            "llm_url": str(form.get("llm_url") or "").strip().rstrip("/"),
+            "llm_model": str(form.get("llm_model") or "").strip(),
+            **({"llm_api_key": key} if (key := str(form.get("llm_api_key") or "").strip()) else {}),
             "fields": fields,
         }
     )
@@ -480,18 +483,18 @@ async def save_rules(request: Request):
     return _redirect("/rules", msg="Regeln gespeichert")
 
 
-@app.post("/rules/ollama/test", response_class=HTMLResponse)
-async def test_ollama(request: Request):
-    cfg = _cfg(request).all()
-    if not cfg["ollama_url"]:
-        return HTMLResponse('<span class="bad">Keine Ollama-URL gespeichert</span>')
+@app.post("/rules/llm/test", response_class=HTMLResponse)
+async def test_llm(request: Request):
+    llm = LLM.from_config(_cfg(request).all())
+    if not llm:
+        return HTMLResponse('<span class="bad">URL und Modell speichern, dann testen</span>')
     try:
-        models = await list_models(cfg["ollama_url"])
-    except TitleError as e:
+        models = await list_models(llm)
+    except LLMError as e:
         return HTMLResponse(f'<span class="bad">{e}</span>')
-    if cfg["ollama_model"] not in models:
-        return HTMLResponse(f'<span class="bad">Modell {cfg["ollama_model"]} fehlt. Vorhanden: {", ".join(models)}</span>')
-    return HTMLResponse(f'<span class="good">OK - {cfg["ollama_model"]} verfügbar</span>')
+    if llm.model not in models:
+        return HTMLResponse(f'<span class="bad">Modell {llm.model} fehlt. Vorhanden: {", ".join(models) or "–"}</span>')
+    return HTMLResponse(f'<span class="good">OK - {llm.label} verfügbar</span>')
 
 
 # --- Beschreibungen ------------------------------------------------------
@@ -519,13 +522,14 @@ async def descriptions_page(request: Request, instance_id: int = 0, kind: str = 
             for oid, name in sorted(meta.names(kind).items(), key=lambda kv: kv[1].lower()):
                 if oid in hidden:
                     continue
-                d = stored.get((kind, oid), {"text": "", "active": True})
+                d = stored.get((kind, oid), {"text": "", "source": "", "active": True})
                 rows.append({"id": oid, "name": name, **d})
         except PaperlessError as e:
             error = str(e)
     return _render(
         request, "descriptions.html",
         instances=instances, inst=inst, kind=kind, kinds=KINDS, rows=rows, meta_error=error,
+        can_translate=LLM.from_config(_cfg(request).all()) is not None,
     )
 
 
@@ -534,11 +538,37 @@ async def save_descriptions(request: Request):
     form = await request.form()
     instance_id = int(str(form["instance_id"]))
     kind = str(form["kind"])
-    for oid in form.getlist("ids"):
-        _cfg(request).save_description(
-            instance_id, kind, int(oid), str(form.get(f"text_{oid}", "")), f"active_{oid}" in form
-        )
-    return _redirect(f"/descriptions?instance_id={instance_id}&kind={kind}", msg="Beschreibungen gespeichert")
+    cfg = _cfg(request).all()
+    stored = _cfg(request).descriptions(instance_id)
+    llm = LLM.from_config(cfg)
+    expand = llm is not None and "expand" in form
+    translated, failed = 0, []
+    inst = _cfg(request).instance(instance_id)
+    for oid_raw in form.getlist("ids"):
+        oid = int(oid_raw)
+        source = str(form.get(f"text_{oid}", "")).strip()
+        active = f"active_{oid}" in form
+        old = stored.get((kind, oid), {"text": "", "source": ""})
+        text = old["text"]
+        if source != old["source"]:
+            # Nur geänderte Einträge übersetzen
+            text = source
+            if source and expand and inst:
+                name = str(form.get(f"name_{oid}", ""))
+                try:
+                    async with _proc(request).client(inst) as pl:
+                        examples = await pl.example_titles(kind, oid, 8)
+                except PaperlessError:
+                    examples = []
+                try:
+                    text = await describe_category(llm, kind, name, source, examples)
+                    translated += 1
+                except LLMError:
+                    failed.append(name or str(oid))
+        _cfg(request).save_description(instance_id, kind, oid, text, active, source=source)
+    msg = "Beschreibungen gespeichert" + (f", {translated} vom Sprachmodell ausformuliert" if translated else "")
+    err = f"Sprachmodell fehlgeschlagen für: {', '.join(failed)} – Eingabe wurde unverändert übernommen" if failed else None
+    return _redirect(f"/descriptions?instance_id={instance_id}&kind={kind}", msg=msg, err=err)
 
 
 # --- Webhook und Health ------------------------------------------------------

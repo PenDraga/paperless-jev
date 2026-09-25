@@ -36,7 +36,7 @@
   <div class="field-row">
     <span></span>
     <strong>Titel</strong>
-    <input name="title" enterkeyhint="done" placeholder="leer = automatisch ({{ 'Ollama' if title_mode == 'ollama' else ('Vorlage' if title_mode == 'template' else 'unverändert') }})">
+    <input name="title" enterkeyhint="done" placeholder="leer = automatisch ({{ 'Sprachmodell' if title_mode == 'llm' else ('Vorlage' if title_mode == 'template' else 'unverändert') }})">
     <small class="muted">aktuell: {{ job.doc_title or "–" }}</small>
   </div>
   <fieldset>

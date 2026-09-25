@@ -1,8 +1,8 @@
-"""Titel per lokalem Ollama - der einzige generative Schritt.
+"""Titel und Beschreibungen per lokalem Sprachmodell - die einzigen generativen Schritte.
 
 Jev entscheidet nur, formuliert aber keinen Text. Für den Titel wird darum
-nach der Klassifizierung ein kleines lokales Sprachmodell gefragt; als
-Stilvorlage dienen Titel bereits abgelegter Dokumente.
+nach der Klassifizierung ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel)
+gefragt; als Stilvorlage dienen Titel bereits abgelegter Dokumente.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-import httpx
+from .llm import LLM, LLMError, complete
 
 MAX_TITLE = 128  # Feldlänge in Paperless
 MAX_TEXT = 4000
@@ -39,8 +39,6 @@ Dokumenttext:
 Titel:"""
 
 
-class TitleError(Exception):
-    pass
 
 
 def clean_title(raw: str) -> str:
@@ -62,40 +60,68 @@ def build_prompt(text: str, facts: dict[str, Any], examples: list[str]) -> str:
     return PROMPT.format(facts=fact_lines, examples=example_lines, text=body)
 
 
-async def generate_title(
-    url: str,
-    model: str,
-    text: str,
-    facts: dict[str, Any],
-    examples: list[str],
-    timeout: float = 180.0,
-) -> str:
-    payload = {
-        "model": model,
-        "prompt": build_prompt(text, facts, examples),
-        "stream": False,
-        "think": False,
-        "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 60},
-    }
-    try:
-        async with httpx.AsyncClient(timeout=timeout) as http:
-            resp = await http.post(f"{url.rstrip('/')}/api/generate", json=payload)
-    except httpx.HTTPError as e:
-        raise TitleError(f"Ollama nicht erreichbar: {e}") from e
-    if resp.status_code >= 400:
-        raise TitleError(f"Ollama HTTP {resp.status_code}: {resp.text[:200]}")
-    title = clean_title(resp.json().get("response", ""))
+async def generate_title(llm: LLM, text: str, facts: dict[str, Any], examples: list[str]) -> str:
+    title = clean_title(await complete(llm, build_prompt(text, facts, examples), max_tokens=60))
     if not title:
-        raise TitleError("Ollama lieferte keinen Titel")
+        raise LLMError("Sprachmodell lieferte keinen Titel")
     return title
 
 
-async def list_models(url: str) -> list[str]:
-    try:
-        async with httpx.AsyncClient(timeout=10) as http:
-            resp = await http.get(f"{url.rstrip('/')}/api/tags")
-    except httpx.HTTPError as e:
-        raise TitleError(f"Ollama nicht erreichbar: {e}") from e
-    if resp.status_code >= 400:
-        raise TitleError(f"Ollama HTTP {resp.status_code}")
-    return [m["name"] for m in resp.json().get("models", [])]
+DESCRIBE_PROMPT = """You write short category descriptions for a document classifier in a private Swiss/German household archive.
+Category type: {kind}
+Category name: "{name}"
+
+The owner's notes (German or English, possibly just keywords):
+\"\"\"
+{notes}
+\"\"\"
+
+Titles of documents the owner has already filed in this category:
+{examples}
+
+Write ONE English description (1-2 sentences, max. 45 words) in this form:
+"<what belongs, covering every keyword from the notes>." and, ONLY if the notes name exclusions (e.g. "nicht", "kein", "not"), a second sentence "Not: <exclusions>."
+Rules:
+- Every keyword from the notes must appear in the description; translate German terms and keep the German term in parentheses where it is a document term (e.g. "salary statement (Lohnausweis)").
+- Use the example titles only to understand the category; never copy dates, periods, amounts or single example documents into the description.
+- Do not invent exclusions or extra categories.
+- Keep proper names (companies, people, places) unchanged.
+- Swiss context: "3a" means the private pension "pillar 3a (Säule 3a)"; "Liegenschaft" means real estate property.
+Output only the description."""
+
+KIND_NAMES = {
+    "document_type": "document type",
+    "correspondent": "correspondent (sender)",
+    "tag": "tag",
+    "storage_path": "storage location",
+}
+
+
+async def describe_category(
+    llm: LLM, kind: str, name: str, notes: str, examples: list[str]
+) -> str:
+    """Baut Stichworte (deutsch oder englisch) zu einer englischen Beschreibung für Jev aus."""
+    example_lines = "\n".join(f"- {t}" for t in examples[:8]) or "- (none)"
+    prompt = DESCRIBE_PROMPT.format(
+        kind=KIND_NAMES.get(kind, kind), name=name, notes=notes.strip(), examples=example_lines
+    )
+    raw = await complete(llm, prompt, max_tokens=200)
+    raw = re.sub(r"^(description|english)\s*:\s*", "", raw, flags=re.IGNORECASE).strip().strip('"').strip()
+    raw = strip_invented_exclusions(raw, notes)
+    if not raw:
+        raise LLMError("Sprachmodell lieferte keine Beschreibung")
+    return raw
+
+
+EXCLUSION_WORDS = re.compile(r"\b(nicht|kein|keine|ohne|ausser|außer|not|no|except)\b", re.IGNORECASE)
+
+
+def strip_invented_exclusions(description: str, notes: str) -> str:
+    """Entfernt "Not: ..."-Sätze, wenn die Stichworte keine Ausschlüsse nennen - und leere wie "Not: none"."""
+    parts = re.split(r"(?=\bNot:)", description)
+    head, tails = parts[0].strip(), [p.strip() for p in parts[1:]]
+    keep = [
+        t for t in tails
+        if EXCLUSION_WORDS.search(notes) and not re.fullmatch(r"Not:\s*(none|n/a|-)?\.?", t, re.IGNORECASE)
+    ]
+    return " ".join([head, *keep]).strip()

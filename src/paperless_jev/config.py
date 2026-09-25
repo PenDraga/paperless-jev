@@ -48,11 +48,14 @@ DEFAULTS: dict[str, Any] = {
     "tag_done": "ai-klassifiziert",
     "tag_review": "ai-review",
     "tag_ignore": "ai-ignorieren",
-    # off: Titel bleibt | template: aus Vorlage | ollama: lokal generiert
+    # off: Titel bleibt | template: aus Vorlage | llm: vom Sprachmodell formuliert
     "title_mode": "off",
     "title_template": "{document_type} {correspondent} {created:%Y-%m}",
-    "ollama_url": "",
-    "ollama_model": "qwen3:8b",
+    # Generatives Sprachmodell für Titel und Beschreibungen
+    "llm_provider": "ollama",  # ollama | openai (OpenAI-kompatibel: SGLang, vLLM, …)
+    "llm_url": "",
+    "llm_model": "",
+    "llm_api_key": "",
     "fields": {
         "document_type": {"enabled": True, "auto": 0.85, "review": 0.4},
         "correspondent": {"enabled": True, "auto": 0.85, "review": 0.4},
@@ -63,7 +66,7 @@ DEFAULTS: dict[str, Any] = {
     "webhook_secret": "",
 }
 
-SECRET_KEYS = ("typesafe_api_key",)
+SECRET_KEYS = ("typesafe_api_key", "llm_api_key")
 
 
 @dataclass
@@ -112,6 +115,13 @@ class Config:
         if "title_mode" not in stored and cfg.pop("title_enabled", False):
             cfg["title_mode"] = "template"
         cfg.pop("title_enabled", None)
+        # Einstellung aus v0.2: ollama_url/ollama_model -> llm_*
+        if "llm_url" not in stored and cfg.get("ollama_url"):
+            cfg.update(llm_provider="ollama", llm_url=cfg["ollama_url"], llm_model=cfg.get("ollama_model") or "qwen3:8b")
+        cfg.pop("ollama_url", None)
+        cfg.pop("ollama_model", None)
+        if cfg["title_mode"] == "ollama":
+            cfg["title_mode"] = "llm"
         return cfg
 
     def update(self, values: dict[str, Any]) -> None:
@@ -184,21 +194,33 @@ class Config:
 
     def descriptions(self, instance_id: int) -> dict[tuple[str, int], dict[str, Any]]:
         rows = self.db.query(
-            "SELECT kind, object_id, text, active FROM descriptions WHERE instance_id = ?",
+            "SELECT kind, object_id, text, source, active FROM descriptions WHERE instance_id = ?",
             (instance_id,),
         )
         return {
-            (r["kind"], r["object_id"]): {"text": r["text"], "active": bool(r["active"])}
+            (r["kind"], r["object_id"]): {
+                "text": r["text"],
+                # Ohne eigene Eingabe (alte Einträge) ist der Jev-Text zugleich die Eingabe
+                "source": r["source"] or r["text"],
+                "active": bool(r["active"]),
+            }
             for r in rows
         }
 
     def save_description(
-        self, instance_id: int, kind: str, object_id: int, text: str, active: bool
+        self,
+        instance_id: int,
+        kind: str,
+        object_id: int,
+        text: str,
+        active: bool,
+        source: str | None = None,
     ) -> None:
+        """text = Fassung für Jev (englisch), source = Eingabe im UI (z. B. deutsch)."""
         self.db.execute(
-            "INSERT INTO descriptions (instance_id, kind, object_id, text, active)"
-            " VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO descriptions (instance_id, kind, object_id, text, source, active)"
+            " VALUES (?, ?, ?, ?, ?, ?)"
             " ON CONFLICT(instance_id, kind, object_id)"
-            " DO UPDATE SET text = excluded.text, active = excluded.active",
-            (instance_id, kind, object_id, text.strip(), int(active)),
+            " DO UPDATE SET text = excluded.text, source = excluded.source, active = excluded.active",
+            (instance_id, kind, object_id, text.strip(), (source if source is not None else text).strip(), int(active)),
         )

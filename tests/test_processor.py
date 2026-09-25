@@ -167,14 +167,15 @@ def test_pages_render(client, path):
 def test_ollama_title_and_manual_title(client, monkeypatch):
     calls = []
 
-    async def fake_title(url, model, text, facts, examples, timeout=180.0):
-        calls.append((url, model, facts["Absender"], examples))
+    async def fake_title(llm, text, facts, examples):
+        calls.append((llm.url, llm.model, facts["Absender"], examples))
         return "Swisscom - Rechnung Mobile"
 
     monkeypatch.setattr(processor_module, "generate_title", fake_title)
     FakeJev.response["answers"]["correspondent"]["confidence"] = 0.95
     FakeJev.response["answers"]["tag:101"]["noul"] = 0.97
-    client.app.state.config.update({"title_mode": "ollama", "ollama_url": "http://ollama:11434"})
+    # alte Einstellungsnamen (v0.2) werden übernommen
+    client.app.state.config.update({"title_mode": "ollama", "ollama_url": "http://ollama:11434", "ollama_model": "qwen3:8b"})
     client.post("/run", data={"instance_id": "0"})
     _wait(client)
     _, data = FakePaperless.patches[-1]
@@ -187,3 +188,29 @@ def test_ollama_title_and_manual_title(client, monkeypatch):
     _, data = FakePaperless.patches[-1]
     assert data["title"] == "Mein Titel"
     assert len(calls) == 1
+
+
+def test_descriptions_are_expanded_on_change(client, monkeypatch):
+    calls = []
+
+    async def fake_describe(llm, kind, name, notes, examples):
+        calls.append((kind, name, notes, examples))
+        return "EN: " + notes
+
+    monkeypatch.setattr(app_module, "describe_category", fake_describe)
+    cfg = client.app.state.config
+    cfg.update({"llm_provider": "openai", "llm_url": "http://sglang:8000", "llm_model": "qwen3.8-flash-next"})
+    form = {"instance_id": "1", "kind": "tag", "ids": ["101", "103"], "name_101": "Steuern", "name_103": "Auto",
+            "text_101": "Für die Steuererklärung relevant", "active_101": "on", "text_103": "", "active_103": "on",
+            "expand": "on"}
+    assert client.post("/descriptions", data=form, follow_redirects=False).status_code == 303
+    d = cfg.descriptions(1)
+    assert d[("tag", 101)] == {"text": "EN: Für die Steuererklärung relevant", "source": "Für die Steuererklärung relevant", "active": True}
+    assert calls == [("tag", "Steuern", "Für die Steuererklärung relevant", [])]
+
+    # Unverändert gespeichert -> keine erneute Übersetzung
+    client.post("/descriptions", data=form)
+    assert len(calls) == 1
+    # Seite zeigt deutsche Eingabe und englische Fassung
+    page = client.get("/descriptions?instance_id=1&kind=tag").text
+    assert "Für die Steuererklärung relevant</textarea>" in page and "EN: EN: Für die" in page

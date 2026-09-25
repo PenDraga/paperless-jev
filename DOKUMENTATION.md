@@ -14,7 +14,7 @@ Paperless NGX ──Webhook "Dokument hinzugefügt"──▶ paperless-jev ─�
 | `processor.py` | Warteschlange (asyncio), Polling, Verarbeitung, Zurückschreiben nach Paperless |
 | `classifier.py` | baut die Jev-Anfrage und wertet sie aus (reine Funktionen, getestet) |
 | `candidates.py` | findet Datumsangaben und Korrespondenten-Kandidaten per Code |
-| `titles.py` | optional: Titel per lokalem Ollama (einziger generativer Schritt) |
+| `llm.py` / `titles.py` | optional: lokales Sprachmodell (Ollama oder OpenAI-kompatibel, z. B. SGLang/vLLM) für Titel und für Beschreibungen aus Stichworten |
 | `paperless.py` / `jev.py` | schlanke HTTP-Clients (Paperless API v10, TypeSafe System One) |
 | `config.py` / `db.py` / `vault.py` | Einstellungen, Instanzen, Beschreibungen, Jobs in SQLite; Tokens mit Fernet verschlüsselt |
 
@@ -62,8 +62,9 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
 ## Titel
 
 Jev formuliert keinen Text. Titel entstehen darum wahlweise
-- **per Ollama** (empfohlen, ersetzt paperless-gpt): nach der Klassifizierung erzeugt ein lokales Modell
-  (z. B. `qwen3:8b`) einen Titel. Als Stilvorlage dienen bis zu 8 Titel bereits abgelegter Dokumente
+- **per Sprachmodell** (empfohlen, ersetzt paperless-gpt): nach der Klassifizierung erzeugt ein lokales Modell
+  einen Titel – über Ollama (z. B. `qwen3:8b`) oder eine OpenAI-kompatible API (z. B. SGLang mit
+  `qwen3.8-flash-next`); bei Qwen3 wird der Denkmodus abgeschaltet. Als Stilvorlage dienen bis zu 8 Titel bereits abgelegter Dokumente
   desselben Korrespondenten bzw. Typs. Jahreszahlen, Daten und Personennamen werden vermieden, weil
   Paperless sie separat speichert. Dauer ca. 1-2 s pro Dokument.
 - **per Vorlage**, z. B. `{document_type} {correspondent} {created:%Y-%m}`,
@@ -72,6 +73,14 @@ Jev formuliert keinen Text. Titel entstehen darum wahlweise
 Ein im Review eingetragener Titel hat Vorrang. Paperless-Workflows mit Auslöser *Dokument aktualisiert*,
 die einen Titel setzen (z. B. „Kontoauszug {{ created_month_name }} {{ created_year }}“), laufen nach
 paperless-jev und haben damit das letzte Wort.
+
+## Beschreibungen aus Stichworten
+
+Unter *Beschreibungen* genügen deutsche Stichworte („Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung“).
+Beim Speichern baut das Sprachmodell geänderte Einträge zu einer englischen Regel aus („… Not: …“) und nutzt dazu
+die Titel bereits abgelegter Dokumente. Gespeichert werden beide Fassungen: die Stichworte (im Eingabefeld) und
+der englische Text für Jev (darunter angezeigt). Erfundene Ausschlüsse werden entfernt, wenn die Stichworte kein
+„nicht/kein/ohne“ enthalten.
 
 ## Webhook
 

@@ -64,6 +64,13 @@ class Database:
         with self._lock:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.executescript(SCHEMA)
+            self._migrate()
+
+    def _migrate(self) -> None:
+        cols = {r[1] for r in self._conn.execute("PRAGMA table_info(descriptions)")}
+        if "source" not in cols:
+            # Eingabe (z. B. deutsch); "text" ist die an Jev gesendete Fassung
+            self._conn.execute("ALTER TABLE descriptions ADD COLUMN source TEXT NOT NULL DEFAULT ''")
 
     def query(self, sql: str, params: tuple | list = ()) -> list[dict[str, Any]]:
         with self._lock:

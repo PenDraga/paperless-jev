@@ -12,7 +12,8 @@ from .config import Config, Instance
 from .db import Database
 from .jev import JevClient, JevError
 from .paperless import Metadata, PaperlessClient, PaperlessError, collect_examples
-from .titles import TitleError, generate_title
+from .llm import LLM, LLMError
+from .titles import generate_title
 
 log = logging.getLogger("paperless_jev")
 
@@ -269,7 +270,8 @@ class Processor:
         }
         if cfg["title_mode"] == "template":
             return render_title(cfg["title_template"], values)
-        if cfg["title_mode"] != "ollama" or not cfg["ollama_url"]:
+        llm = LLM.from_config(cfg)
+        if cfg["title_mode"] != "llm" or not llm:
             return None
         # Stilvorlage: Titel desselben Korrespondenten, sonst desselben Typs
         examples: list[str] = []
@@ -287,10 +289,8 @@ class Processor:
             "Dateiname": doc.get("original_file_name"),
         }
         try:
-            return await generate_title(
-                cfg["ollama_url"], cfg["ollama_model"], doc.get("content", ""), facts, examples
-            )
-        except TitleError as e:
+            return await generate_title(llm, doc.get("content", ""), facts, examples)
+        except LLMError as e:
             log.warning("Titel für Dokument %s nicht erzeugt: %s", doc.get("id"), e)
             return None
 
