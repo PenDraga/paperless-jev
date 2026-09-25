@@ -1,0 +1,35 @@
+# Betrieb neben den Paperless-Instanzen: im Netz paperless_paperless-internal
+# (Zugriff auf http://paperless:8000 usw., Webhooks von dort) und
+# hinter Traefik mit Authentik-Middleware fuer die Web-UI.
+services:
+  paperless-jev:
+    image: paperless-jev:latest
+    build: ..
+    container_name: paperless-jev
+    restart: unless-stopped
+    environment:
+      - PJ_LOG_LEVEL=INFO
+    volumes:
+      - paperless-jev-data:/data
+    networks:
+      - paperless
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.paperless-jev.entrypoints=https
+      - traefik.http.routers.paperless-jev.rule=Host(`paperless-jev.example.com`)
+      - traefik.http.routers.paperless-jev.middlewares=authentik@file,hsts-headers@file
+      - traefik.http.routers.paperless-jev.tls=true
+      - traefik.http.routers.paperless-jev.tls.certresolver=cloudflare
+      - traefik.http.services.paperless-jev.loadbalancer.server.port=8000
+
+volumes:
+  paperless-jev-data:
+
+networks:
+  paperless:
+    name: paperless_paperless-internal
+    external: true
+  traefik:
+    external: true

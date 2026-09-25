@@ -1,0 +1,31 @@
+:root { --pico-font-size: 95%; }
+.flash { padding: .6rem 1rem; border-radius: var(--pico-border-radius); }
+.flash.good { background: #e6f4ea; color: #1e5e32; }
+.flash.bad { background: #fdecea; color: #8a1c1c; }
+.good { color: #1e7a3c; }
+.bad { color: #b3261e; }
+.muted { color: var(--pico-muted-color); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1rem; }
+.stats article { margin: 0; text-align: center; }
+.stats .num { font-size: 1.8rem; font-weight: 700; display: block; }
+.badge { display: inline-block; padding: .05rem .5rem; border-radius: 1rem; font-size: .8rem; background: #eee; color: #333; white-space: nowrap; }
+.badge.auto, .badge.done { background: #d7f0de; color: #1e5e32; }
+.badge.suggest, .badge.review { background: #fff1c2; color: #6b4e00; }
+.badge.low, .badge.none, .badge.skipped, .badge.dismissed { background: #eceff1; color: #455a64; }
+.badge.error { background: #fdecea; color: #8a1c1c; }
+.badge.dry_run { background: #e3ecfa; color: #1f4b8f; }
+.review-item { display: grid; grid-template-columns: 14rem 1fr; gap: 1.5rem; }
+.review-item img { width: 100%; border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); }
+@media (max-width: 700px) { .review-item { grid-template-columns: 1fr; } .review-item img { max-width: 14rem; } }
+.bar { height: .45rem; background: var(--pico-muted-border-color); border-radius: .3rem; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--pico-primary); }
+.field-row { display: grid; grid-template-columns: 1.4rem 9rem 1fr 10rem; gap: .6rem; align-items: center; margin-bottom: .4rem; }
+.field-row select, .field-row input { margin: 0; }
+@media (max-width: 700px) { .field-row { grid-template-columns: 1.4rem 1fr; } }
+.tags { display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
+.tags label { white-space: nowrap; }
+.inline { display: inline; }
+.inline button, .inline input[type=submit] { width: auto; margin: 0; padding: .3rem .8rem; }
+td textarea { min-height: 2.4rem; margin: 0; }
+pre.json { max-height: 30rem; overflow: auto; font-size: .8rem; }
+.thresholds td input { margin: 0; max-width: 6rem; }

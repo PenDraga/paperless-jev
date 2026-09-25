@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Protokoll</h2>
+<p>Filter:
+  <a href="/log">alle</a>{% for key, label in STATUS_LABELS.items() %} · <a href="/log?status={{ key }}"{% if status == key %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</p>
+{% include "_jobs_table.html" with context %}
+{% endblock %}

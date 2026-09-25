@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Job #{{ job.id }} <span class="badge {{ job.status }}">{{ STATUS_LABELS.get(job.status, job.status) }}</span></h2>
+<p>Dokument #{{ job.doc_id }} {{ job.doc_title or "" }}
+  {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">in Paperless öffnen</a>{% endif %}
+  · Quelle {{ job.source }} · Modell {{ job.model or "–" }} · {{ job.input_tokens or 0 }} Tokens
+  {% if job.result %}· {{ job.result.question_count }} Fragen{% endif %}</p>
+{% if job.error %}<p class="flash bad">{{ job.error }}</p>{% endif %}
+<form method="post" action="/jobs/{{ job.id }}/retry" class="inline"><button type="submit" class="secondary">Neu klassifizieren</button></form>
+
+{% if job.result %}
+<div class="review-item" style="margin-top:1.5rem">
+  <img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="Vorschau">
+  <div>
+    <h4>Vorschlag bearbeiten und übernehmen</h4>
+    {% set back = "/jobs/" ~ job.id %}
+    {% include "_review_form.html" with context %}
+  </div>
+</div>
+{% endif %}
+
+{% if job.applied %}<h4>In Paperless geschrieben</h4><pre class="json">{{ job.applied|tojson(indent=2) }}</pre>{% endif %}
+{% if job.result %}<details><summary>Rohdaten der Auswertung</summary><pre class="json">{{ job.result|tojson(indent=2) }}</pre></details>{% endif %}
+{% endblock %}

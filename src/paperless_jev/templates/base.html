@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}paperless-jev{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+<header class="container">
+  <nav>
+    <ul><li><strong>paperless-jev</strong></li></ul>
+    <ul>
+      <li><a href="/">Übersicht</a></li>
+      <li><a href="/review">Review</a></li>
+      <li><a href="/log">Protokoll</a></li>
+      <li><a href="/rules">Regeln</a></li>
+      <li><a href="/descriptions">Beschreibungen</a></li>
+      <li><a href="/setup">Setup</a></li>
+    </ul>
+  </nav>
+</header>
+<main class="container">
+  {% if msg %}<p class="flash good">{{ msg }}</p>{% endif %}
+  {% if err %}<p class="flash bad">{{ err }}</p>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="container"><small>paperless-jev {{ version }} · Klassifizierung mit TypeSafe Jev</small></footer>
+</body>
+</html>

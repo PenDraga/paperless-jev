@@ -1,0 +1,21 @@
+{% set jobs = recent if recent is defined else jobs %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>#</th><th>Instanz</th><th>Dokument</th><th>Status</th><th>Vorschlag</th><th>Quelle</th><th>Zeit (UTC)</th></tr></thead>
+  <tbody>
+  {% for j in jobs %}
+    <tr>
+      <td><a href="/jobs/{{ j.id }}">{{ j.id }}</a></td>
+      <td>{{ j.instance.name if j.instance else "?" }}</td>
+      <td>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %} {{ j.doc_title or "" }}</td>
+      <td><span class="badge {{ j.status }}">{{ STATUS_LABELS.get(j.status, j.status) }}</span>{% if j.error %}<br><small class="bad">{{ j.error[:120] }}</small>{% endif %}</td>
+      <td>{% if j.result %}{% for name, f in j.result.fields.items() %}{% if f.value %}<span class="badge {{ f.level }}" title="{{ FIELD_LABELS[name] }} · {{ '%.2f'|format(f.confidence) }}">{{ f.label }}</span> {% endif %}{% endfor %}{% endif %}</td>
+      <td>{{ j.source }}</td>
+      <td><small>{{ j.updated_at[:16].replace("T", " ") }}</small></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">Noch keine Einträge.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Regeln</h2>
+<form method="post" action="/rules">
+<article>
+  <header><strong>Betriebsmodus</strong></header>
+  <fieldset>
+    <label><input type="radio" name="mode" value="dry_run" {% if cfg.mode == "dry_run" %}checked{% endif %}> <strong>Probelauf</strong> – klassifizieren und protokollieren, nichts in Paperless ändern</label>
+    <label><input type="radio" name="mode" value="review" {% if cfg.mode == "review" %}checked{% endif %}> <strong>Nur Vorschläge</strong> – jedes Dokument landet in der Review-Queue</label>
+    <label><input type="radio" name="mode" value="auto" {% if cfg.mode == "auto" %}checked{% endif %}> <strong>Automatisch</strong> – sichere Werte direkt setzen, unsichere Fälle in die Review-Queue</label>
+  </fieldset>
+</article>
+
+<article>
+  <header><strong>Felder und Schwellwerte</strong></header>
+  <p><small>Jev liefert pro Antwort eine kalibrierte <em>Confidence</em> (bei Tags die Wahrscheinlichkeit für „ja“).
+    Ab <em>Auto</em> wird der Wert gesetzt, ab <em>Review</em> vorgeschlagen, darunter ignoriert.</small></p>
+  <div class="overflow-auto">
+  <table class="thresholds">
+    <thead><tr><th>Feld</th><th>aktiv</th><th>Auto ≥</th><th>Review ≥</th></tr></thead>
+    <tbody>
+    {% for name, spec in cfg.fields.items() %}
+      <tr>
+        <td>{{ FIELD_LABELS[name] }}</td>
+        <td><input type="checkbox" name="{{ name }}_enabled" {% if spec.enabled %}checked{% endif %}></td>
+        <td><input type="number" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
+        <td><input type="number" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <label><input type="checkbox" name="overwrite" {% if cfg.overwrite %}checked{% endif %}> bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)</label>
+  <label><input type="checkbox" name="remove_inbox" {% if cfg.remove_inbox %}checked{% endif %}> Posteingangs-Tag entfernen, wenn ein Dokument fertig klassifiziert ist</label>
+</article>
+
+<article>
+  <header><strong>Tags für den Status</strong> <small class="muted">(werden bei Bedarf angelegt)</small></header>
+  <div class="grid">
+    <label>Erledigt <input name="tag_done" value="{{ cfg.tag_done }}"></label>
+    <label>Review nötig <input name="tag_review" value="{{ cfg.tag_review }}"></label>
+    <label>Ignorieren <input name="tag_ignore" value="{{ cfg.tag_ignore }}"><small>Dokumente mit diesem Tag gehen nie an Jev.</small></label>
+  </div>
+</article>
+
+<article>
+  <header><strong>Titel</strong></header>
+  <label><input type="checkbox" name="title_enabled" {% if cfg.title_enabled %}checked{% endif %}> Titel aus Vorlage setzen</label>
+  <label>Vorlage <input name="title_template" value="{{ cfg.title_template }}">
+    <small>Platzhalter: <code>{document_type}</code> <code>{correspondent}</code> <code>{storage_path}</code> <code>{title}</code> <code>{created:%Y-%m-%d}</code>. Fehlt ein Wert, bleibt der Titel unverändert.</small></label>
+</article>
+
+<article>
+  <header><strong>Verarbeitung</strong></header>
+  <div class="grid">
+    <label>Polling-Intervall (Minuten, 0 = aus) <input type="number" min="0" name="poll_minutes" value="{{ cfg.poll_minutes }}"></label>
+    <label>Max. Zeichen Dokumenttext <input type="number" min="1000" step="500" name="max_chars" value="{{ cfg.max_chars }}"><small>Lange Dokumente: Anfang (70 %) + Ende (30 %).</small></label>
+    <label>Ähnliche Dokumente als Kontext <input type="number" min="0" max="10" name="similar_docs" value="{{ cfg.similar_docs }}"><small>0 = aus</small></label>
+  </div>
+</article>
+<button type="submit">Speichern</button>
+</form>
+{% endblock %}

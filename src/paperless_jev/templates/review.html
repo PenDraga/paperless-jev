@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Review-Queue <small class="muted">({{ items|length }})</small></h2>
+{% for item in items %}
+  {% set job = item.job %}{% set meta = item.meta %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
+  <article>
+    <header><strong>{{ job.doc_title or "Dokument" }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
+      {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">in Paperless öffnen</a>{% endif %}
+      · <a href="/jobs/{{ job.id }}">Details</a></header>
+    <div class="review-item">
+      <a href="{{ job.instance.browse_url if job.instance else '#' }}/documents/{{ job.doc_id }}/preview" target="_blank"><img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="Vorschau" loading="lazy"></a>
+      <div>{% include "_review_form.html" with context %}</div>
+    </div>
+  </article>
+{% else %}
+  <p class="muted">Nichts zu prüfen. 🎉</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Übersicht</h2>
+{% if not cfg.typesafe_api_key or not instances %}
+<p class="flash bad">Noch nicht eingerichtet – bitte unter <a href="/setup">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.</p>
+{% endif %}
+<p>Modus: <span class="badge {{ cfg.mode }}">{{ {"dry_run": "Probelauf – schreibt nichts", "review": "Nur Vorschläge (Review)", "auto": "Automatisch + Review"}[cfg.mode] }}</span>
+ · Modell <code>{{ cfg.model }}</code> · Polling {% if cfg.poll_minutes > 0 %}alle {{ cfg.poll_minutes }} min{% else %}aus{% endif %}
+ · Warteschlange: {{ queue_size }}</p>
+
+<div class="stats">
+  <article><span class="num">{{ counts.get("review", 0) }}</span><a href="/review">in Review</a></article>
+  <article><span class="num">{{ counts.get("done", 0) }}</span>erledigt</article>
+  <article><span class="num">{{ counts.get("dry_run", 0) }}</span>Probeläufe</article>
+  <article><span class="num">{{ counts.get("error", 0) }}</span><a href="/log?status=error">Fehler</a></article>
+  <article><span class="num">{% if auto_rate is not none %}{{ (auto_rate * 100)|round|int }} %{% else %}–{% endif %}</span>ohne Review erledigt</article>
+  <article><span class="num">{{ "{:,}".format(tokens).replace(",", "'") }}</span>Tokens (≈ ${{ "%.4f"|format(cost) }})</article>
+</div>
+
+{% if reviewed %}
+<h4>Korrekturen im Review ({{ reviewed }} geprüft)</h4>
+<p>{% for name, n in corrections.items() %}{{ FIELD_LABELS[name] }}: {{ n }}× korrigiert{% if not loop.last %} · {% endif %}{% else %}Bisher keine Korrekturen.{% endfor %}</p>
+{% endif %}
+
+<h4>Posteingang jetzt verarbeiten</h4>
+<form method="post" action="/run" class="grid">
+  <select name="instance_id">
+    <option value="0">Alle aktiven Instanzen</option>
+    {% for i in instances %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}
+  </select>
+  <label><input type="checkbox" name="force" value="true"> auch bereits bewertete Dokumente neu klassifizieren</label>
+  <button type="submit">Einreihen</button>
+</form>
+
+<h4>Zuletzt verarbeitet</h4>
+{% include "_jobs_table.html" with context %}
+{% endblock %}

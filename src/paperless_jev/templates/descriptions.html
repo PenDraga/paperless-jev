@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Beschreibungen</h2>
+<p><small>Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich –
+  am besten <strong>auf Englisch</strong> und präzise, z. B. Dokumenttyp „Rechnung“: <em>An invoice requesting payment for goods or services</em>.
+  Deaktivierte Einträge schlägt Jev nie vor.</small></p>
+{% if not instances %}<p class="bad">Zuerst unter <a href="/setup">Setup</a> eine Instanz anlegen.</p>{% else %}
+<form method="get" action="/descriptions" class="grid">
+  <select name="instance_id" onchange="this.form.submit()">
+    {% for i in instances %}<option value="{{ i.id }}" {% if inst and i.id == inst.id %}selected{% endif %}>{{ i.name }}</option>{% endfor %}
+  </select>
+  <select name="kind" onchange="this.form.submit()">
+    {% for k, label in kinds.items() %}<option value="{{ k }}" {% if k == kind %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+</form>
+{% if meta_error %}<p class="bad">{{ meta_error }}</p>{% endif %}
+<form method="post" action="/descriptions">
+  <input type="hidden" name="instance_id" value="{{ inst.id }}">
+  <input type="hidden" name="kind" value="{{ kind }}">
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>aktiv</th><th>Name</th><th>Beschreibung für Jev</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><input type="hidden" name="ids" value="{{ r.id }}"><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}></td>
+        <td>{{ r.name }}</td>
+        <td><textarea name="text_{{ r.id }}" rows="1" placeholder="optional">{{ r.text }}</textarea></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">Keine Einträge.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if rows %}<button type="submit">Speichern</button>{% endif %}
+</form>
+{% endif %}
+{% endblock %}

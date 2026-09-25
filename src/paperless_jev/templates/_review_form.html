@@ -1,0 +1,57 @@
+{# Erwartet: job, meta, tag_options, back #}
+{% set res = job.result or {} %}
+{% set fields = res.get("fields", {}) %}
+{% set current = res.get("current", {}) %}
+{% if not meta %}
+  <p class="bad">Stammdaten nicht verfügbar{% if meta_error %}: {{ meta_error }}{% endif %}</p>
+{% else %}
+<form method="post" action="/jobs/{{ job.id }}/apply">
+  <input type="hidden" name="back" value="{{ back }}">
+  {% for name, options in [("document_type", meta.document_types), ("correspondent", meta.correspondents), ("storage_path", meta.storage_paths)] %}
+    {% set f = fields.get(name) %}
+    {% set selected = f.value if f and f.value else current.get(name) %}
+    {% if f or current.get(name) %}
+    <div class="field-row">
+      <input type="checkbox" name="use_{{ name }}" checked title="Feld übernehmen">
+      <strong>{{ FIELD_LABELS[name] }}</strong>
+      <select name="{{ name }}">
+        <option value="">– leer –</option>
+        {% for oid, oname in options|dictsort(by="value") %}<option value="{{ oid }}"{% if oid == selected %} selected{% endif %}>{{ oname }}</option>{% endfor %}
+      </select>
+      <span>{% if f %}<span class="badge {{ f.level }}">{{ "%.0f"|format(f.confidence * 100) }} %</span>
+        <div class="bar"><span style="width: {{ (f.confidence * 100)|round|int }}%"></span></div>{% else %}<small class="muted">nicht bewertet</small>{% endif %}</span>
+    </div>
+    {% if f and f.top|length > 1 %}<small class="muted">Alternativen: {% for lbl, p in f.top[1:4] %}{{ lbl }} ({{ "%.0f"|format(p * 100) }} %){% if not loop.last %}, {% endif %}{% endfor %}</small>{% endif %}
+    {% endif %}
+  {% endfor %}
+  {% set f = fields.get("created") %}
+  <div class="field-row">
+    <input type="checkbox" name="use_created" {% if f and f.value %}checked{% endif %} title="Feld übernehmen">
+    <strong>{{ FIELD_LABELS["created"] }}</strong>
+    <input type="date" name="created" value="{{ f.value if f and f.value else current.get('created') or '' }}">
+    <span>{% if f %}<span class="badge {{ f.level }}">{{ "%.0f"|format(f.confidence * 100) }} %</span> <small class="muted">{{ f.label }}</small>{% endif %}
+      {% if current.get("created") %}<br><small class="muted">aktuell {{ current.created }}</small>{% endif %}</span>
+  </div>
+  <fieldset>
+    <legend><strong>Tags</strong> <small class="muted">(zusätzlich zu den vorhandenen)</small></legend>
+    <div class="tags">
+    {% set scored = res.get("tags", []) %}
+    {% for t in scored if t.level != "low" %}
+      <label><input type="checkbox" name="tags" value="{{ t.id }}"{% if t.level in ("auto", "suggest") %} checked{% endif %}> {{ t.label }} <span class="badge {{ t.level }}">{{ "%.0f"|format(t.p * 100) }} %</span></label>
+    {% endfor %}
+    </div>
+    <details><summary><small>Weitere Tags</small></summary>
+      <div class="tags">
+      {% set shown = scored|selectattr("level", "ne", "low")|map(attribute="id")|list %}
+      {% for tid, tname in tag_options|dictsort(by="value") if tid not in shown and tid not in current.get("tags", []) %}
+        <label><input type="checkbox" name="tags" value="{{ tid }}"> {{ tname }}</label>
+      {% endfor %}
+      </div>
+    </details>
+  </fieldset>
+  <div class="grid">
+    <button type="submit" name="action" value="apply">Übernehmen &amp; Posteingang verlassen</button>
+    <button type="submit" name="action" value="dismiss" class="secondary outline">Verwerfen</button>
+  </div>
+</form>
+{% endif %}

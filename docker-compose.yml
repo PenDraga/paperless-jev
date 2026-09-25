@@ -1,0 +1,12 @@
+# Lokaler Build und Betrieb. Fuer den Betrieb hinter Traefik siehe deploy/compose.yaml.
+services:
+  paperless-jev:
+    build: .
+    image: paperless-jev:latest
+    container_name: paperless-jev
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8090:8000"
+    volumes:
+      - ./data:/data
