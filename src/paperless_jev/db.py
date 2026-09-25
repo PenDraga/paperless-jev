@@ -95,6 +95,13 @@ class Database:
             (instance_id, doc_id, source, ts, ts),
         )
 
+    def delete_jobs(self, where: str, params: tuple | list = ()) -> int:
+        """Löscht Protokoll-Einträge; laufende und wartende bleiben immer stehen."""
+        with self._lock:
+            return self._conn.execute(
+                f"DELETE FROM jobs WHERE ({where}) AND status NOT IN ('queued', 'running')", params
+            ).rowcount
+
     def update_job(self, job_id: int, **fields: Any) -> None:
         fields["updated_at"] = now()
         for col in JSON_COLUMNS:

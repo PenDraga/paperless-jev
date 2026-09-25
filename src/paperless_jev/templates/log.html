@@ -15,4 +15,20 @@
 </form>
 {% if instances %}<article>{% include "_test_form.html" with context %}</article>{% endif %}
 <article>{% include "_jobs_table.html" with context %}</article>
+<article>
+  <details>
+    <summary><span class="card-h" style="display:inline-flex;margin:0">{{ icon("trash") }}{{ _("Protokoll bereinigen") }}</span></summary>
+    <form method="post" action="/log/cleanup" onsubmit="return confirm('{{ _('Ausgewählte Einträge endgültig löschen?') }}')">
+      <fieldset>
+        {% for key, label in [("error", "Fehler"), ("test", "Einzeltests"), ("dismissed", "verworfen"), ("skipped", "übersprungen")] %}
+        <label><input type="checkbox" name="what" value="{{ key }}"{% if key in ("error", "test") and cleanup[key] %} checked{% endif %}{% if not cleanup[key] %} disabled{% endif %}> {{ _(label) }} <span class="muted">({{ cleanup[key] }})</span></label>
+        {% endfor %}
+        <label><input type="checkbox" name="what" value="dry_run"{% if not cleanup.dry_run %} disabled{% endif %}> {{ _("Probeläufe") }} <span class="muted">({{ cleanup.dry_run }})</span>
+          <small class="muted">{{ _("Achtung: zählen für die Auswertung. Dokumente, die noch im Posteingang liegen, werden beim nächsten Polling erneut klassifiziert (kostet Tokens).") }}</small></label>
+      </fieldset>
+      <button type="submit" class="secondary" style="width:auto">{{ icon("trash") }} {{ _("Löschen") }}</button>
+      <small class="muted">{{ _("Laufende und wartende Einträge bleiben immer stehen. Erledigte Einträge lassen sich hier nicht löschen – sie zeigen, was nach Paperless geschrieben wurde.") }}</small>
+    </form>
+  </details>
+</article>
 {% endblock %}

@@ -25,7 +25,7 @@ from . import i18n
 from .i18n import gettext as _
 from .jev import USD_PER_MTOK, JevClient, JevError
 from .paperless import Metadata, PaperlessClient, PaperlessError
-from .processor import Processor
+from .processor import TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
 from .titles import describe_category
 from .vault import Vault
@@ -288,7 +288,8 @@ async def _evaluation(request: Request) -> dict[str, Any] | None:
 async def job_log(request: Request, status: str | None = None, q: str | None = None, limit: int = 200):
     jobs = await _jobs(request, status or None, limit=min(limit, 2000), q=q or None)
     return _render(
-        request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit, instances=_cfg(request).instances()
+        request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit, instances=_cfg(request).instances(),
+        cleanup=_cleanup_counts(request.app.state.db),
     )
 
 
@@ -325,6 +326,42 @@ async def test_job(request: Request, job_id: int):
         raise HTTPException(404)
     new_id = await _proc(request).test_document(job["instance_id"], job["doc_id"])
     return _redirect(f"/jobs/{new_id}", msg=_("Test abgeschlossen – nichts wurde in Paperless geändert"))
+
+
+@app.post("/jobs/{job_id}/delete")
+async def delete_job(request: Request, job_id: int):
+    if not request.app.state.db.delete_jobs("id = ?", (job_id,)):
+        return _redirect(f"/jobs/{job_id}", err=_("Laufende oder wartende Einträge lassen sich nicht löschen"))
+    return _redirect("/log", msg=_("Eintrag #{id} gelöscht", id=job_id))
+
+
+# Was sich im Protokoll bereinigen lässt: Schlüssel -> (Bedingung, Parameter)
+CLEANUP = {
+    "error": ("status = 'error'", ()),
+    "test": ("source = ?", (TEST,)),
+    "dismissed": ("status = 'dismissed'", ()),
+    "skipped": ("status = 'skipped'", ()),
+    "dry_run": ("status = 'dry_run' AND source != ?", (TEST,)),
+}
+
+
+def _cleanup_counts(db: Database) -> dict[str, int]:
+    return {
+        key: db.one(f"SELECT COUNT(*) AS n FROM jobs WHERE ({cond}) AND status NOT IN ('queued', 'running')", params)["n"]
+        for key, (cond, params) in CLEANUP.items()
+    }
+
+
+@app.post("/log/cleanup")
+async def cleanup_log(request: Request):
+    form = await request.form()
+    keys = [k for k in form.getlist("what") if k in CLEANUP]
+    if not keys:
+        return _redirect("/log", err=_("Nichts ausgewählt"))
+    where = " OR ".join(f"({CLEANUP[k][0]})" for k in keys)
+    params = [p for k in keys for p in CLEANUP[k][1]]
+    n = request.app.state.db.delete_jobs(where, params)
+    return _redirect("/log", msg=_("{n} Einträge gelöscht", n=n))
 
 
 @app.post("/jobs/{job_id}/retry")

@@ -140,6 +140,20 @@ EN: dict[str, str] = {
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
     "Filtern": "Filter",
+    "Protokoll bereinigen": "Clean up log",
+    "Ausgewählte Einträge endgültig löschen?": "Delete the selected entries permanently?",
+    "Einzeltests": "Single tests",
+    "Achtung: zählen für die Auswertung. Dokumente, die noch im Posteingang liegen, werden beim nächsten Polling erneut klassifiziert (kostet Tokens).":
+        "Caution: they count towards the evaluation. Documents still in the inbox are classified again at the next poll (costs tokens).",
+    "Löschen": "Delete",
+    "Laufende und wartende Einträge bleiben immer stehen. Erledigte Einträge lassen sich hier nicht löschen – sie zeigen, was nach Paperless geschrieben wurde.":
+        "Running and queued entries are always kept. Finished entries cannot be deleted here – they show what was written to Paperless.",
+    "Nichts ausgewählt": "Nothing selected",
+    "{n} Einträge gelöscht": "{n} entries deleted",
+    "Diesen Eintrag endgültig löschen?": "Delete this entry permanently?",
+    "Eintrag löschen": "Delete entry",
+    "Eintrag #{id} gelöscht": "Entry #{id} deleted",
+    "Laufende oder wartende Einträge lassen sich nicht löschen": "Running or queued entries cannot be deleted",
     # --- Review, Job ------------------------------------------------------------
     "Review-Queue": "Review queue",
     "in Paperless öffnen": "open in Paperless",

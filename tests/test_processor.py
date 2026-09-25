@@ -278,3 +278,26 @@ def test_parse_doc_id():
     assert _parse_doc_id("#12") == 12
     assert _parse_doc_id("https://paperless.example.com/documents/2474/details") == 2474
     assert _parse_doc_id("abc") is None
+
+
+def test_log_cleanup_and_delete(client):
+    db = client.app.state.db
+    ids = {}
+    for name, status, source in [("err", "error", "poll"), ("test", "dry_run", "test"), ("dry", "dry_run", "poll"),
+                                 ("done", "done", "poll"), ("run", "running", "test")]:
+        ids[name] = db.create_job(1, 900 + len(ids), source)
+        db.update_job(ids[name], status=status)
+    page = client.get("/log").text
+    assert "Protokoll bereinigen" in page
+
+    # Fehler + Einzeltests: der laufende Test bleibt stehen, Probelauf und Erledigt auch
+    r = client.post("/log/cleanup", data={"what": ["error", "test"]}, follow_redirects=False)
+    assert r.status_code == 303 and "2+Eintr" in r.headers["location"]
+    left = {row["id"] for row in db.query("SELECT id FROM jobs WHERE doc_id >= 900")}
+    assert left == {ids["dry"], ids["done"], ids["run"]}
+
+    # Einzelner Eintrag; laufende lassen sich nicht löschen
+    client.post(f"/jobs/{ids['dry']}/delete")
+    assert db.job(ids["dry"]) is None
+    r = client.post(f"/jobs/{ids['run']}/delete", follow_redirects=False)
+    assert "err=" in r.headers["location"] and db.job(ids["run"])
