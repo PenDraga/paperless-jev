@@ -73,6 +73,7 @@ templates.env.globals.update(
     FIELD_LABELS=FIELD_LABELS,
     STATUS_LABELS=STATUS_LABELS,
     MODE_LABELS=MODE_LABELS,
+    RULE_LABELS={1: "beliebiges Wort", 2: "alle Wörter", 3: "exakt", 4: "Regex", 5: "ungefähr"},
     LANGUAGES=i18n.LANGUAGES,
     version=__version__,
     asset_v=int((HERE / "static" / "style.css").stat().st_mtime),
@@ -596,6 +597,7 @@ async def save_rules(request: Request):
             "correspondent_fallback": str(form.get("correspondent_fallback") or "").strip(),
             "overwrite": "overwrite" in form,
             "review_conflicts": "review_conflicts" in form,
+            "paperless_rules": "paperless_rules" in form,
             "remove_inbox": "remove_inbox" in form,
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),
@@ -655,7 +657,7 @@ async def descriptions_page(request: Request, instance_id: int = 0, kind: str = 
                 if oid in hidden:
                     continue
                 d = stored.get((kind, oid), {"text": "", "source": "", "active": True})
-                rows.append({"id": oid, "name": name, **d})
+                rows.append({"id": oid, "name": name, "rule": meta.rules.get((kind, oid)), **d})
         except PaperlessError as e:
             error = str(e)
     return _render(

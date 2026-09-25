@@ -25,7 +25,8 @@
     {% for r in rows %}
       <tr>
         <td class="desc-active"><input type="hidden" name="ids" value="{{ r.id }}"><label><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}><span class="show-mobile-inline"> {{ _("aktiv") }}</span></label></td>
-        <td class="card-title">{{ r.name }}<input type="hidden" name="name_{{ r.id }}" value="{{ r.name }}"></td>
+        <td class="card-title">{{ r.name }}<input type="hidden" name="name_{{ r.id }}" value="{{ r.name }}">
+          {% if r.rule %}<small class="muted rule" title="{{ _('Zuweisungsregel aus Paperless – geht als Hinweis an Jev') }}">Paperless: {{ _(RULE_LABELS[r.rule.algorithm]) }} <code>{{ r.rule.match }}</code></small>{% endif %}</td>
         <td class="desc-text"><textarea name="text_{{ r.id }}" rows="1" placeholder="{{ _('Stichworte, optional') if can_translate else _('optional') }}">{{ r.source }}</textarea>
           {% if r.text and r.text != r.source %}<small class="muted translation" title="{{ _('An Jev gesendet') }}">→ {{ r.text }}</small>{% endif %}</td>
       </tr>

@@ -44,6 +44,7 @@ DEFAULTS: dict[str, Any] = {
     "overwrite": False,
     # Widerspricht Jev sicher einem vorhandenen Wert -> Review statt ignorieren
     "review_conflicts": True,
+    "paperless_rules": False,
     "remove_inbox": True,
     "tag_done": "ai-klassifiziert",
     "tag_review": "ai-review",

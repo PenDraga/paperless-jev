@@ -7,6 +7,7 @@ Englisch trainiert, der Dokumenttext selbst darf deutsch bleiben.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
@@ -41,6 +42,11 @@ CONVENTION_HINT = (
     "that are already filed under it."
 )
 EXAMPLES_KEY = "titles_of_documents_already_filed_here"
+RULE_KEY = "owner_matching_rule"
+RULE_HINT = (
+    " Some options include the owner's text matching rule from Paperless: treat a match "
+    "as a strong hint, but the document content decides."
+)
 
 Examples = dict[tuple[str, int], list[str]]
 
@@ -91,13 +97,39 @@ def _active(
     }
 
 
-def _criterion(kind: str, oid: int, descriptions: dict, examples: Examples) -> Any:
-    """Beschreibung und/oder Beispieltitel als (strukturiertes) Kriterium."""
+def match_words(match: str) -> list[str]:
+    """Suchbegriffe wie Paperless sie trennt: Leerzeichen, "Wortgruppen in Anführungszeichen"."""
+    return [a or b for a, b in re.findall(r'"([^"]+)"|(\S+)', match)]
+
+
+def rule_hint(rule: dict[str, Any]) -> str:
+    """Paperless-Zuweisungsregel als englischer Satz für Jev."""
+    match, algorithm = rule["match"], rule["algorithm"]
+    quoted = ", ".join(f'"{w}"' for w in match_words(match))
+    return {
+        1: f"the text contains any of these words: {quoted}",
+        2: f"the text contains all of these words: {quoted}",
+        3: f'the text contains exactly: "{match}"',
+        4: f"the text matches the regular expression: {match}",
+        5: f'the text approximately contains: "{match}"',
+    }[algorithm]
+
+
+def _criterion(
+    kind: str, oid: int, descriptions: dict, examples: Examples, rules: dict | None = None
+) -> Any:
+    """Beschreibung, Paperless-Regel und/oder Beispieltitel als (strukturiertes) Kriterium."""
     text = descriptions.get((kind, oid), {}).get("text", "")
     titles = examples.get((kind, oid))
+    rule = (rules or {}).get((kind, oid))
+    if not titles and not rule:
+        return text or None
+    criterion: dict[str, Any] = {"what": text} if text else {}
+    if rule:
+        criterion[RULE_KEY] = rule_hint(rule)
     if titles:
-        return {"what": text, EXAMPLES_KEY: titles} if text else {EXAMPLES_KEY: titles}
-    return text or None
+        criterion[EXAMPLES_KEY] = titles
+    return criterion
 
 
 def excluded_tags(meta: Metadata, cfg: dict[str, Any]) -> set[int]:
@@ -134,6 +166,7 @@ def build_request(
         ]
     req = JevRequest(state=state)
     fields = cfg["fields"]
+    rules = meta.rules if cfg.get("paperless_rules") else {}
 
     for name, kind in KIND_OF_FIELD.items():
         if not fields[name]["enabled"]:
@@ -146,12 +179,14 @@ def build_request(
             continue
         labels = dict(list(_labels(items).items())[:MAX_CHOICE_OPTIONS])
         criteria: dict[str, Any] = {
-            label: _criterion(kind, oid, descriptions, examples) for label, oid in labels.items()
+            label: _criterion(kind, oid, descriptions, examples, rules) for label, oid in labels.items()
         }
         criteria[NONE] = NONE_CRITERION
         instructions = INSTRUCTIONS[name]
-        if any(isinstance(c, dict) for c in criteria.values()):
+        if any(isinstance(c, dict) and EXAMPLES_KEY in c for c in criteria.values()):
             instructions += CONVENTION_HINT
+        if any(isinstance(c, dict) and RULE_KEY in c for c in criteria.values()):
+            instructions += RULE_HINT
         req.questions[name] = {
             "type": "choice",
             "instructions": instructions,
@@ -180,7 +215,7 @@ def build_request(
                 "type": "noul",
                 "instructions": TAG_INSTRUCTION.format(name=tag_name),
             }
-            if desc := _criterion("tag", tid, descriptions, examples):
+            if desc := _criterion("tag", tid, descriptions, examples, rules):
                 question["criteria"] = {"true": desc, "false": f'The tag "{tag_name}" does not apply.'}
             req.questions[f"tag:{tid}"] = question
 

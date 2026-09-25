@@ -202,6 +202,8 @@ td.empty-cell:hover { background: transparent !important; }
 td textarea { min-height: 2.4rem; margin: 0; }
 pre.json { max-height: 30rem; overflow: auto; font-size: .8rem; }
 .thresholds td input { margin: 0; max-width: 6rem; }
+.rule { display: block; font-weight: 400; margin-top: .2rem; }
+.rule code { font-size: .75rem; padding: .05rem .3rem; }
 .translation { display: block; margin-top: .25rem; line-height: 1.3; }
 .translate-toggle { font-size: .85rem; margin-bottom: .4rem; }
 

@@ -174,3 +174,27 @@ def test_confident_conflict_with_existing_value_goes_to_review():
     assert "correspondent" not in decision["updates"]
     assert decision["needs_review"] is True
     assert plan(result, doc, cfg(review_conflicts=False))["needs_review"] is False
+
+
+def test_paperless_rules_become_hints():
+    from paperless_jev.classifier import RULE_KEY, match_words, rule_hint
+
+    assert match_words('Police 1234567 "Bank Cler AG"') == ["Police", "1234567", "Bank Cler AG"]
+    assert rule_hint({"match": "Police 1234567", "algorithm": 2}) == 'the text contains all of these words: "Police", "1234567"'
+    assert rule_hint({"match": "Bank Cler AG", "algorithm": 3}) == 'the text contains exactly: "Bank Cler AG"'
+
+    meta = make_meta()
+    meta.rules = {("correspondent", 1): {"match": "swisscom.ch", "algorithm": 1, "insensitive": True},
+                  ("tag", 103): {"match": "Octavia SQ7", "algorithm": 1, "insensitive": True}}
+    req = build_request(make_doc(), meta, {}, cfg(paperless_rules=True))
+    q = req.questions["correspondent"]
+    assert q["criteria"]["Swisscom"] == {RULE_KEY: 'the text contains any of these words: "swisscom.ch"'}
+    assert q["criteria"]["Stadtwerke"] is None
+    assert "matching rule" in q["instructions"] and "filing conventions" not in q["instructions"]
+    assert "matching rule" not in req.questions["document_type"]["instructions"]
+    # Tag 103 ist schon gesetzt und wird nicht gefragt; ohne Regel kein Kriterium
+    assert "tag:103" not in req.questions and "criteria" not in req.questions["tag:101"]
+
+    # Standard: aus (Vergleich an 60 Dokumenten ohne messbaren Vorteil, +40 % Tokens)
+    req = build_request(make_doc(), meta, {}, cfg())
+    assert req.questions["correspondent"]["criteria"]["Swisscom"] is None

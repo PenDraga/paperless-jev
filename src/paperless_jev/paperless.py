@@ -16,6 +16,11 @@ class PaperlessError(Exception):
     pass
 
 
+# Paperless matching_algorithm: 1 beliebiges Wort, 2 alle Wörter, 3 exakt, 4 Regex, 5 ungefähr
+# (0 = keine, 6 = automatisch/gelernt - dort gibt es keinen Suchbegriff)
+RULE_ALGORITHMS = (1, 2, 3, 4, 5)
+
+
 @dataclass
 class Metadata:
     """Stammdaten einer Instanz: id -> Name."""
@@ -25,6 +30,8 @@ class Metadata:
     storage_paths: dict[int, str] = field(default_factory=dict)
     tags: dict[int, str] = field(default_factory=dict)
     inbox_tags: set[int] = field(default_factory=set)
+    # Paperless-Zuweisungsregeln mit Suchbegriff: (Art, ID) -> {"match", "algorithm", "insensitive"}
+    rules: dict[tuple[str, int], dict[str, Any]] = field(default_factory=dict)
 
     def tag_id(self, name: str) -> int | None:
         wanted = name.strip().lower()
@@ -110,16 +117,30 @@ class PaperlessClient:
 
     async def metadata(self) -> Metadata:
         meta = Metadata()
+
+        def rule(kind: str, item: dict[str, Any]) -> None:
+            match = (item.get("match") or "").strip()
+            if match and item.get("matching_algorithm") in RULE_ALGORITHMS:
+                meta.rules[(kind, item["id"])] = {
+                    "match": match,
+                    "algorithm": item["matching_algorithm"],
+                    "insensitive": bool(item.get("is_insensitive", True)),
+                }
+
         for c in await self._all("/api/correspondents/"):
             meta.correspondents[c["id"]] = c["name"]
+            rule("correspondent", c)
         for t in await self._all("/api/document_types/"):
             meta.document_types[t["id"]] = t["name"]
+            rule("document_type", t)
         for s in await self._all("/api/storage_paths/"):
             meta.storage_paths[s["id"]] = s["name"]
+            rule("storage_path", s)
         for t in await self._all("/api/tags/"):
             meta.tags[t["id"]] = t["name"]
             if t.get("is_inbox_tag"):
                 meta.inbox_tags.add(t["id"])
+            rule("tag", t)
         return meta
 
     async def example_titles(self, kind: str, object_id: int, limit: int) -> list[str]:
