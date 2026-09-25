@@ -2,7 +2,8 @@
 
 Klassifiziert neue Dokumente im Paperless-NGX-Posteingang mit [TypeSafe Jev](https://docs.typesafe.ai/introduction):
 Dokumenttyp, Korrespondent, Speicherpfad, Ausstellungsdatum und Tags. Das Tool läuft als Docker-Container
-und wird komplett über eine Web-UI konfiguriert.
+und wird komplett über eine Web-UI konfiguriert (Deutsch/Englisch, für Handy optimiert; Dokumente lassen
+sich direkt im Review ansehen).
 
 Jev erzeugt keinen Text, es **wählt aus**: aus deinen vorhandenen Paperless-Stammdaten bzw. aus
 Datumsangaben, die der Code vorher im OCR-Text gefunden hat. Jede Antwort bringt eine kalibrierte

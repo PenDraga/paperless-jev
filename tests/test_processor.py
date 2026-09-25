@@ -214,3 +214,32 @@ def test_descriptions_are_expanded_on_change(client, monkeypatch):
     # Seite zeigt deutsche Eingabe und englische Fassung
     page = client.get("/descriptions?instance_id=1&kind=tag").text
     assert "Für die Steuererklärung relevant</textarea>" in page and "EN: EN: Für die" in page
+
+
+def test_language_switch(client):
+    assert "Übersicht" in client.get("/").text
+    r = client.get("/lang/en?next=/rules", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/rules"
+    client.cookies.set("lang", "en")
+    page = client.get("/rules").text
+    assert "Operating mode" in page and "Betriebsmodus" not in page and '<html lang="en">' in page
+    assert "Overview" in client.get("/log").text
+    r = client.post("/rules", data={"mode": "dry_run"}, follow_redirects=False)
+    assert "Rules+saved" in r.headers["location"]
+    client.cookies.set("lang", "de")
+    assert client.get("/lang/en?next=//evil.example", follow_redirects=False).headers["location"] == "/"
+
+
+
+def test_document_preview_is_proxied(client, monkeypatch):
+    async def preview(self, doc_id):
+        return b"%PDF-1.7 test", "application/pdf"
+
+    monkeypatch.setattr(FakePaperless, "preview", preview, raising=False)
+    r = client.get("/doc/1/42")
+    assert r.status_code == 200 and r.content.startswith(b"%PDF") and r.headers["content-type"] == "application/pdf"
+    assert "inline" in r.headers["content-disposition"]
+    assert client.get("/doc/99/42").status_code == 404
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    assert 'href="/doc/1/42"' in client.get("/jobs/1").text

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ current_lang() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,13 +10,17 @@
 </head>
 <body>
 {% set path = request.url.path %}
+{% set here = request.url.path ~ ("?" ~ request.url.query if request.url.query else "") %}
 <header class="container">
   <nav class="main-nav">
     <ul><li><a href="/" class="brand"><strong>paperless-jev</strong></a></li></ul>
     <ul>
       {% for href, label in [("/", "Übersicht"), ("/review", "Review"), ("/log", "Protokoll"), ("/rules", "Regeln"), ("/descriptions", "Beschreibungen"), ("/setup", "Setup")] %}
-      <li><a href="{{ href }}"{% if path == href or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}>{{ label }}{% if href == "/review" and review_count %} <span class="count">{{ review_count }}</span>{% endif %}</a></li>
+      <li><a href="{{ href }}"{% if path == href or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}>{{ _(label) }}{% if href == "/review" and review_count %} <span class="count">{{ review_count }}</span>{% endif %}</a></li>
       {% endfor %}
+      <li class="lang-switch" title="{{ _('Sprache') }}">
+        {% for code in LANGUAGES %}{% if code == current_lang() %}<strong>{{ code|upper }}</strong>{% else %}<a href="/lang/{{ code }}?next={{ here|urlencode }}" hreflang="{{ code }}" lang="{{ code }}">{{ code|upper }}</a>{% endif %}{% if not loop.last %}<span class="muted"> | </span>{% endif %}{% endfor %}
+      </li>
     </ul>
   </nav>
 </header>
@@ -25,6 +29,38 @@
   {% if err %}<p class="flash bad">{{ err }}</p>{% endif %}
   {% block content %}{% endblock %}
 </main>
-<footer class="container"><small>paperless-jev {{ version }} · Klassifizierung mit TypeSafe Jev</small></footer>
+<dialog id="doc-viewer" class="doc-viewer">
+  <article>
+    <header>
+      <strong id="doc-viewer-title">{{ _("Dokument ansehen") }}</strong>
+      <span class="doc-viewer-actions">
+        <a id="doc-viewer-tab" href="#" target="_blank" rel="noopener">{{ _("In neuem Tab öffnen") }}</a>
+        <button type="button" class="secondary outline" data-close-viewer>{{ _("Schliessen") }}</button>
+      </span>
+    </header>
+    <iframe id="doc-viewer-frame" title="{{ _('Dokument ansehen') }}"></iframe>
+  </article>
+</dialog>
+<script>
+// Desktop: Dokument im Overlay; Handy: neuer Tab (PDF im Frame zeigt dort oft nur Seite 1)
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("a[data-viewer]");
+  const dlg = document.getElementById("doc-viewer");
+  if (e.target.closest("[data-close-viewer]") || e.target === dlg) {
+    dlg.close();
+    return;
+  }
+  if (!link || window.innerWidth < 761 || !dlg.showModal) return;
+  e.preventDefault();
+  document.getElementById("doc-viewer-frame").src = link.href;
+  document.getElementById("doc-viewer-tab").href = link.href;
+  document.getElementById("doc-viewer-title").textContent = link.dataset.viewer || link.textContent;
+  dlg.showModal();
+});
+document.getElementById("doc-viewer").addEventListener("close", () => {
+  document.getElementById("doc-viewer-frame").src = "about:blank";
+});
+</script>
+<footer class="container"><small>paperless-jev {{ version }} · {{ _("Klassifizierung mit TypeSafe Jev") }}</small></footer>
 </body>
 </html>

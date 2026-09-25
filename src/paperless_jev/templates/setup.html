@@ -1,76 +1,77 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Setup</h2>
+<h2>{{ _("Setup") }}</h2>
 
 <article>
   <header><strong>TypeSafe / Jev</strong></header>
   <form method="post" action="/setup/typesafe">
-    <label>API-Key {% if has_key %}<small class="good">(gespeichert – leer lassen, um ihn zu behalten)</small>{% endif %}
-      <input type="password" name="api_key" autocomplete="off" placeholder="{{ 'gespeichert' if has_key else 'API-Key von console.typesafe.ai/keys' }}">
+    <label>{{ _("API-Key") }} {% if has_key %}<small class="good">{{ _("(gespeichert – leer lassen, um ihn zu behalten)") }}</small>{% endif %}
+      <input type="password" name="api_key" autocomplete="off" placeholder="{{ _('gespeichert') if has_key else _('API-Key von console.typesafe.ai/keys') }}">
     </label>
-    <label>Modell
+    <label>{{ _("Modell") }}
       <input name="model" value="{{ cfg.model }}">
-      <small>Für stabile Schwellwerte auf eine Version pinnen, z. B. <code>jev-1.13.0</code>. <code>jev-latest</code> wechselt bei neuen Releases automatisch.</small>
+      <small>{{ _("Für stabile Schwellwerte auf eine Version pinnen, z. B. <code>jev-1.13.0</code>. <code>jev-latest</code> wechselt bei neuen Releases automatisch.")|safe }}</small>
     </label>
     <div class="grid">
-      <button type="submit">Speichern</button>
-      <button type="button" class="secondary" hx-post="/setup/typesafe/test" hx-target="#jev-test">Verbindung testen</button>
+      <button type="submit">{{ _("Speichern") }}</button>
+      <button type="button" class="secondary" hx-post="/setup/typesafe/test" hx-target="#jev-test">{{ _("Verbindung testen") }}</button>
     </div>
     <p id="jev-test"></p>
   </form>
 </article>
 
 <article>
-  <header><strong>Paperless-Instanzen</strong></header>
+  <header><strong>{{ _("Paperless-Instanzen") }}</strong></header>
   {% for i in instances %}
   <details {% if loop.length == 1 %}open{% endif %}>
-    <summary>{{ i.name }} <small class="muted">{{ i.url }}</small> {% if not i.enabled %}<span class="badge">deaktiviert</span>{% endif %}</summary>
+    <summary>{{ i.name }} <small class="muted">{{ i.url }}</small> {% if not i.enabled %}<span class="badge">{{ _("deaktiviert") }}</span>{% endif %}</summary>
     <form method="post" action="/setup/instances">
       <input type="hidden" name="instance_id" value="{{ i.id }}">
       <div class="grid">
-        <label>Name <input name="name" value="{{ i.name }}" required></label>
-        <label>API-URL (aus dem Container erreichbar) <input name="url" value="{{ i.url }}" required></label>
+        <label>{{ _("Name") }} <input name="name" value="{{ i.name }}" required></label>
+        <label>{{ _("API-URL (aus dem Container erreichbar)") }} <input name="url" value="{{ i.url }}" required></label>
       </div>
       <div class="grid">
-        <label>Öffentliche URL (für Links) <input name="public_url" value="{{ i.public_url }}"></label>
-        <label>API-Token <input type="password" name="token" placeholder="gespeichert – leer lassen, um ihn zu behalten" autocomplete="off"></label>
+        <label>{{ _("Öffentliche URL") }} <input name="public_url" value="{{ i.public_url }}">
+          <small>{{ _("Für Links – und als Host-Header, damit Paperless (ALLOWED_HOSTS) den Zugriff über den Containernamen akzeptiert.") }}</small></label>
+        <label>{{ _("API-Token") }} <input type="password" name="token" placeholder="{{ _('gespeichert – leer lassen, um ihn zu behalten') }}" autocomplete="off"></label>
       </div>
-      <label><input type="checkbox" name="enabled" value="true" {% if i.enabled %}checked{% endif %}> aktiv</label>
+      <label><input type="checkbox" name="enabled" value="true" {% if i.enabled %}checked{% endif %}> {{ _("aktiv") }}</label>
       <div class="grid">
-        <button type="submit">Speichern</button>
-        <button type="button" class="secondary" hx-post="/setup/instances/{{ i.id }}/test" hx-target="#test-{{ i.id }}">Verbindung testen</button>
+        <button type="submit">{{ _("Speichern") }}</button>
+        <button type="button" class="secondary" hx-post="/setup/instances/{{ i.id }}/test" hx-target="#test-{{ i.id }}">{{ _("Verbindung testen") }}</button>
       </div>
       <p id="test-{{ i.id }}"></p>
     </form>
-    <p><strong>Webhook für sofortige Verarbeitung</strong> – in Paperless unter <em>Workflows</em> anlegen:</p>
+    <p>{{ _("<strong>Webhook für sofortige Verarbeitung</strong> – in Paperless unter <em>Workflows</em> anlegen:")|safe }}</p>
     <ul>
-      <li>Auslöser: <em>Dokument hinzugefügt</em></li>
-      <li>Aktion: <em>Webhook</em>, URL<br><code>{{ base_url }}/hook/{{ i.name }}?token={{ cfg.webhook_secret }}</code><br>
-        <small>Läuft paperless-jev im selben Docker-Netz, besser die interne Adresse verwenden, z. B. <code>http://paperless-jev:8000/hook/{{ i.name }}?token=…</code></small></li>
-      <li>„Webhook-Parameter verwenden“ aktivieren, Parameter <code>doc_id</code> = <code>{{ "{{ doc_id }}" }}</code></li>
+      <li>{{ _("Auslöser: <em>Dokument hinzugefügt</em>")|safe }}</li>
+      <li>{{ _("Aktion: <em>Webhook</em>, URL")|safe }}<br><code>{{ base_url }}/hook/{{ i.name }}?token={{ cfg.webhook_secret }}</code><br>
+        <small>{{ _("Läuft paperless-jev im selben Docker-Netz, besser die interne Adresse verwenden, z. B.") }} <code>http://paperless-jev:8000/hook/{{ i.name }}?token=…</code></small></li>
+      <li>{{ _("„Webhook-Parameter verwenden“ aktivieren, Parameter") }} <code>doc_id</code> = <code>{{ "{{ doc_id }}" }}</code></li>
     </ul>
     <form method="post" action="/setup/instances/{{ i.id }}/delete" class="inline"
-          onsubmit="return confirm('Instanz {{ i.name }} wirklich löschen?')">
-      <button type="submit" class="secondary outline">Instanz löschen</button>
+          onsubmit="return confirm({{ _('Instanz {name} wirklich löschen?', name=i.name)|tojson|forceescape }})">
+      <button type="submit" class="secondary outline">{{ _("Instanz löschen") }}</button>
     </form>
   </details>
   <hr>
   {% endfor %}
   <details {% if not instances %}open{% endif %}>
-    <summary>Neue Instanz hinzufügen</summary>
+    <summary>{{ _("Neue Instanz hinzufügen") }}</summary>
     <form method="post" action="/setup/instances">
       <div class="grid">
-        <label>Name <input name="name" placeholder="z. B. home" required></label>
-        <label>API-URL (aus dem Container erreichbar) <input name="url" placeholder="http://paperless:8000" required></label>
+        <label>{{ _("Name") }} <input name="name" placeholder="{{ _('z. B. home') }}" required></label>
+        <label>{{ _("API-URL (aus dem Container erreichbar)") }} <input name="url" placeholder="http://paperless:8000" required></label>
       </div>
       <div class="grid">
-        <label>Öffentliche URL <input name="public_url" placeholder="https://paperless.example.com">
-          <small>Für Links – und als Host-Header, damit Paperless (ALLOWED_HOSTS) den Zugriff über den Containernamen akzeptiert.</small></label>
-        <label>API-Token <input type="password" name="token" required autocomplete="off">
-          <small>In Paperless: Profil → „API-Auth-Token“</small></label>
+        <label>{{ _("Öffentliche URL") }} <input name="public_url" placeholder="https://paperless.example.com">
+          <small>{{ _("Für Links – und als Host-Header, damit Paperless (ALLOWED_HOSTS) den Zugriff über den Containernamen akzeptiert.") }}</small></label>
+        <label>{{ _("API-Token") }} <input type="password" name="token" required autocomplete="off">
+          <small>{{ _("In Paperless: Profil → „API-Auth-Token“") }}</small></label>
       </div>
-      <label><input type="checkbox" name="enabled" value="true" checked> aktiv</label>
-      <button type="submit">Hinzufügen</button>
+      <label><input type="checkbox" name="enabled" value="true" checked> {{ _("aktiv") }}</label>
+      <button type="submit">{{ _("Hinzufügen") }}</button>
     </form>
   </details>
 </article>

@@ -20,6 +20,8 @@ from . import __version__
 from .classifier import excluded_tags
 from .config import FIELD_LABELS, SINGLE_FIELDS, Config
 from .db import Database
+from . import i18n
+from .i18n import gettext as _
 from .jev import USD_PER_MTOK, JevClient, JevError
 from .paperless import Metadata, PaperlessClient, PaperlessError
 from .processor import Processor
@@ -33,6 +35,11 @@ DATA_DIR = Path(os.environ.get("PJ_DATA_DIR", "/data"))
 ADMIN_USER = os.environ.get("PJ_ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("PJ_ADMIN_PASSWORD", "")
 PUBLIC_PATHS = ("/hook/", "/health", "/static/")
+MODE_LABELS = {
+    "dry_run": "Probelauf – schreibt nichts",
+    "review": "Nur Vorschläge (Review)",
+    "auto": "Automatisch + Review",
+}
 
 STATUS_LABELS = {
     "queued": "wartet",
@@ -62,8 +69,30 @@ app = FastAPI(title="paperless-jev", version=__version__, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
 templates = Jinja2Templates(directory=HERE / "templates")
 templates.env.globals.update(
-    FIELD_LABELS=FIELD_LABELS, STATUS_LABELS=STATUS_LABELS, version=__version__
+    FIELD_LABELS=FIELD_LABELS,
+    STATUS_LABELS=STATUS_LABELS,
+    MODE_LABELS=MODE_LABELS,
+    LANGUAGES=i18n.LANGUAGES,
+    version=__version__,
+    _=_,
+    current_lang=i18n.current.get,
 )
+
+
+@app.middleware("http")
+async def language(request: Request, call_next):
+    """Sprache für diesen Request: Cookie, sonst Browser-Einstellung."""
+    i18n.current.set(i18n.pick(request.cookies.get(i18n.COOKIE), request.headers.get("accept-language")))
+    return await call_next(request)
+
+
+@app.get("/lang/{code}")
+async def set_language(code: str, next: str = "/"):
+    target = next if next.startswith("/") and not next.startswith("//") else "/"
+    resp = RedirectResponse(target, status_code=303)
+    if code in i18n.LANGUAGES:
+        resp.set_cookie(i18n.COOKIE, code, max_age=365 * 24 * 3600, samesite="lax")
+    return resp
 
 
 @app.middleware("http")
@@ -171,7 +200,7 @@ def _view(row: dict[str, Any], meta: Metadata | None) -> None:
             continue
         label = f["value"] if name == "created" and f["value"] else f["label"]
         view[name] = {
-            "label": "keiner passt" if f["value"] is None else label,
+            "label": _("keiner passt") if f["value"] is None else label,
             "confidence": f["confidence"],
             "level": f["level"],
             "current": cur_label,
@@ -253,7 +282,7 @@ async def job_log(request: Request, status: str | None = None, q: str | None = N
 @app.post("/run")
 async def run_now(request: Request, instance_id: int = Form(0), force: bool = Form(False)):
     count = await _proc(request).poll_once(instance_id or None, force=force)
-    return _redirect("/", msg=f"{count} Dokument(e) eingereiht")
+    return _redirect("/", msg=_("{n} Dokument(e) eingereiht", n=count))
 
 
 @app.post("/jobs/{job_id}/retry")
@@ -262,7 +291,7 @@ async def retry_job(request: Request, job_id: int):
     if not job:
         raise HTTPException(404)
     new_id = await _proc(request).enqueue(job["instance_id"], job["doc_id"], "manual", force=True)
-    return _redirect(f"/jobs/{new_id}" if new_id else f"/jobs/{job_id}", msg="Neu eingereiht")
+    return _redirect(f"/jobs/{new_id}" if new_id else f"/jobs/{job_id}", msg=_("Neu eingereiht"))
 
 
 # --- Review --------------------------------------------------------------
@@ -308,7 +337,7 @@ async def apply_job(request: Request, job_id: int):
     form = await request.form()
     if form.get("action") == "dismiss":
         await _proc(request).dismiss(job_id)
-        return _redirect(str(form.get("back") or "/review"), msg="Verworfen")
+        return _redirect(str(form.get("back") or "/review"), msg=_("Verworfen"))
     choice: dict[str, Any] = {}
     for name in SINGLE_FIELDS:
         if f"use_{name}" not in form:
@@ -326,7 +355,25 @@ async def apply_job(request: Request, job_id: int):
         await _proc(request).apply_review(job_id, choice)
     except PaperlessError as e:
         return _redirect(f"/jobs/{job_id}", err=str(e))
-    return _redirect(str(form.get("back") or "/review"), msg="Übernommen")
+    return _redirect(str(form.get("back") or "/review"), msg=_("Übernommen"))
+
+
+@app.get("/doc/{instance_id}/{doc_id}")
+async def document_preview(request: Request, instance_id: int, doc_id: int):
+    """Dokument aus Paperless durchreichen - ohne separate Paperless-Anmeldung."""
+    inst = _cfg(request).instance(instance_id)
+    if not inst:
+        raise HTTPException(404)
+    try:
+        async with _proc(request).client(inst) as pl:
+            content, ctype = await pl.preview(doc_id)
+    except PaperlessError:
+        raise HTTPException(404) from None
+    return Response(
+        content,
+        media_type=ctype,
+        headers={"Content-Disposition": f'inline; filename="document-{doc_id}.pdf"', "Cache-Control": "private, max-age=600"},
+    )
 
 
 @app.get("/thumb/{instance_id}/{doc_id}")
@@ -364,14 +411,14 @@ async def save_typesafe(request: Request, api_key: str = Form(""), model: str = 
     if api_key.strip():
         values["typesafe_api_key"] = api_key.strip()
     _cfg(request).update(values)
-    return _redirect("/setup", msg="TypeSafe-Einstellungen gespeichert")
+    return _redirect("/setup", msg=_("TypeSafe-Einstellungen gespeichert"))
 
 
 @app.post("/setup/typesafe/test", response_class=HTMLResponse)
 async def test_typesafe(request: Request):
     cfg = _cfg(request).all()
     if not cfg["typesafe_api_key"]:
-        return HTMLResponse('<span class="bad">Kein API-Key gespeichert</span>')
+        return HTMLResponse(f'<span class="bad">{_("Kein API-Key gespeichert")}</span>')
     try:
         async with JevClient(cfg["typesafe_api_key"], timeout=20) as jev:
             resp = await jev.ask(
@@ -384,8 +431,10 @@ async def test_typesafe(request: Request):
         return HTMLResponse(f'<span class="bad">{e}</span>')
     ans = resp["answers"]["t"]
     return HTMLResponse(
-        f'<span class="good">OK - {resp.get("model")} antwortet "{ans["choice"]}" '
-        f'(Confidence {ans["confidence"]:.2f})</span>'
+        '<span class="good">'
+        + _('OK - {model} antwortet "{choice}" (Confidence {confidence})',
+            model=resp.get("model"), choice=ans["choice"], confidence=f'{ans["confidence"]:.2f}')
+        + "</span>"
     )
 
 
@@ -401,23 +450,23 @@ async def save_instance(
 ):
     name = name.strip().lower().replace(" ", "-")
     if not instance_id and not token.strip():
-        return _redirect("/setup", err="Für eine neue Instanz wird ein Token benötigt")
+        return _redirect("/setup", err=_("Für eine neue Instanz wird ein Token benötigt"))
     _cfg(request).save_instance(instance_id or None, name, url.strip(), public_url.strip(), token.strip(), enabled)
     _proc(request).forget_metadata(instance_id or None)
-    return _redirect("/setup", msg=f"Instanz {name} gespeichert")
+    return _redirect("/setup", msg=_("Instanz {name} gespeichert", name=name))
 
 
 @app.post("/setup/instances/{instance_id}/delete")
 async def delete_instance(request: Request, instance_id: int):
     _cfg(request).delete_instance(instance_id)
-    return _redirect("/setup", msg="Instanz gelöscht")
+    return _redirect("/setup", msg=_("Instanz gelöscht"))
 
 
 @app.post("/setup/instances/{instance_id}/test", response_class=HTMLResponse)
 async def test_instance(request: Request, instance_id: int):
     inst = _cfg(request).instance(instance_id)
     if not inst:
-        return HTMLResponse('<span class="bad">Unbekannte Instanz</span>')
+        return HTMLResponse(f'<span class="bad">{_("Unbekannte Instanz")}</span>')
     try:
         async with PaperlessClient(inst.url, inst.token, timeout=10, host=inst.host_header) as pl:
             inbox = await pl.ping()
@@ -425,8 +474,10 @@ async def test_instance(request: Request, instance_id: int):
     except PaperlessError as e:
         return HTMLResponse(f'<span class="bad">{e}</span>')
     return HTMLResponse(
-        f'<span class="good">OK - {inbox} im Posteingang, {len(meta.document_types)} Typen, '
-        f"{len(meta.correspondents)} Korrespondenten, {len(meta.tags)} Tags</span>"
+        '<span class="good">'
+        + _("OK - {inbox} im Posteingang, {types} Typen, {correspondents} Korrespondenten, {tags} Tags",
+            inbox=inbox, types=len(meta.document_types), correspondents=len(meta.correspondents), tags=len(meta.tags))
+        + "</span>"
     )
 
 
@@ -480,21 +531,23 @@ async def save_rules(request: Request):
         }
     )
     _proc(request).forget_metadata()
-    return _redirect("/rules", msg="Regeln gespeichert")
+    return _redirect("/rules", msg=_("Regeln gespeichert"))
 
 
 @app.post("/rules/llm/test", response_class=HTMLResponse)
 async def test_llm(request: Request):
     llm = LLM.from_config(_cfg(request).all())
     if not llm:
-        return HTMLResponse('<span class="bad">URL und Modell speichern, dann testen</span>')
+        return HTMLResponse(f'<span class="bad">{_("URL und Modell speichern, dann testen")}</span>')
     try:
         models = await list_models(llm)
     except LLMError as e:
         return HTMLResponse(f'<span class="bad">{e}</span>')
     if llm.model not in models:
-        return HTMLResponse(f'<span class="bad">Modell {llm.model} fehlt. Vorhanden: {", ".join(models) or "–"}</span>')
-    return HTMLResponse(f'<span class="good">OK - {llm.label} verfügbar</span>')
+        return HTMLResponse(
+            f'<span class="bad">{_("Modell {model} fehlt. Vorhanden: {available}", model=llm.model, available=", ".join(models) or "–")}</span>'
+        )
+    return HTMLResponse(f'<span class="good">{_("OK - {model} verfügbar", model=llm.label)}</span>')
 
 
 # --- Beschreibungen ------------------------------------------------------
@@ -566,8 +619,8 @@ async def save_descriptions(request: Request):
                 except LLMError:
                     failed.append(name or str(oid))
         _cfg(request).save_description(instance_id, kind, oid, text, active, source=source)
-    msg = "Beschreibungen gespeichert" + (f", {translated} vom Sprachmodell ausformuliert" if translated else "")
-    err = f"Sprachmodell fehlgeschlagen für: {', '.join(failed)} – Eingabe wurde unverändert übernommen" if failed else None
+    msg = _("Beschreibungen gespeichert") + (_(", {n} vom Sprachmodell ausformuliert", n=translated) if translated else "")
+    err = _("Sprachmodell fehlgeschlagen für: {names} – Eingabe wurde unverändert übernommen", names=", ".join(failed)) if failed else None
     return _redirect(f"/descriptions?instance_id={instance_id}&kind={kind}", msg=msg, err=err)
 
 

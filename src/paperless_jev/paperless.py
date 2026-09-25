@@ -149,6 +149,11 @@ class PaperlessClient:
     async def patch_document(self, doc_id: int, data: dict[str, Any]) -> dict[str, Any]:
         return (await self._request("PATCH", f"/api/documents/{doc_id}/", json=data)).json()
 
+    async def preview(self, doc_id: int) -> tuple[bytes, str]:
+        """Anzeigbare Fassung: das Archiv-PDF, sonst das Original (z. B. Bild)."""
+        resp = await self._request("GET", f"/api/documents/{doc_id}/preview/")
+        return resp.content, resp.headers.get("content-type", "application/pdf")
+
     async def thumbnail(self, doc_id: int) -> tuple[bytes, str]:
         resp = await self._request("GET", f"/api/documents/{doc_id}/thumb/")
         return resp.content, resp.headers.get("content-type", "image/webp")

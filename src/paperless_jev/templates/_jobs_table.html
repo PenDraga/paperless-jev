@@ -1,38 +1,37 @@
 {% set jobs = recent if recent is defined else jobs %}
 {% macro cell(v) -%}
   {%- if not v -%}<span class="muted">–</span>
-  {%- elif v.label is none -%}<small class="muted">ist: {{ v.current }}</small>
+  {%- elif v.label is none -%}<small class="muted">{{ _("ist: {value}", value=v.current) }}</small>
   {%- else -%}
     <span class="badge {{ v.level }}" title="Confidence {{ '%.2f'|format(v.confidence) }}">{{ v.label }} · {{ '%.0f'|format(v.confidence * 100) }}%</span>
-    {%- if v.match %} <span class="good" title="entspricht dem aktuellen Wert">✓</span>
-    {%- elif v.current %}<br><small class="muted">ist: {{ v.current }}</small>{% endif %}
+    {%- if v.match %} <span class="good" title="{{ _('entspricht dem aktuellen Wert') }}">✓</span>
+    {%- elif v.current %}<br><small class="muted">{{ _("ist: {value}", value=v.current) }}</small>{% endif %}
   {%- endif -%}
 {%- endmacro %}
 <div class="overflow-auto">
 <table class="striped jobs cards">
-  <thead><tr><th class="hide-mobile">#</th><th>Dokument</th><th>Status</th><th>Dokumenttyp</th><th>Korrespondent</th><th>Datum</th><th>Tags (neu)</th></tr></thead>
+  <thead><tr><th class="hide-mobile">#</th><th>{{ _("Dokument") }}</th><th>{{ _("Status") }}</th><th>{{ _("Dokumenttyp") }}</th><th>{{ _("Korrespondent") }}</th><th>{{ _("Datum") }}</th><th>{{ _("Tags (neu)") }}</th></tr></thead>
   <tbody>
   {% for j in jobs %}
     <tr>
       <td class="hide-mobile"><a href="/jobs/{{ j.id }}">{{ j.id }}</a></td>
       <td class="card-title">{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}
         {{ (j.doc_title or "")[:70] }}
+        <a href="/doc/{{ j.instance_id }}/{{ j.doc_id }}" target="_blank" class="eye" title="{{ _('Dokument ansehen') }}" aria-label="{{ _('Dokument ansehen') }}" data-viewer="{{ j.doc_title or '#' ~ j.doc_id }}">👁</a>
         {% if j.current_tags %}<br><small class="muted">{{ j.current_tags|join(", ") }}</small>{% endif %}
-        <a href="/jobs/{{ j.id }}" class="show-mobile card-link">Details →</a></td>
-      <td data-label="Status"><div><span class="badge {{ j.status }}">{{ STATUS_LABELS.get(j.status, j.status) }}</span>
-        {% if j.error %}<br><small class="bad">{{ j.error[:120] }}</small>{% endif %}
+        <a href="/jobs/{{ j.id }}" class="show-mobile card-link">{{ _("Details →") }}</a></td>
+      <td class="col-status" data-label="{{ _('Status') }}"><div><span class="badge {{ j.status }}">{{ _(STATUS_LABELS.get(j.status, j.status)) }}</span>
+        {% if j.error %}<br><small class="bad">{{ _(j.error)[:120] }}</small>{% endif %}
         <br><small class="muted">{{ j.updated_at[5:16].replace("T", " ") }}</small></div></td>
-      <td data-label="Dokumenttyp"><div>{{ cell(j.view.document_type) }}</div></td>
-      <td data-label="Korrespondent"><div>{{ cell(j.view.correspondent) }}</div></td>
-      <td data-label="Datum"><div>{{ cell(j.view.created) }}</div></td>
-      <td data-label="Tags (neu)"><div>{% for t in j.tags_view %}<span class="badge {{ t.level }}" title="p={{ '%.2f'|format(t.p) }}">{{ t.label }} · {{ '%.0f'|format(t.p * 100) }}%</span> {% else %}<span class="muted">–</span>{% endfor %}</div></td>
+      <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type) }}</div></td>
+      <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent) }}</div></td>
+      <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created) }}</div></td>
+      <td data-label="{{ _('Tags (neu)') }}"><div>{% for t in j.tags_view %}<span class="badge {{ t.level }}" title="p={{ '%.2f'|format(t.p) }}">{{ t.label }} · {{ '%.0f'|format(t.p * 100) }}%</span> {% else %}<span class="muted">–</span>{% endfor %}</div></td>
     </tr>
   {% else %}
-    <tr><td colspan="7" class="muted">Noch keine Einträge.</td></tr>
+    <tr><td colspan="7" class="muted">{{ _("Noch keine Einträge.") }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
-<p><small class="muted">Farben: <span class="badge auto">sicher</span> würde automatisch gesetzt ·
-  <span class="badge suggest">unsicher</span> käme ins Review · <span class="badge low">zu unsicher</span> wird ignoriert ·
-  ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel.</small></p>
+<p><small class="muted">{{ _("Farben: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · <span class=\"badge low\">zu unsicher</span> wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel.")|safe }}</small></p>

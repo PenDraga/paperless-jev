@@ -1,88 +1,87 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Regeln</h2>
+<h2>{{ _("Regeln") }}</h2>
 <form method="post" action="/rules">
 <article>
-  <header><strong>Betriebsmodus</strong></header>
+  <header><strong>{{ _("Betriebsmodus") }}</strong></header>
   <fieldset>
-    <label><input type="radio" name="mode" value="dry_run" {% if cfg.mode == "dry_run" %}checked{% endif %}> <strong>Probelauf</strong> – klassifizieren und protokollieren, nichts in Paperless ändern</label>
-    <label><input type="radio" name="mode" value="review" {% if cfg.mode == "review" %}checked{% endif %}> <strong>Nur Vorschläge</strong> – jedes Dokument landet in der Review-Queue</label>
-    <label><input type="radio" name="mode" value="auto" {% if cfg.mode == "auto" %}checked{% endif %}> <strong>Automatisch</strong> – sichere Werte direkt setzen, unsichere Fälle in die Review-Queue</label>
+    <label><input type="radio" name="mode" value="dry_run" {% if cfg.mode == "dry_run" %}checked{% endif %}> {{ _("<strong>Probelauf</strong> – klassifizieren und protokollieren, nichts in Paperless ändern")|safe }}</label>
+    <label><input type="radio" name="mode" value="review" {% if cfg.mode == "review" %}checked{% endif %}> {{ _("<strong>Nur Vorschläge</strong> – jedes Dokument landet in der Review-Queue")|safe }}</label>
+    <label><input type="radio" name="mode" value="auto" {% if cfg.mode == "auto" %}checked{% endif %}> {{ _("<strong>Automatisch</strong> – sichere Werte direkt setzen, unsichere Fälle in die Review-Queue")|safe }}</label>
   </fieldset>
 </article>
 
 <article>
-  <header><strong>Felder und Schwellwerte</strong></header>
-  <p><small>Jev liefert pro Antwort eine kalibrierte <em>Confidence</em> (bei Tags die Wahrscheinlichkeit für „ja“).
-    Ab <em>Auto</em> wird der Wert gesetzt, ab <em>Review</em> vorgeschlagen, darunter ignoriert.</small></p>
+  <header><strong>{{ _("Felder und Schwellwerte") }}</strong></header>
+  <p><small>{{ _("Jev liefert pro Antwort eine kalibrierte <em>Confidence</em> (bei Tags die Wahrscheinlichkeit für „ja“). Ab <em>Auto</em> wird der Wert gesetzt, ab <em>Review</em> vorgeschlagen, darunter ignoriert.")|safe }}</small></p>
   <div class="overflow-auto">
   <table class="thresholds cards">
-    <thead><tr><th>Feld</th><th>aktiv</th><th>Auto ≥</th><th>Review ≥</th></tr></thead>
+    <thead><tr><th>{{ _("Feld") }}</th><th>{{ _("aktiv") }}</th><th>{{ _("Auto ≥") }}</th><th>{{ _("Review ≥") }}</th></tr></thead>
     <tbody>
     {% for name, spec in cfg.fields.items() %}
       <tr>
-        <td class="card-title">{{ FIELD_LABELS[name] }}</td>
-        <td data-label="aktiv"><input type="checkbox" name="{{ name }}_enabled" {% if spec.enabled %}checked{% endif %}></td>
-        <td data-label="Auto ≥"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
-        <td data-label="Review ≥"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
+        <td class="card-title">{{ _(FIELD_LABELS[name]) }}</td>
+        <td data-label="{{ _('aktiv') }}"><input type="checkbox" name="{{ name }}_enabled" {% if spec.enabled %}checked{% endif %}></td>
+        <td data-label="{{ _('Auto ≥') }}"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
+        <td data-label="{{ _('Review ≥') }}"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
-  <label><input type="checkbox" name="overwrite" {% if cfg.overwrite %}checked{% endif %}> bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)</label>
-  <label>Sammel-Korrespondent, wenn keiner passt <input name="correspondent_fallback" value="{{ cfg.correspondent_fallback }}" placeholder="z. B. Diverses – leer = Feld bleibt leer"></label>
-  <label><input type="checkbox" name="tags_force_review" {% if cfg.tags_force_review %}checked{% endif %}> unsichere Tag-Vorschläge allein schicken ein Dokument ins Review</label>
-  <label><input type="checkbox" name="review_conflicts" {% if cfg.review_conflicts %}checked{% endif %}> ins Review, wenn Jev einem vorhandenen Wert sicher widerspricht (z. B. falsche Paperless-Zuordnung)</label>
-  <label><input type="checkbox" name="remove_inbox" {% if cfg.remove_inbox %}checked{% endif %}> Posteingangs-Tag entfernen, wenn ein Dokument fertig klassifiziert ist</label>
+  <label><input type="checkbox" name="overwrite" {% if cfg.overwrite %}checked{% endif %}> {{ _("bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)") }}</label>
+  <label>{{ _("Sammel-Korrespondent, wenn keiner passt") }} <input name="correspondent_fallback" value="{{ cfg.correspondent_fallback }}" placeholder="{{ _('z. B. Diverses – leer = Feld bleibt leer') }}"></label>
+  <label><input type="checkbox" name="tags_force_review" {% if cfg.tags_force_review %}checked{% endif %}> {{ _("unsichere Tag-Vorschläge allein schicken ein Dokument ins Review") }}</label>
+  <label><input type="checkbox" name="review_conflicts" {% if cfg.review_conflicts %}checked{% endif %}> {{ _("ins Review, wenn Jev einem vorhandenen Wert sicher widerspricht (z. B. falsche Paperless-Zuordnung)") }}</label>
+  <label><input type="checkbox" name="remove_inbox" {% if cfg.remove_inbox %}checked{% endif %}> {{ _("Posteingangs-Tag entfernen, wenn ein Dokument fertig klassifiziert ist") }}</label>
 </article>
 
 <article>
-  <header><strong>Tags für den Status</strong> <small class="muted">(werden bei Bedarf angelegt)</small></header>
+  <header><strong>{{ _("Tags für den Status") }}</strong> <small class="muted">{{ _("(werden bei Bedarf angelegt)") }}</small></header>
   <div class="grid">
-    <label>Erledigt <input name="tag_done" value="{{ cfg.tag_done }}"></label>
-    <label>Review nötig <input name="tag_review" value="{{ cfg.tag_review }}"></label>
-    <label>Ignorieren <input name="tag_ignore" value="{{ cfg.tag_ignore }}"><small>Dokumente mit diesem Tag gehen nie an Jev.</small></label>
+    <label>{{ _("Erledigt") }} <input name="tag_done" value="{{ cfg.tag_done }}"></label>
+    <label>{{ _("Review nötig") }} <input name="tag_review" value="{{ cfg.tag_review }}"></label>
+    <label>{{ _("Ignorieren") }} <input name="tag_ignore" value="{{ cfg.tag_ignore }}"><small>{{ _("Dokumente mit diesem Tag gehen nie an Jev.") }}</small></label>
   </div>
 </article>
 
 <article>
-  <header><strong>Titel</strong></header>
+  <header><strong>{{ _("Titel") }}</strong></header>
   <fieldset>
-    <label><input type="radio" name="title_mode" value="off" {% if cfg.title_mode == "off" %}checked{% endif %}> Titel nicht ändern</label>
-    <label><input type="radio" name="title_mode" value="llm" {% if cfg.title_mode == "llm" %}checked{% endif %}> <strong>Titel vom Sprachmodell formulieren</strong> – Stil nach Titeln bereits abgelegter Dokumente desselben Korrespondenten</label>
-    <label><input type="radio" name="title_mode" value="template" {% if cfg.title_mode == "template" %}checked{% endif %}> Titel aus Vorlage</label>
+    <label><input type="radio" name="title_mode" value="off" {% if cfg.title_mode == "off" %}checked{% endif %}> {{ _("Titel nicht ändern") }}</label>
+    <label><input type="radio" name="title_mode" value="llm" {% if cfg.title_mode == "llm" %}checked{% endif %}> {{ _("<strong>Titel vom Sprachmodell formulieren</strong> – Stil nach Titeln bereits abgelegter Dokumente desselben Korrespondenten")|safe }}</label>
+    <label><input type="radio" name="title_mode" value="template" {% if cfg.title_mode == "template" %}checked{% endif %}> {{ _("Titel aus Vorlage") }}</label>
   </fieldset>
-  <label>Vorlage <input name="title_template" value="{{ cfg.title_template }}">
-    <small>Platzhalter: <code>{document_type}</code> <code>{correspondent}</code> <code>{storage_path}</code> <code>{title}</code> <code>{created:%Y-%m-%d}</code>. Fehlt ein Wert, bleibt der Titel unverändert.</small></label>
+  <label>{{ _("Vorlage") }} <input name="title_template" value="{{ cfg.title_template }}">
+    <small>{{ _("Platzhalter") }}: <code>{document_type}</code> <code>{correspondent}</code> <code>{storage_path}</code> <code>{title}</code> <code>{created:%Y-%m-%d}</code>. {{ _("Fehlt ein Wert, bleibt der Titel unverändert.") }}</small></label>
 </article>
 
 <article>
-  <header><strong>Sprachmodell</strong> <small class="muted">für Titel und für Beschreibungen aus Stichworten</small></header>
-  <label>Schnittstelle
+  <header><strong>{{ _("Sprachmodell") }}</strong> <small class="muted">{{ _("für Titel und für Beschreibungen aus Stichworten") }}</small></header>
+  <label>{{ _("Schnittstelle") }}
     <select name="llm_provider">
-      {% for key, label in providers.items() %}<option value="{{ key }}" {% if cfg.llm_provider == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      {% for key, label in providers.items() %}<option value="{{ key }}" {% if cfg.llm_provider == key %}selected{% endif %}>{{ _(label) }}</option>{% endfor %}
     </select>
   </label>
   <div class="grid">
-    <label>URL <input name="llm_url" value="{{ cfg.llm_url }}" inputmode="url" placeholder="Ollama: http://ollama:11434 · SGLang: http://sglang:8000"></label>
-    <label>Modell <input name="llm_model" value="{{ cfg.llm_model }}" placeholder="qwen3:8b · qwen3.8-flash-next"></label>
+    <label>{{ _("URL") }} <input name="llm_url" value="{{ cfg.llm_url }}" inputmode="url" placeholder="Ollama: http://ollama:11434 · SGLang: http://sglang:8000"></label>
+    <label>{{ _("Modell") }} <input name="llm_model" value="{{ cfg.llm_model }}" placeholder="qwen3:8b · qwen3.8-flash-next"></label>
   </div>
-  <label>API-Key <small class="muted">(nur OpenAI-kompatibel und nur falls nötig{% if cfg.llm_api_key %} – gespeichert, leer lassen zum Behalten{% endif %})</small>
+  <label>{{ _("API-Key") }} <small class="muted">{{ _("(nur OpenAI-kompatibel und nur falls nötig – gespeichert, leer lassen zum Behalten)") if cfg.llm_api_key else _("(nur OpenAI-kompatibel und nur falls nötig)") }}</small>
     <input type="password" name="llm_api_key" autocomplete="off"></label>
-  <p><button type="button" class="secondary" hx-post="/rules/llm/test" hx-target="#llm-test">Verbindung testen</button> <span id="llm-test"></span>
-    <br><small class="muted">Erst speichern, dann testen. Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.</small></p>
+  <p><button type="button" class="secondary" hx-post="/rules/llm/test" hx-target="#llm-test">{{ _("Verbindung testen") }}</button> <span id="llm-test"></span>
+    <br><small class="muted">{{ _("Erst speichern, dann testen. Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.") }}</small></p>
 </article>
 
 <article>
-  <header><strong>Verarbeitung</strong></header>
+  <header><strong>{{ _("Verarbeitung") }}</strong></header>
   <div class="grid">
-    <label>Polling-Intervall (Minuten, 0 = aus) <input type="number" min="0" name="poll_minutes" value="{{ cfg.poll_minutes }}"></label>
-    <label>Max. Zeichen Dokumenttext <input type="number" min="1000" step="500" name="max_chars" value="{{ cfg.max_chars }}"><small>Lange Dokumente: Anfang (70 %) + Ende (30 %).</small></label>
-    <label>Ähnliche Dokumente als Kontext <input type="number" min="0" max="10" name="similar_docs" value="{{ cfg.similar_docs }}"><small>0 = aus</small></label>
-    <label>Beispieltitel je Typ/Tag <input type="number" min="0" max="20" name="examples" value="{{ cfg.examples }}"><small>Titel bereits abgelegter Dokumente – so lernt Jev deine Ablage-Konventionen. 0 = aus</small></label>
+    <label>{{ _("Polling-Intervall (Minuten, 0 = aus)") }} <input type="number" min="0" name="poll_minutes" value="{{ cfg.poll_minutes }}"></label>
+    <label>{{ _("Max. Zeichen Dokumenttext") }} <input type="number" min="1000" step="500" name="max_chars" value="{{ cfg.max_chars }}"><small>{{ _("Lange Dokumente: Anfang (70 %) + Ende (30 %).") }}</small></label>
+    <label>{{ _("Ähnliche Dokumente als Kontext") }} <input type="number" min="0" max="10" name="similar_docs" value="{{ cfg.similar_docs }}"><small>{{ _("0 = aus") }}</small></label>
+    <label>{{ _("Beispieltitel je Typ/Tag") }} <input type="number" min="0" max="20" name="examples" value="{{ cfg.examples }}"><small>{{ _("Titel bereits abgelegter Dokumente – so lernt Jev deine Ablage-Konventionen. 0 = aus") }}</small></label>
   </div>
 </article>
-<div class="sticky-actions"><button type="submit">Speichern</button></div>
+<div class="sticky-actions"><button type="submit">{{ _("Speichern") }}</button></div>
 </form>
 {% endblock %}

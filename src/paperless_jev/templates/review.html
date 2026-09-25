@@ -1,18 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Review-Queue <small class="muted">({{ items|length }})</small></h2>
+<h2>{{ _("Review-Queue") }} <small class="muted">({{ items|length }})</small></h2>
 {% for item in items %}
   {% set job = item.job %}{% set meta = item.meta %}{% set title_mode = item.title_mode %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
   <article>
-    <header><strong>{{ job.doc_title or "Dokument" }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
-      {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">in Paperless öffnen</a>{% endif %}
-      · <a href="/jobs/{{ job.id }}">Details</a></header>
+    <header><strong>{{ job.doc_title or _("Dokument") }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
+      {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">{{ _("in Paperless öffnen") }}</a>{% endif %}
+      · <a href="/jobs/{{ job.id }}">{{ _("Details") }}</a></header>
     <div class="review-item">
-      <a href="{{ job.instance.browse_url if job.instance else '#' }}/documents/{{ job.doc_id }}/preview" target="_blank"><img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="Vorschau" loading="lazy"></a>
+      <div class="doc-thumb">
+        <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}"><img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="{{ _('Vorschau') }}" loading="lazy"></a>
+        <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary view-btn" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">👁 {{ _("Dokument ansehen") }}</a>
+      </div>
       <div>{% include "_review_form.html" with context %}</div>
     </div>
   </article>
 {% else %}
-  <p class="muted">Nichts zu prüfen. 🎉</p>
+  <p class="muted">{{ _("Nichts zu prüfen. 🎉") }}</p>
 {% endfor %}
 {% endblock %}
