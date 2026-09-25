@@ -82,6 +82,15 @@ templates.env.globals.update(
 
 
 @app.middleware("http")
+async def frame_options(request: Request, call_next):
+    """Nur die eigene Seite darf einbetten (Dokument-Viewer im Overlay), fremde Seiten nicht."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Content-Security-Policy", "frame-ancestors 'self'")
+    return response
+
+
+@app.middleware("http")
 async def language(request: Request, call_next):
     """Sprache für diesen Request: Cookie, sonst Browser-Einstellung."""
     i18n.current.set(i18n.pick(request.cookies.get(i18n.COOKIE), request.headers.get("accept-language")))

@@ -20,7 +20,9 @@ services:
       - traefik.docker.network=traefik
       - traefik.http.routers.paperless-jev.entrypoints=https
       - traefik.http.routers.paperless-jev.rule=Host(`paperless-jev.example.com`)
-      - traefik.http.routers.paperless-jev.middlewares=admin-only@file,hsts-headers@file
+      # hsts-headers-ha statt hsts-headers: ohne frameDeny, sonst blockiert der Browser den Dokument-Viewer.
+      # Einbetten durch fremde Seiten verhindert die App selbst (X-Frame-Options: SAMEORIGIN).
+      - traefik.http.routers.paperless-jev.middlewares=admin-only@file,hsts-headers-ha@file
       - traefik.http.routers.paperless-jev.tls=true
       - traefik.http.routers.paperless-jev.tls.certresolver=cloudflare
       - traefik.http.services.paperless-jev.loadbalancer.server.port=8000
