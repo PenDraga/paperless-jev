@@ -69,7 +69,10 @@ document.addEventListener("click", (e) => {
   }
   if (!link || window.innerWidth < 761 || !dlg.showModal) return;
   e.preventDefault();
-  document.getElementById("doc-viewer-frame").src = link.href;
+  // eigener Parameter: der Browser holt das PDF frisch statt aus dem Cache (dort evtl. noch mit altem X-Frame-Options)
+  const url = new URL(link.href, location.href);
+  url.searchParams.set("view", "{{ asset_v }}");
+  document.getElementById("doc-viewer-frame").src = url.href;
   document.getElementById("doc-viewer-tab").href = link.href;
   document.getElementById("doc-viewer-title").textContent = link.dataset.viewer || link.textContent;
   dlg.showModal();
