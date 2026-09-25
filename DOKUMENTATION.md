@@ -14,6 +14,7 @@ Paperless NGX ──Webhook "Dokument hinzugefügt"──▶ paperless-jev ─�
 | `processor.py` | Warteschlange (asyncio), Polling, Verarbeitung, Zurückschreiben nach Paperless |
 | `classifier.py` | baut die Jev-Anfrage und wertet sie aus (reine Funktionen, getestet) |
 | `candidates.py` | findet Datumsangaben und Korrespondenten-Kandidaten per Code |
+| `titles.py` | optional: Titel per lokalem Ollama (einziger generativer Schritt) |
 | `paperless.py` / `jev.py` | schlanke HTTP-Clients (Paperless API v10, TypeSafe System One) |
 | `config.py` / `db.py` / `vault.py` | Einstellungen, Instanzen, Beschreibungen, Jobs in SQLite; Tokens mit Fernet verschlüsselt |
 
@@ -57,6 +58,20 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
 - **Text-Kürzung** auf `max_chars` (Anfang 70 %, Ende 30 %): Absender, Datum und Beträge stehen fast immer dort; Jev erlaubt 32k Tokens für State + längste Frage.
 - **Kein Redis/Celery.** Für Posteingangs-Volumen reicht eine In-Process-Queue; offene Jobs werden nach einem Neustart aus SQLite wieder eingereiht.
 - **Modell pinnen**: `jev-latest` wandert bei Releases mit; wer Schwellen kalibriert hat, trägt eine feste Version ein (z. B. `jev-1.13.0`).
+
+## Titel
+
+Jev formuliert keinen Text. Titel entstehen darum wahlweise
+- **per Ollama** (empfohlen, ersetzt paperless-gpt): nach der Klassifizierung erzeugt ein lokales Modell
+  (z. B. `qwen3:8b`) einen Titel. Als Stilvorlage dienen bis zu 8 Titel bereits abgelegter Dokumente
+  desselben Korrespondenten bzw. Typs. Jahreszahlen, Daten und Personennamen werden vermieden, weil
+  Paperless sie separat speichert. Dauer ca. 1-2 s pro Dokument.
+- **per Vorlage**, z. B. `{document_type} {correspondent} {created:%Y-%m}`,
+- oder gar nicht.
+
+Ein im Review eingetragener Titel hat Vorrang. Paperless-Workflows mit Auslöser *Dokument aktualisiert*,
+die einen Titel setzen (z. B. „Kontoauszug {{ created_month_name }} {{ created_year }}“), laufen nach
+paperless-jev und haben damit das letzte Wort.
 
 ## Webhook
 

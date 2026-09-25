@@ -162,3 +162,28 @@ def test_pages_render(client, path):
     client.post("/run", data={"instance_id": "0"})
     _wait(client)
     assert client.get(path).status_code == 200
+
+
+def test_ollama_title_and_manual_title(client, monkeypatch):
+    calls = []
+
+    async def fake_title(url, model, text, facts, examples, timeout=180.0):
+        calls.append((url, model, facts["Absender"], examples))
+        return "Swisscom - Rechnung Mobile"
+
+    monkeypatch.setattr(processor_module, "generate_title", fake_title)
+    FakeJev.response["answers"]["correspondent"]["confidence"] = 0.95
+    FakeJev.response["answers"]["tag:101"]["noul"] = 0.97
+    client.app.state.config.update({"title_mode": "ollama", "ollama_url": "http://ollama:11434"})
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    _, data = FakePaperless.patches[-1]
+    assert data["title"] == "Swisscom - Rechnung Mobile"
+    assert calls[0][:3] == ("http://ollama:11434", "qwen3:8b", "Swisscom")
+
+    # Im Review eingetragener Titel hat Vorrang vor Ollama
+    job = client.app.state.db.one("SELECT id FROM jobs")
+    client.post(f"/jobs/{job['id']}/apply", data={"title": "Mein Titel", "action": "apply"})
+    _, data = FakePaperless.patches[-1]
+    assert data["title"] == "Mein Titel"
+    assert len(calls) == 1

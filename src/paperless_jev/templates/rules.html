@@ -47,7 +47,17 @@
 
 <article>
   <header><strong>Titel</strong></header>
-  <label><input type="checkbox" name="title_enabled" {% if cfg.title_enabled %}checked{% endif %}> Titel aus Vorlage setzen</label>
+  <fieldset>
+    <label><input type="radio" name="title_mode" value="off" {% if cfg.title_mode == "off" %}checked{% endif %}> Titel nicht ändern</label>
+    <label><input type="radio" name="title_mode" value="ollama" {% if cfg.title_mode == "ollama" %}checked{% endif %}> <strong>Titel mit lokalem Ollama formulieren</strong> – Stil nach Titeln bereits abgelegter Dokumente desselben Korrespondenten</label>
+    <label><input type="radio" name="title_mode" value="template" {% if cfg.title_mode == "template" %}checked{% endif %}> Titel aus Vorlage</label>
+  </fieldset>
+  <div class="grid">
+    <label>Ollama-URL <input name="ollama_url" value="{{ cfg.ollama_url }}" placeholder="http://ollama:11434"></label>
+    <label>Ollama-Modell <input name="ollama_model" value="{{ cfg.ollama_model }}"></label>
+  </div>
+  <p><button type="button" class="secondary" hx-post="/rules/ollama/test" hx-target="#ollama-test">Ollama testen</button> <span id="ollama-test"></span>
+    <br><small>Erst speichern, dann testen. Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.</small></p>
   <label>Vorlage <input name="title_template" value="{{ cfg.title_template }}">
     <small>Platzhalter: <code>{document_type}</code> <code>{correspondent}</code> <code>{storage_path}</code> <code>{title}</code> <code>{created:%Y-%m-%d}</code>. Fehlt ein Wert, bleibt der Titel unverändert.</small></label>
 </article>

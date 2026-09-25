@@ -23,6 +23,7 @@ from .db import Database
 from .jev import USD_PER_MTOK, JevClient, JevError
 from .paperless import PaperlessClient, PaperlessError
 from .processor import Processor
+from .titles import TitleError, list_models
 from .vault import Vault
 
 log = logging.getLogger("paperless_jev")
@@ -183,7 +184,11 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
     except PaperlessError as e:
         return {"meta": None, "meta_error": str(e)}
     hidden = excluded_tags(meta, _cfg(request).all())
-    return {"meta": meta, "tag_options": {k: v for k, v in meta.tags.items() if k not in hidden}}
+    return {
+        "meta": meta,
+        "tag_options": {k: v for k, v in meta.tags.items() if k not in hidden},
+        "title_mode": _cfg(request).all()["title_mode"],
+    }
 
 
 @app.get("/review", response_class=HTMLResponse)
@@ -219,6 +224,8 @@ async def apply_job(request: Request, job_id: int):
         else:
             choice[name] = int(raw) if raw else None
     choice["tags_add"] = [int(t) for t in form.getlist("tags")]
+    if title := str(form.get("title") or "").strip():
+        choice["title"] = title[:128]
     try:
         await _proc(request).apply_review(job_id, choice)
     except PaperlessError as e:
@@ -366,13 +373,29 @@ async def save_rules(request: Request):
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),
             "tag_ignore": str(form.get("tag_ignore") or cfg["tag_ignore"]).strip(),
-            "title_enabled": "title_enabled" in form,
+            "title_mode": mode_title if (mode_title := str(form.get("title_mode", "off"))) in ("off", "template", "ollama") else "off",
             "title_template": str(form.get("title_template") or cfg["title_template"]),
+            "ollama_url": str(form.get("ollama_url") or "").strip().rstrip("/"),
+            "ollama_model": str(form.get("ollama_model") or cfg["ollama_model"]).strip(),
             "fields": fields,
         }
     )
     _proc(request).forget_metadata()
     return _redirect("/rules", msg="Regeln gespeichert")
+
+
+@app.post("/rules/ollama/test", response_class=HTMLResponse)
+async def test_ollama(request: Request):
+    cfg = _cfg(request).all()
+    if not cfg["ollama_url"]:
+        return HTMLResponse('<span class="bad">Keine Ollama-URL gespeichert</span>')
+    try:
+        models = await list_models(cfg["ollama_url"])
+    except TitleError as e:
+        return HTMLResponse(f'<span class="bad">{e}</span>')
+    if cfg["ollama_model"] not in models:
+        return HTMLResponse(f'<span class="bad">Modell {cfg["ollama_model"]} fehlt. Vorhanden: {", ".join(models)}</span>')
+    return HTMLResponse(f'<span class="good">OK - {cfg["ollama_model"]} verfügbar</span>')
 
 
 # --- Beschreibungen ------------------------------------------------------

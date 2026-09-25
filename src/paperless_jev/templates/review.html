@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Review-Queue <small class="muted">({{ items|length }})</small></h2>
 {% for item in items %}
-  {% set job = item.job %}{% set meta = item.meta %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
+  {% set job = item.job %}{% set meta = item.meta %}{% set title_mode = item.title_mode %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
   <article>
     <header><strong>{{ job.doc_title or "Dokument" }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
       {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">in Paperless öffnen</a>{% endif %}

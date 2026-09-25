@@ -12,6 +12,7 @@ from .config import Config, Instance
 from .db import Database
 from .jev import JevClient, JevError
 from .paperless import Metadata, PaperlessClient, PaperlessError, collect_examples
+from .titles import TitleError, generate_title
 
 log = logging.getLogger("paperless_jev")
 
@@ -233,7 +234,7 @@ class Processor:
         finished=True: Dokument ist fertig - Erledigt-Tag setzen, Review- und
         Posteingangs-Tags entfernen. Sonst Review-Tag setzen.
         """
-        data = {k: v for k, v in updates.items() if k != "tags_add"}
+        data = {k: v for k, v in updates.items() if k not in ("tags_add", "title")}
         tags = set(doc.get("tags", [])) | set(updates.get("tags_add", []))
         review_tag = await self._tag(inst, pl, meta, cfg["tag_review"])
         if finished:
@@ -241,25 +242,57 @@ class Processor:
             tags.add(await self._tag(inst, pl, meta, cfg["tag_done"]))
             if cfg["remove_inbox"]:
                 tags -= meta.inbox_tags
-            if cfg["title_enabled"]:
-                merged = {**doc, **data}
-                title = render_title(
-                    cfg["title_template"],
-                    {
-                        "document_type": meta.document_types.get(merged.get("document_type")),
-                        "correspondent": meta.correspondents.get(merged.get("correspondent")),
-                        "storage_path": meta.storage_paths.get(merged.get("storage_path")),
-                        "created": merged.get("created"),
-                        "title": doc.get("title"),
-                    },
-                )
-                if title:
-                    data["title"] = title
+            title = updates.get("title") or await self.make_title(pl, meta, doc, {**doc, **data}, cfg)
+            if title and title != doc.get("title"):
+                data["title"] = title
         else:
             tags.add(review_tag)
         data["tags"] = sorted(tags)
         await pl.patch_document(doc["id"], data)
         return data
+
+    async def make_title(
+        self,
+        pl: PaperlessClient,
+        meta: Metadata,
+        doc: dict[str, Any],
+        merged: dict[str, Any],
+        cfg: dict[str, Any],
+    ) -> str | None:
+        """Titel nach Einstellung; bei Fehlern bleibt der bisherige Titel."""
+        values = {
+            "document_type": meta.document_types.get(merged.get("document_type")),
+            "correspondent": meta.correspondents.get(merged.get("correspondent")),
+            "storage_path": meta.storage_paths.get(merged.get("storage_path")),
+            "created": merged.get("created"),
+            "title": doc.get("title"),
+        }
+        if cfg["title_mode"] == "template":
+            return render_title(cfg["title_template"], values)
+        if cfg["title_mode"] != "ollama" or not cfg["ollama_url"]:
+            return None
+        # Stilvorlage: Titel desselben Korrespondenten, sonst desselben Typs
+        examples: list[str] = []
+        for kind in ("correspondent", "document_type"):
+            if merged.get(kind) and len(examples) < 8:
+                try:
+                    found = await pl.example_titles(kind, merged[kind], 8)
+                except PaperlessError:
+                    found = []
+                examples += [t for t in found if t not in examples]
+        facts = {
+            "Absender": values["correspondent"],
+            "Dokumenttyp": values["document_type"],
+            "Datum": values["created"],
+            "Dateiname": doc.get("original_file_name"),
+        }
+        try:
+            return await generate_title(
+                cfg["ollama_url"], cfg["ollama_model"], doc.get("content", ""), facts, examples
+            )
+        except TitleError as e:
+            log.warning("Titel für Dokument %s nicht erzeugt: %s", doc.get("id"), e)
+            return None
 
     async def apply_review(self, job_id: int, choice: dict[str, Any]) -> dict[str, Any]:
         """Übernimmt die in der Review-Queue bestätigten oder korrigierten Werte."""

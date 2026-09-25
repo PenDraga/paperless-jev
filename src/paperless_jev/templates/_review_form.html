@@ -32,6 +32,12 @@
     <span>{% if f %}<span class="badge {{ f.level }}">{{ "%.0f"|format(f.confidence * 100) }} %</span> <small class="muted">{{ f.label }}</small>{% endif %}
       {% if current.get("created") %}<br><small class="muted">aktuell {{ current.created }}</small>{% endif %}</span>
   </div>
+  <div class="field-row">
+    <span></span>
+    <strong>Titel</strong>
+    <input name="title" placeholder="leer = automatisch ({{ 'Ollama' if title_mode == 'ollama' else ('Vorlage' if title_mode == 'template' else 'unverändert') }})">
+    <small class="muted">aktuell: {{ job.doc_title or "–" }}</small>
+  </div>
   <fieldset>
     <legend><strong>Tags</strong> <small class="muted">(zusätzlich zu den vorhandenen)</small></legend>
     <div class="tags">

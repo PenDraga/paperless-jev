@@ -46,8 +46,11 @@ DEFAULTS: dict[str, Any] = {
     "tag_done": "ai-klassifiziert",
     "tag_review": "ai-review",
     "tag_ignore": "ai-ignorieren",
-    "title_enabled": False,
+    # off: Titel bleibt | template: aus Vorlage | ollama: lokal generiert
+    "title_mode": "off",
     "title_template": "{document_type} {correspondent} {created:%Y-%m}",
+    "ollama_url": "",
+    "ollama_model": "qwen3:8b",
     "fields": {
         "document_type": {"enabled": True, "auto": 0.85, "review": 0.4},
         "correspondent": {"enabled": True, "auto": 0.85, "review": 0.4},
@@ -92,7 +95,9 @@ class Config:
 
     def all(self) -> dict[str, Any]:
         cfg = copy.deepcopy(DEFAULTS)
-        for row in self.db.query("SELECT key, value FROM settings"):
+        rows = self.db.query("SELECT key, value FROM settings")
+        stored = {r["key"] for r in rows}
+        for row in rows:
             value = json.loads(row["value"])
             if row["key"] in SECRET_KEYS:
                 value = self.vault.decrypt(value)
@@ -101,6 +106,10 @@ class Config:
                     cfg["fields"].setdefault(name, {}).update(spec)
             else:
                 cfg[row["key"]] = value
+        # Einstellung aus v0.1: title_enabled -> title_mode
+        if "title_mode" not in stored and cfg.pop("title_enabled", False):
+            cfg["title_mode"] = "template"
+        cfg.pop("title_enabled", None)
         return cfg
 
     def update(self, values: dict[str, Any]) -> None:
