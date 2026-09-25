@@ -25,17 +25,17 @@
 {% if evaluation %}
 <h4>Auswertung <small class="muted">({{ evaluation.docs }} Dokumente, jeweils letzter Lauf)</small></h4>
 <div class="overflow-auto">
-<table>
+<table class="cards">
   <thead><tr><th>Feld</th><th>sicher</th><th>davon = aktueller Wert</th><th>würde leeres Feld füllen</th><th>unsicher (Review)</th><th>keine Antwort</th></tr></thead>
   <tbody>
   {% for name, s in evaluation.fields.items() if s.auto or s.suggest or s.none %}
     <tr>
-      <td>{{ FIELD_LABELS[name] }}</td>
-      <td>{{ s.auto }}</td>
-      <td>{% if s.compare %}{{ s.match }}/{{ s.compare }} ({{ (s.match / s.compare * 100)|round|int }} %){% else %}–{% endif %}</td>
-      <td>{{ s.fill }}</td>
-      <td>{{ s.suggest }}</td>
-      <td>{{ s.none }}</td>
+      <td class="card-title">{{ FIELD_LABELS[name] }}</td>
+      <td data-label="sicher"><div>{{ s.auto }}</div></td>
+      <td data-label="davon = aktueller Wert"><div>{% if s.compare %}{{ s.match }}/{{ s.compare }} ({{ (s.match / s.compare * 100)|round|int }} %){% else %}–{% endif %}</div></td>
+      <td data-label="würde leeres Feld füllen"><div>{{ s.fill }}</div></td>
+      <td data-label="unsicher (Review)"><div>{{ s.suggest }}</div></td>
+      <td data-label="keine Antwort"><div>{{ s.none }}</div></td>
     </tr>
   {% endfor %}
   </tbody>

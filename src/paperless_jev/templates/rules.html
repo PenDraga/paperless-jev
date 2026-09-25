@@ -16,15 +16,15 @@
   <p><small>Jev liefert pro Antwort eine kalibrierte <em>Confidence</em> (bei Tags die Wahrscheinlichkeit für „ja“).
     Ab <em>Auto</em> wird der Wert gesetzt, ab <em>Review</em> vorgeschlagen, darunter ignoriert.</small></p>
   <div class="overflow-auto">
-  <table class="thresholds">
+  <table class="thresholds cards">
     <thead><tr><th>Feld</th><th>aktiv</th><th>Auto ≥</th><th>Review ≥</th></tr></thead>
     <tbody>
     {% for name, spec in cfg.fields.items() %}
       <tr>
-        <td>{{ FIELD_LABELS[name] }}</td>
-        <td><input type="checkbox" name="{{ name }}_enabled" {% if spec.enabled %}checked{% endif %}></td>
-        <td><input type="number" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
-        <td><input type="number" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
+        <td class="card-title">{{ FIELD_LABELS[name] }}</td>
+        <td data-label="aktiv"><input type="checkbox" name="{{ name }}_enabled" {% if spec.enabled %}checked{% endif %}></td>
+        <td data-label="Auto ≥"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
+        <td data-label="Review ≥"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
       </tr>
     {% endfor %}
     </tbody>
@@ -72,6 +72,6 @@
     <label>Beispieltitel je Typ/Tag <input type="number" min="0" max="20" name="examples" value="{{ cfg.examples }}"><small>Titel bereits abgelegter Dokumente – so lernt Jev deine Ablage-Konventionen. 0 = aus</small></label>
   </div>
 </article>
-<button type="submit">Speichern</button>
+<div class="sticky-actions"><button type="submit">Speichern</button></div>
 </form>
 {% endblock %}

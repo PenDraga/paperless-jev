@@ -36,7 +36,7 @@
   <div class="field-row">
     <span></span>
     <strong>Titel</strong>
-    <input name="title" placeholder="leer = automatisch ({{ 'Ollama' if title_mode == 'ollama' else ('Vorlage' if title_mode == 'template' else 'unverändert') }})">
+    <input name="title" enterkeyhint="done" placeholder="leer = automatisch ({{ 'Ollama' if title_mode == 'ollama' else ('Vorlage' if title_mode == 'template' else 'unverändert') }})">
     <small class="muted">aktuell: {{ job.doc_title or "–" }}</small>
   </div>
   <fieldset>
@@ -56,7 +56,7 @@
       </div>
     </details>
   </fieldset>
-  <div class="grid">
+  <div class="grid sticky-actions">
     <button type="submit" name="action" value="apply">Übernehmen &amp; Posteingang verlassen</button>
     <button type="submit" name="action" value="dismiss" class="secondary outline">Verwerfen</button>
   </div>

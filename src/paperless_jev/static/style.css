@@ -31,3 +31,59 @@ pre.json { max-height: 30rem; overflow: auto; font-size: .8rem; }
 .thresholds td input { margin: 0; max-width: 6rem; }
 table.jobs td { font-size: .85rem; vertical-align: top; }
 table.jobs .badge { white-space: normal; }
+
+/* --- Navigation --------------------------------------------------------- */
+.main-nav a[aria-current="page"] { font-weight: 700; text-decoration: underline; text-underline-offset: .3em; }
+.main-nav .brand { color: inherit; }
+.count { display: inline-block; min-width: 1.4em; padding: 0 .35em; border-radius: 1em; background: #f0b429; color: #3b2a00; font-size: .75em; text-align: center; font-weight: 700; }
+
+/* --- Aktionen, die beim Scrollen sichtbar bleiben ---------------------------- */
+.sticky-actions { position: sticky; bottom: 0; z-index: 5; background: var(--pico-background-color); padding: .6rem 0 calc(.6rem + env(safe-area-inset-bottom, 0px)); margin-bottom: 0; }
+.sticky-actions button { margin-bottom: 0; }
+
+.show-mobile, .show-mobile-inline { display: none; }
+
+/* --- Handy ------------------------------------------------------------------ */
+@media (max-width: 760px) {
+  :root { --pico-font-size: 100%; }
+  main.container, header.container, footer.container { padding-left: .9rem; padding-right: .9rem; }
+  h2 { font-size: 1.5rem; }
+
+  /* Navigation: Marke oben, Menü als umbrechende Leiste darunter */
+  .main-nav { flex-wrap: wrap; }
+  .main-nav > ul:first-child { width: 100%; }
+  .main-nav > ul:last-child { width: 100%; flex-wrap: wrap; justify-content: flex-start; margin: 0 0 .4rem; gap: .1rem .2rem; }
+  .main-nav > ul:last-child li { padding: .35rem .5rem; }
+
+  /* Tabellen werden zu Karten */
+  table.cards, table.cards tbody, table.cards tr, table.cards td { display: block; width: 100%; }
+  table.cards thead { display: none; }
+  table.cards tr { border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); margin-bottom: .8rem; padding: .5rem .7rem; background: var(--pico-card-background-color); }
+  table.cards td { border: 0; padding: .2rem 0; background: transparent !important; }
+  table.cards td[data-label] { display: grid; grid-template-columns: 7.5rem 1fr; gap: .5rem; align-items: start; }
+  table.cards td[data-label]::before { content: attr(data-label); color: var(--pico-muted-color); font-size: .8rem; padding-top: .1rem; }
+  table.cards td.card-title { font-weight: 600; padding-bottom: .4rem; }
+  table.cards .hide-mobile { display: none; }
+  .show-mobile { display: block; margin-top: .3rem; font-weight: 400; }
+  .show-mobile-inline { display: inline; }
+  table.jobs td { font-size: .9rem; }
+
+  /* Beschreibungen: Name + aktiv in einer Zeile, Text volle Breite */
+  table.desc tr { display: grid; grid-template-columns: 1fr auto; }
+  table.desc td.card-title { grid-row: 1; grid-column: 1; padding-bottom: 0; }
+  table.desc td.desc-active { grid-row: 1; grid-column: 2; }
+  table.desc td.desc-text { grid-column: 1 / -1; }
+  table.desc textarea { min-height: 3.2rem; }
+
+  /* Review: Vorschaubild kompakt, Felder volle Breite */
+  .review-item { grid-template-columns: 1fr; gap: .8rem; }
+  .review-item img { max-width: 9rem; }
+  .field-row { grid-template-columns: 1.8rem 1fr; gap: .3rem .5rem; margin-bottom: .9rem; }
+  .field-row > :nth-child(n+3) { grid-column: 1 / -1; }
+  .tags { gap: .5rem 1rem; }
+  .tags label { white-space: normal; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .stats .num { font-size: 1.5rem; }
+  article { padding: 1rem; }
+}
+@media (min-width: 761px) { table.jobs td[data-label="Datum"] .badge { white-space: nowrap; } }

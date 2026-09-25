@@ -9,16 +9,14 @@
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 </head>
 <body>
+{% set path = request.url.path %}
 <header class="container">
-  <nav>
-    <ul><li><strong>paperless-jev</strong></li></ul>
+  <nav class="main-nav">
+    <ul><li><a href="/" class="brand"><strong>paperless-jev</strong></a></li></ul>
     <ul>
-      <li><a href="/">Übersicht</a></li>
-      <li><a href="/review">Review</a></li>
-      <li><a href="/log">Protokoll</a></li>
-      <li><a href="/rules">Regeln</a></li>
-      <li><a href="/descriptions">Beschreibungen</a></li>
-      <li><a href="/setup">Setup</a></li>
+      {% for href, label in [("/", "Übersicht"), ("/review", "Review"), ("/log", "Protokoll"), ("/rules", "Regeln"), ("/descriptions", "Beschreibungen"), ("/setup", "Setup")] %}
+      <li><a href="{{ href }}"{% if path == href or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}>{{ label }}{% if href == "/review" and review_count %} <span class="count">{{ review_count }}</span>{% endif %}</a></li>
+      {% endfor %}
     </ul>
   </nav>
 </header>

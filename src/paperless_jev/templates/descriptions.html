@@ -18,14 +18,14 @@
   <input type="hidden" name="instance_id" value="{{ inst.id }}">
   <input type="hidden" name="kind" value="{{ kind }}">
   <div class="overflow-auto">
-  <table class="striped">
+  <table class="striped cards desc">
     <thead><tr><th>aktiv</th><th>Name</th><th>Beschreibung für Jev</th></tr></thead>
     <tbody>
     {% for r in rows %}
       <tr>
-        <td><input type="hidden" name="ids" value="{{ r.id }}"><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}></td>
-        <td>{{ r.name }}</td>
-        <td><textarea name="text_{{ r.id }}" rows="1" placeholder="optional">{{ r.text }}</textarea></td>
+        <td class="desc-active"><input type="hidden" name="ids" value="{{ r.id }}"><label><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}><span class="show-mobile-inline"> aktiv</span></label></td>
+        <td class="card-title">{{ r.name }}</td>
+        <td class="desc-text"><textarea name="text_{{ r.id }}" rows="1" placeholder="optional">{{ r.text }}</textarea></td>
       </tr>
     {% else %}
       <tr><td colspan="3" class="muted">Keine Einträge.</td></tr>
@@ -33,7 +33,7 @@
     </tbody>
   </table>
   </div>
-  {% if rows %}<button type="submit">Speichern</button>{% endif %}
+  {% if rows %}<div class="sticky-actions"><button type="submit">Speichern</button></div>{% endif %}
 </form>
 {% endif %}
 {% endblock %}

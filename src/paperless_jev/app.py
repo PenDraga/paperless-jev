@@ -92,6 +92,10 @@ def _proc(request: Request) -> Processor:
 
 def _render(request: Request, name: str, **ctx: Any) -> HTMLResponse:
     ctx.setdefault("msg", request.query_params.get("msg"))
+    ctx.setdefault(
+        "review_count",
+        request.app.state.db.one("SELECT COUNT(*) AS n FROM jobs WHERE status = 'review'")["n"],
+    )
     ctx.setdefault("err", request.query_params.get("err"))
     return templates.TemplateResponse(request, name, ctx)
 
