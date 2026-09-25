@@ -42,6 +42,8 @@ DEFAULTS: dict[str, Any] = {
     # (Sammel-Korrespondent wie "Diverses"); leer = Feld bleibt leer.
     "correspondent_fallback": "",
     "overwrite": False,
+    # Widerspricht Jev sicher einem vorhandenen Wert -> Review statt ignorieren
+    "review_conflicts": True,
     "remove_inbox": True,
     "tag_done": "ai-klassifiziert",
     "tag_review": "ai-review",

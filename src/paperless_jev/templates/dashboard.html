@@ -22,6 +22,30 @@
 <p>{% for name, n in corrections.items() %}{{ FIELD_LABELS[name] }}: {{ n }}× korrigiert{% if not loop.last %} · {% endif %}{% else %}Bisher keine Korrekturen.{% endfor %}</p>
 {% endif %}
 
+{% if evaluation %}
+<h4>Auswertung <small class="muted">({{ evaluation.docs }} Dokumente, jeweils letzter Lauf)</small></h4>
+<div class="overflow-auto">
+<table>
+  <thead><tr><th>Feld</th><th>sicher</th><th>davon = aktueller Wert</th><th>würde leeres Feld füllen</th><th>unsicher (Review)</th><th>keine Antwort</th></tr></thead>
+  <tbody>
+  {% for name, s in evaluation.fields.items() if s.auto or s.suggest or s.none %}
+    <tr>
+      <td>{{ FIELD_LABELS[name] }}</td>
+      <td>{{ s.auto }}</td>
+      <td>{% if s.compare %}{{ s.match }}/{{ s.compare }} ({{ (s.match / s.compare * 100)|round|int }} %){% else %}–{% endif %}</td>
+      <td>{{ s.fill }}</td>
+      <td>{{ s.suggest }}</td>
+      <td>{{ s.none }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p><strong>Neue Tags</strong> für {{ evaluation.tag_docs }} Dokumente:
+  {% for label, c in evaluation.top_tags %}<span class="badge auto">{{ label }} {{ c[0] }}</span>{% if c[1] %}<span class="badge suggest">+{{ c[1] }}</span>{% endif %} {% else %}keine{% endfor %}
+  <br><small class="muted">grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei Dokumenten aus dem ecoDMS-Import ein guter Genauigkeitstest.</small></p>
+{% endif %}
+
 <h4>Posteingang jetzt verarbeiten</h4>
 <form method="post" action="/run" class="grid">
   <select name="instance_id">

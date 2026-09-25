@@ -1,8 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Protokoll</h2>
-<p>Filter:
-  <a href="/log">alle</a>{% for key, label in STATUS_LABELS.items() %} · <a href="/log?status={{ key }}"{% if status == key %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
-</p>
+<form method="get" action="/log" class="grid">
+  <input name="q" value="{{ q }}" placeholder="Titel oder Dokument-ID suchen">
+  <select name="status">
+    <option value="">alle Status</option>
+    {% for key, label in STATUS_LABELS.items() %}<option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="limit">
+    {% for n in [50, 200, 1000] %}<option value="{{ n }}" {% if limit == n %}selected{% endif %}>{{ n }} Einträge</option>{% endfor %}
+  </select>
+  <button type="submit">Filtern</button>
+</form>
 {% include "_jobs_table.html" with context %}
 {% endblock %}

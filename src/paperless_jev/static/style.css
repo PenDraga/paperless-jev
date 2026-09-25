@@ -29,3 +29,5 @@
 td textarea { min-height: 2.4rem; margin: 0; }
 pre.json { max-height: 30rem; overflow: auto; font-size: .8rem; }
 .thresholds td input { margin: 0; max-width: 6rem; }
+table.jobs td { font-size: .85rem; vertical-align: top; }
+table.jobs .badge { white-space: normal; }

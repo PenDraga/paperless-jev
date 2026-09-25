@@ -19,7 +19,8 @@
         {% for oid, oname in options|dictsort(by="value") %}<option value="{{ oid }}"{% if oid == selected %} selected{% endif %}>{{ oname }}</option>{% endfor %}
       </select>
       <span>{% if f %}<span class="badge {{ f.level }}">{{ "%.0f"|format(f.confidence * 100) }} %</span>
-        <div class="bar"><span style="width: {{ (f.confidence * 100)|round|int }}%"></span></div>{% else %}<small class="muted">nicht bewertet</small>{% endif %}</span>
+        <div class="bar"><span style="width: {{ (f.confidence * 100)|round|int }}%"></span></div>{% else %}<small class="muted">nicht bewertet</small>{% endif %}
+        {% if current.get(name) and f and f.value and f.value != current.get(name) %}<br><small class="bad">bisher: {{ options.get(current.get(name), "#" ~ current.get(name)) }}</small>{% endif %}</span>
     </div>
     {% if f and f.top|length > 1 %}<small class="muted">Alternativen: {% for lbl, p in f.top[1:4] %}{{ lbl }} ({{ "%.0f"|format(p * 100) }} %){% if not loop.last %}, {% endif %}{% endfor %}</small>{% endif %}
     {% endif %}

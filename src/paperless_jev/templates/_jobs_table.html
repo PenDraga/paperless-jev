@@ -1,17 +1,30 @@
 {% set jobs = recent if recent is defined else jobs %}
+{% macro cell(v) -%}
+  {%- if not v -%}<span class="muted">–</span>
+  {%- elif v.label is none -%}<small class="muted">ist: {{ v.current }}</small>
+  {%- else -%}
+    <span class="badge {{ v.level }}" title="Confidence {{ '%.2f'|format(v.confidence) }}">{{ v.label }} · {{ '%.0f'|format(v.confidence * 100) }}%</span>
+    {%- if v.match %} <span class="good" title="entspricht dem aktuellen Wert">✓</span>
+    {%- elif v.current %}<br><small class="muted">ist: {{ v.current }}</small>{% endif %}
+  {%- endif -%}
+{%- endmacro %}
 <div class="overflow-auto">
-<table class="striped">
-  <thead><tr><th>#</th><th>Instanz</th><th>Dokument</th><th>Status</th><th>Vorschlag</th><th>Quelle</th><th>Zeit (UTC)</th></tr></thead>
+<table class="striped jobs">
+  <thead><tr><th>#</th><th>Dokument</th><th>Status</th><th>Dokumenttyp</th><th>Korrespondent</th><th>Datum</th><th>Tags (neu)</th></tr></thead>
   <tbody>
   {% for j in jobs %}
     <tr>
       <td><a href="/jobs/{{ j.id }}">{{ j.id }}</a></td>
-      <td>{{ j.instance.name if j.instance else "?" }}</td>
-      <td>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %} {{ j.doc_title or "" }}</td>
-      <td><span class="badge {{ j.status }}">{{ STATUS_LABELS.get(j.status, j.status) }}</span>{% if j.error %}<br><small class="bad">{{ j.error[:120] }}</small>{% endif %}</td>
-      <td>{% if j.result %}{% for name, f in j.result.fields.items() %}{% if f.value %}<span class="badge {{ f.level }}" title="{{ FIELD_LABELS[name] }} · {{ '%.2f'|format(f.confidence) }}">{{ f.label }}</span> {% endif %}{% endfor %}{% endif %}</td>
-      <td>{{ j.source }}</td>
-      <td><small>{{ j.updated_at[:16].replace("T", " ") }}</small></td>
+      <td>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}
+        {{ (j.doc_title or "")[:70] }}
+        {% if j.current_tags %}<br><small class="muted">{{ j.current_tags|join(", ") }}</small>{% endif %}</td>
+      <td><span class="badge {{ j.status }}">{{ STATUS_LABELS.get(j.status, j.status) }}</span>
+        {% if j.error %}<br><small class="bad">{{ j.error[:120] }}</small>{% endif %}
+        <br><small class="muted">{{ j.updated_at[5:16].replace("T", " ") }}</small></td>
+      <td>{{ cell(j.view.document_type) }}</td>
+      <td>{{ cell(j.view.correspondent) }}</td>
+      <td>{{ cell(j.view.created) }}</td>
+      <td>{% for t in j.tags_view %}<span class="badge {{ t.level }}" title="p={{ '%.2f'|format(t.p) }}">{{ t.label }} · {{ '%.0f'|format(t.p * 100) }}%</span> {% else %}<span class="muted">–</span>{% endfor %}</td>
     </tr>
   {% else %}
     <tr><td colspan="7" class="muted">Noch keine Einträge.</td></tr>
@@ -19,3 +32,6 @@
   </tbody>
 </table>
 </div>
+<p><small class="muted">Farben: <span class="badge auto">sicher</span> würde automatisch gesetzt ·
+  <span class="badge suggest">unsicher</span> käme ins Review · <span class="badge low">zu unsicher</span> wird ignoriert ·
+  ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel.</small></p>

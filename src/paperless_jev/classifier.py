@@ -261,6 +261,16 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
                     needs_review = True
             continue
         if current and not cfg["overwrite"]:
+            # Vorhandener Wert bleibt - widerspricht Jev aber sicher, soll ein
+            # Mensch entscheiden (z. B. zu breite Paperless-Zuordnungsregeln).
+            if (
+                cfg.get("review_conflicts", True)
+                and found
+                and found["level"] == "auto"
+                and found["value"] is not None
+                and found["value"] != current
+            ):
+                needs_review = True
             continue
         if found and found["level"] == "auto" and found["value"] != current:
             updates[name] = found["value"]

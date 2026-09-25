@@ -159,3 +159,18 @@ def test_correspondent_fallback_when_none_fits():
     resp["answers"]["correspondent"] = {"type": "choice", "choice": NONE, "confidence": 0.96, "probabilities": {}}
     f = interpret(resp, req, meta, c)["fields"]["correspondent"]
     assert (f["value"], f["label"], f["level"]) == (2, "Stadtwerke", "auto")
+
+
+def test_confident_conflict_with_existing_value_goes_to_review():
+    c = cfg()
+    meta = make_meta()
+    doc = make_doc() | {"correspondent": 2, "document_type": 10}  # Jev sagt sicher: Swisscom (1)
+    req = build_request(doc, meta, {}, c)
+    resp = jev_response()
+    resp["answers"]["correspondent"]["confidence"] = 0.97
+    resp["answers"]["tag:101"]["noul"] = 0.1
+    result = interpret(resp, req, meta, c)
+    decision = plan(result, doc, c)
+    assert "correspondent" not in decision["updates"]
+    assert decision["needs_review"] is True
+    assert plan(result, doc, cfg(review_conflicts=False))["needs_review"] is False

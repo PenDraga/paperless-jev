@@ -21,7 +21,7 @@ from .classifier import excluded_tags
 from .config import FIELD_LABELS, SINGLE_FIELDS, Config
 from .db import Database
 from .jev import USD_PER_MTOK, JevClient, JevError
-from .paperless import PaperlessClient, PaperlessError
+from .paperless import Metadata, PaperlessClient, PaperlessError
 from .processor import Processor
 from .titles import TitleError, list_models
 from .vault import Vault
@@ -132,26 +132,117 @@ async def dashboard(request: Request):
         reviewed=reviewed,
         corrections=corrections,
         queue_size=_proc(request).queue.qsize(),
-        recent=_jobs(request, limit=10),
+        recent=await _jobs(request, limit=10),
+        evaluation=await _evaluation(request),
     )
 
 
-def _jobs(request: Request, status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+async def _metas(request: Request) -> dict[int, Metadata | None]:
+    """Stammdaten je Instanz (gecacht), um IDs in Namen zu übersetzen."""
+    metas: dict[int, Metadata | None] = {}
+    for inst in _cfg(request).instances():
+        try:
+            async with _proc(request).client(inst) as pl:
+                metas[inst.id] = await _proc(request).metadata(inst, pl)
+        except PaperlessError:
+            metas[inst.id] = None
+    return metas
+
+
+def _view(row: dict[str, Any], meta: Metadata | None) -> None:
+    """Pro Feld: Vorschlag, Confidence, Stufe und Vergleich mit dem aktuellen Wert."""
+    result = row.get("result") or {}
+    current = result.get("current", {})
+    view: dict[str, Any] = {}
+    for name in SINGLE_FIELDS:
+        f = result.get("fields", {}).get(name)
+        cur = current.get(name)
+        if name == "created":
+            cur_label = cur
+        else:
+            cur_label = (meta.names(name).get(cur, f"#{cur}") if meta else f"#{cur}") if cur else None
+        if not f:
+            view[name] = {"label": None, "current": cur_label} if cur_label else None
+            continue
+        label = f["value"] if name == "created" and f["value"] else f["label"]
+        view[name] = {
+            "label": "keiner passt" if f["value"] is None else label,
+            "confidence": f["confidence"],
+            "level": f["level"],
+            "current": cur_label,
+            "match": f["value"] is not None and f["value"] == cur,
+        }
+    row["view"] = view
+    row["tags_view"] = [t for t in result.get("tags", []) if t["level"] != "low"]
+    row["current_tags"] = [
+        meta.tags.get(t, f"#{t}") for t in current.get("tags", []) if not meta or t not in meta.inbox_tags
+    ] if current.get("tags") else []
+
+
+async def _jobs(
+    request: Request, status: str | None = None, limit: int = 100, q: str | None = None
+) -> list[dict[str, Any]]:
     db: Database = request.app.state.db
     names = {i.id: i for i in _cfg(request).instances()}
-    sql, params = "SELECT * FROM jobs", []
+    metas = await _metas(request)
+    sql, where, params = "SELECT * FROM jobs", [], []
     if status:
-        sql += " WHERE status = ?"
+        where.append("status = ?")
         params.append(status)
+    if q:
+        where.append("(doc_title LIKE ? OR CAST(doc_id AS TEXT) = ?)")
+        params += [f"%{q}%", q]
+    if where:
+        sql += " WHERE " + " AND ".join(where)
     rows = db.query(sql + " ORDER BY id DESC LIMIT ?", [*params, limit])
     for row in rows:
         row["instance"] = names.get(row["instance_id"])
+        _view(row, metas.get(row["instance_id"]))
     return rows
 
 
+async def _evaluation(request: Request) -> dict[str, Any] | None:
+    """Auswertung über den jeweils letzten Lauf je Dokument."""
+    db: Database = request.app.state.db
+    rows = db.query(
+        "SELECT * FROM jobs WHERE id IN (SELECT MAX(id) FROM jobs WHERE result IS NOT NULL"
+        " GROUP BY instance_id, doc_id)"
+    )
+    if not rows:
+        return None
+    fields = {n: {"auto": 0, "match": 0, "compare": 0, "fill": 0, "suggest": 0, "none": 0} for n in SINGLE_FIELDS}
+    tag_counts: dict[str, list[int]] = {}
+    tag_docs = 0
+    for row in rows:
+        result = row["result"]
+        current = result.get("current", {})
+        for name, f in result.get("fields", {}).items():
+            s = fields[name]
+            cur = current.get(name)
+            if f["level"] == "auto":
+                s["auto"] += 1
+                if cur:
+                    s["compare"] += 1
+                    s["match"] += f["value"] == cur
+                else:
+                    s["fill"] += 1
+            elif f["level"] == "suggest":
+                s["suggest"] += 1
+            else:
+                s["none"] += 1
+        new_tags = [t for t in result.get("tags", []) if t["level"] != "low"]
+        tag_docs += bool(new_tags)
+        for t in new_tags:
+            counts = tag_counts.setdefault(t["label"], [0, 0])
+            counts[0 if t["level"] == "auto" else 1] += 1
+    top_tags = sorted(tag_counts.items(), key=lambda kv: -(kv[1][0] + kv[1][1]))[:12]
+    return {"docs": len(rows), "fields": fields, "tag_docs": tag_docs, "top_tags": top_tags}
+
+
 @app.get("/log", response_class=HTMLResponse)
-async def job_log(request: Request, status: str | None = None):
-    return _render(request, "log.html", jobs=_jobs(request, status or None, limit=300), status=status)
+async def job_log(request: Request, status: str | None = None, q: str | None = None, limit: int = 200):
+    jobs = await _jobs(request, status or None, limit=min(limit, 2000), q=q or None)
+    return _render(request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit)
 
 
 @app.post("/run")
@@ -194,7 +285,7 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
 @app.get("/review", response_class=HTMLResponse)
 async def review_queue(request: Request):
     items = []
-    for job in _jobs(request, "review", limit=50):
+    for job in await _jobs(request, "review", limit=50):
         items.append({"job": job, **await _review_context(request, job)})
     return _render(request, "review.html", items=items)
 
@@ -369,6 +460,7 @@ async def save_rules(request: Request):
             "tags_force_review": "tags_force_review" in form,
             "correspondent_fallback": str(form.get("correspondent_fallback") or "").strip(),
             "overwrite": "overwrite" in form,
+            "review_conflicts": "review_conflicts" in form,
             "remove_inbox": "remove_inbox" in form,
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),
