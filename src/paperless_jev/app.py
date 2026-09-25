@@ -637,7 +637,7 @@ async def save_descriptions(request: Request):
     stored = _cfg(request).descriptions(instance_id)
     llm = LLM.from_config(cfg)
     expand = llm is not None and "expand" in form
-    translated, failed = 0, []
+    expanded, failed = 0, []
     inst = _cfg(request).instance(instance_id)
     for oid_raw in form.getlist("ids"):
         oid = int(oid_raw)
@@ -646,7 +646,7 @@ async def save_descriptions(request: Request):
         old = stored.get((kind, oid), {"text": "", "source": ""})
         text = old["text"]
         if source != old["source"]:
-            # Nur geänderte Einträge übersetzen
+            # Nur geänderte Einträge ausformulieren
             text = source
             if source and expand and inst:
                 name = str(form.get(f"name_{oid}", ""))
@@ -656,12 +656,12 @@ async def save_descriptions(request: Request):
                 except PaperlessError:
                     examples = []
                 try:
-                    text = await describe_category(llm, kind, name, source, examples)
-                    translated += 1
+                    text = await describe_category(llm, kind, name, source, examples, lang=i18n.current.get())
+                    expanded += 1
                 except LLMError:
                     failed.append(name or str(oid))
         _cfg(request).save_description(instance_id, kind, oid, text, active, source=source)
-    msg = _("Beschreibungen gespeichert") + (_(", {n} vom Sprachmodell ausformuliert", n=translated) if translated else "")
+    msg = _("Beschreibungen gespeichert") + (_(", {n} vom Sprachmodell ausformuliert", n=expanded) if expanded else "")
     err = _("Sprachmodell fehlgeschlagen für: {names} – Eingabe wurde unverändert übernommen", names=", ".join(failed)) if failed else None
     return _redirect(f"/descriptions?instance_id={instance_id}&kind={kind}", msg=msg, err=err)
 

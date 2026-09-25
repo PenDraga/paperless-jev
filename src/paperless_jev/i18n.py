@@ -258,10 +258,10 @@ EN: dict[str, str] = {
     # --- Beschreibungen ---------------------------------------------------------------
     "Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich. Schreib wie eine Regel: was dazugehört und was ausdrücklich nicht, z. B. Dokumenttyp „Kontoauszug“: <em>Bankbelege zu Kontobewegungen: Kontoauszüge, Gutschrifts- und Belastungsanzeigen. Keine Jahres- oder Steuerbescheinigungen.</em>":
         "Jev picks from your Paperless master data. A short description per entry noticeably improves accuracy. Write it like a rule: what belongs and what explicitly does not, e.g. document type “Kontoauszug”: <em>Bank documents about account movements: statements, credit and debit advices. No annual or tax certificates.</em>",
-    "Es genügen <strong>deutsche Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern baut das Sprachmodell geänderte Einträge zu einer englischen Beschreibung aus (Jev versteht Englisch am besten) und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.":
-        "<strong>Keywords</strong> in German or English are enough, e.g. <em>bank documents, credit, debit – not: tax certificate</em>. On save, the language model expands changed entries into an English description (Jev understands English best), also using the titles of documents already filed. The result is shown below the field – if it does not fit, add keywords and save again.",
-    "Am besten auf Englisch – oder unter <a href=\"/rules\">Regeln</a> ein Sprachmodell einrichten, dann genügen deutsche Stichworte.":
-        "Preferably in English – or set up a language model under <a href=\"/rules\">Rules</a>, then keywords are enough.",
+    "Es genügen <strong>Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer ganzen Beschreibung aus – in der Sprache der Oberfläche – und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.":
+        "<strong>Keywords</strong> are enough, e.g. <em>bank documents, credit, debit – not: tax certificate</em>. On save, the language model turns changed entries into a full description – in the interface language – also using the titles of documents already filed. The result is shown below the field – if it does not fit, add keywords and save again.",
+    "Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.":
+        "Write in the interface language. With a language model under <a href=\"/rules\">Rules</a>, keywords are enough – it writes them out.",
     "Deaktivierte Einträge schlägt Jev nie vor.": "Jev never suggests disabled entries.",
     "Zuerst unter <a href=\"/setup\">Setup</a> eine Instanz anlegen.": "First create an instance under <a href=\"/setup\">Setup</a>.",
     "Beschreibung für Jev": "Description for Jev",
@@ -269,8 +269,8 @@ EN: dict[str, str] = {
     "optional": "optional",
     "An Jev gesendet": "Sent to Jev",
     "Keine Einträge.": "No entries.",
-    "geänderte Einträge mit dem Sprachmodell zu einer englischen Beschreibung ausbauen":
-        "expand changed entries into an English description with the language model",
+    "geänderte Einträge mit dem Sprachmodell ausformulieren":
+        "write out changed entries with the language model",
     # --- Meldungen ---------------------------------------------------------------------
     "{n} Dokument(e) eingereiht": "{n} document(s) queued",
     "Neu eingereiht": "Queued again",

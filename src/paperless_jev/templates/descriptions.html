@@ -2,8 +2,8 @@
 {% block content %}
 <h2>{{ _("Beschreibungen") }}</h2>
 <p><small>{{ _("Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich. Schreib wie eine Regel: was dazugehört und was ausdrücklich nicht, z. B. Dokumenttyp „Kontoauszug“: <em>Bankbelege zu Kontobewegungen: Kontoauszüge, Gutschrifts- und Belastungsanzeigen. Keine Jahres- oder Steuerbescheinigungen.</em>")|safe }}
-  {% if can_translate %}{{ _("Es genügen <strong>deutsche Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern baut das Sprachmodell geänderte Einträge zu einer englischen Beschreibung aus (Jev versteht Englisch am besten) und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.")|safe }}
-  {% else %}{{ _("Am besten auf Englisch – oder unter <a href=\"/rules\">Regeln</a> ein Sprachmodell einrichten, dann genügen deutsche Stichworte.")|safe }}{% endif %}
+  {% if can_translate %}{{ _("Es genügen <strong>Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer ganzen Beschreibung aus – in der Sprache der Oberfläche – und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.")|safe }}
+  {% else %}{{ _("Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.")|safe }}{% endif %}
   {{ _("Deaktivierte Einträge schlägt Jev nie vor.") }}</small></p>
 {% if not instances %}<p class="bad">{{ _("Zuerst unter <a href=\"/setup\">Setup</a> eine Instanz anlegen.")|safe }}</p>{% else %}
 <form method="get" action="/descriptions" class="grid">
@@ -27,7 +27,7 @@
         <td class="desc-active"><input type="hidden" name="ids" value="{{ r.id }}"><label><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}><span class="show-mobile-inline"> {{ _("aktiv") }}</span></label></td>
         <td class="card-title">{{ r.name }}<input type="hidden" name="name_{{ r.id }}" value="{{ r.name }}"></td>
         <td class="desc-text"><textarea name="text_{{ r.id }}" rows="1" placeholder="{{ _('Stichworte, optional') if can_translate else _('optional') }}">{{ r.source }}</textarea>
-          {% if r.text and r.text != r.source %}<small class="muted translation" title="{{ _('An Jev gesendet') }}">EN: {{ r.text }}</small>{% endif %}</td>
+          {% if r.text and r.text != r.source %}<small class="muted translation" title="{{ _('An Jev gesendet') }}">→ {{ r.text }}</small>{% endif %}</td>
       </tr>
     {% else %}
       <tr><td colspan="3" class="muted">{{ _("Keine Einträge.") }}</td></tr>
@@ -36,7 +36,7 @@
   </table>
   </div>
   {% if rows %}<div class="sticky-actions">
-    {% if can_translate %}<label class="translate-toggle"><input type="checkbox" name="expand" checked> {{ _("geänderte Einträge mit dem Sprachmodell zu einer englischen Beschreibung ausbauen") }}</label>{% endif %}
+    {% if can_translate %}<label class="translate-toggle"><input type="checkbox" name="expand" checked> {{ _("geänderte Einträge mit dem Sprachmodell ausformulieren") }}</label>{% endif %}
     <button type="submit" aria-busy="false" onclick="this.setAttribute('aria-busy','true')">{{ _("Speichern") }}</button></div>{% endif %}
 </form>
 {% endif %}

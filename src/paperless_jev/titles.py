@@ -67,11 +67,33 @@ async def generate_title(llm: LLM, text: str, facts: dict[str, Any], examples: l
     return title
 
 
-DESCRIBE_PROMPT = """You write short category descriptions for a document classifier in a private Swiss/German household archive.
+DESCRIBE_PROMPT_DE = """Du formulierst kurze Kategorie-Beschreibungen für einen Dokument-Klassifizierer in einem privaten Schweizer Haushaltsarchiv.
+Art der Kategorie: {kind}
+Name der Kategorie: "{name}"
+
+Stichworte des Besitzers:
+\"\"\"
+{notes}
+\"\"\"
+
+Titel von Dokumenten, die der Besitzer bereits in dieser Kategorie abgelegt hat:
+{examples}
+
+Schreibe EINE deutsche Beschreibung (1-2 Sätze, max. 45 Wörter) in dieser Form:
+"<was dazugehört, mit allen Stichworten>." und NUR wenn die Stichworte Ausschlüsse nennen (z. B. "nicht", "kein", "ohne"), einen zweiten Satz "Nicht: <Ausschlüsse>."
+Regeln:
+- Jedes Stichwort muss in der Beschreibung vorkommen. Du darfst ein, zwei naheliegende Bezeichnungen ergänzen, wie sie auf solchen Dokumenten stehen.
+- Die Beispieltitel dienen nur zum Verständnis der Kategorie; übernimm nie Daten, Zeiträume, Beträge oder einzelne Beispieldokumente.
+- Erfinde keine Ausschlüsse und keine weiteren Kategorien.
+- Eigennamen (Firmen, Personen, Orte) unverändert lassen.
+- Schweizer Schreibweise: "ss" statt "ß".
+Gib nur die Beschreibung aus."""
+
+DESCRIBE_PROMPT_EN = """You write short category descriptions for a document classifier in a private Swiss household archive.
 Category type: {kind}
 Category name: "{name}"
 
-The owner's notes (German or English, possibly just keywords):
+The owner's keywords:
 \"\"\"
 {notes}
 \"\"\"
@@ -80,33 +102,33 @@ Titles of documents the owner has already filed in this category:
 {examples}
 
 Write ONE English description (1-2 sentences, max. 45 words) in this form:
-"<what belongs, covering every keyword from the notes>." and, ONLY if the notes name exclusions (e.g. "nicht", "kein", "not"), a second sentence "Not: <exclusions>."
+"<what belongs, covering every keyword>." and, ONLY if the keywords name exclusions (e.g. "not", "no", "except"), a second sentence "Not: <exclusions>."
 Rules:
-- Every keyword from the notes must appear in the description; translate German terms and keep the German term in parentheses where it is a document term (e.g. "salary statement (Lohnausweis)").
-- Use the example titles only to understand the category; never copy dates, periods, amounts or single example documents into the description.
+- Every keyword must appear in the description; translate non-English terms. You may add one or two closely related terms as they appear on such documents.
+- Use the example titles only to understand the category; never copy dates, periods, amounts or single example documents.
 - Do not invent exclusions or extra categories.
 - Keep proper names (companies, people, places) unchanged.
-- Swiss context: "3a" means the private pension "pillar 3a (Säule 3a)"; "Liegenschaft" means real estate property.
 Output only the description."""
 
+DESCRIBE_PROMPTS = {"de": DESCRIBE_PROMPT_DE, "en": DESCRIBE_PROMPT_EN}
+
 KIND_NAMES = {
-    "document_type": "document type",
-    "correspondent": "correspondent (sender)",
-    "tag": "tag",
-    "storage_path": "storage location",
+    "de": {"document_type": "Dokumenttyp", "correspondent": "Korrespondent (Absender)", "tag": "Tag", "storage_path": "Speicherort"},
+    "en": {"document_type": "document type", "correspondent": "correspondent (sender)", "tag": "tag", "storage_path": "storage location"},
 }
 
 
 async def describe_category(
-    llm: LLM, kind: str, name: str, notes: str, examples: list[str]
+    llm: LLM, kind: str, name: str, notes: str, examples: list[str], lang: str = "de"
 ) -> str:
-    """Baut Stichworte (deutsch oder englisch) zu einer englischen Beschreibung für Jev aus."""
-    example_lines = "\n".join(f"- {t}" for t in examples[:8]) or "- (none)"
-    prompt = DESCRIBE_PROMPT.format(
-        kind=KIND_NAMES.get(kind, kind), name=name, notes=notes.strip(), examples=example_lines
+    """Formuliert Stichworte zu einer Beschreibung für Jev aus, in der Sprache der Oberfläche."""
+    lang = lang if lang in DESCRIBE_PROMPTS else "de"
+    example_lines = "\n".join(f"- {t}" for t in examples[:8]) or ("- (keine)" if lang == "de" else "- (none)")
+    prompt = DESCRIBE_PROMPTS[lang].format(
+        kind=KIND_NAMES[lang].get(kind, kind), name=name, notes=notes.strip(), examples=example_lines
     )
     raw = await complete(llm, prompt, max_tokens=200)
-    raw = re.sub(r"^(description|english)\s*:\s*", "", raw, flags=re.IGNORECASE).strip().strip('"').strip()
+    raw = re.sub(r"^(beschreibung|description|english|deutsch)\s*:\s*", "", raw, flags=re.IGNORECASE).strip().strip('"').strip()
     raw = strip_invented_exclusions(raw, notes)
     if not raw:
         raise LLMError("Sprachmodell lieferte keine Beschreibung")
@@ -117,11 +139,11 @@ EXCLUSION_WORDS = re.compile(r"\b(nicht|kein|keine|ohne|ausser|außer|not|no|exc
 
 
 def strip_invented_exclusions(description: str, notes: str) -> str:
-    """Entfernt "Not: ..."-Sätze, wenn die Stichworte keine Ausschlüsse nennen - und leere wie "Not: none"."""
-    parts = re.split(r"(?=\bNot:)", description)
+    """Entfernt "Nicht: ..."-Sätze, wenn die Stichworte keine Ausschlüsse nennen - und leere wie "Nicht: keine"."""
+    parts = re.split(r"(?=\b(?:Nicht|Not):)", description)
     head, tails = parts[0].strip(), [p.strip() for p in parts[1:]]
     keep = [
         t for t in tails
-        if EXCLUSION_WORDS.search(notes) and not re.fullmatch(r"Not:\s*(none|n/a|-)?\.?", t, re.IGNORECASE)
+        if EXCLUSION_WORDS.search(notes) and not re.fullmatch(r"(?:Nicht|Not):\s*(keine|keiner|none|n/a|-)?\.?", t, re.IGNORECASE)
     ]
     return " ".join([head, *keep]).strip()

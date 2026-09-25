@@ -23,3 +23,10 @@ def test_strip_invented_exclusions():
     assert strip_invented_exclusions("Bank statements. Not: tax certificates.", "Bankbelege. nicht: Steuer") == (
         "Bank statements. Not: tax certificates."
     )
+    assert strip_invented_exclusions("Arztrechnungen, Spitalrechnungen. Nicht: Versicherungspolicen.", "Arzt, Spital") == (
+        "Arztrechnungen, Spitalrechnungen."
+    )
+    assert strip_invented_exclusions("Kontoauszüge. Nicht: keine.", "Bank, nicht: Steuer") == "Kontoauszüge."
+    assert strip_invented_exclusions("Kontoauszüge. Nicht: Steuerbescheinigungen.", "Bank, nicht: Steuer") == (
+        "Kontoauszüge. Nicht: Steuerbescheinigungen."
+    )

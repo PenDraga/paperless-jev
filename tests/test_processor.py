@@ -193,9 +193,9 @@ def test_ollama_title_and_manual_title(client, monkeypatch):
 def test_descriptions_are_expanded_on_change(client, monkeypatch):
     calls = []
 
-    async def fake_describe(llm, kind, name, notes, examples):
-        calls.append((kind, name, notes, examples))
-        return "EN: " + notes
+    async def fake_describe(llm, kind, name, notes, examples, lang="de"):
+        calls.append((kind, name, notes, examples, lang))
+        return "Ausformuliert: " + notes
 
     monkeypatch.setattr(app_module, "describe_category", fake_describe)
     cfg = client.app.state.config
@@ -205,15 +205,21 @@ def test_descriptions_are_expanded_on_change(client, monkeypatch):
             "expand": "on"}
     assert client.post("/descriptions", data=form, follow_redirects=False).status_code == 303
     d = cfg.descriptions(1)
-    assert d[("tag", 101)] == {"text": "EN: Für die Steuererklärung relevant", "source": "Für die Steuererklärung relevant", "active": True}
-    assert calls == [("tag", "Steuern", "Für die Steuererklärung relevant", [])]
+    assert d[("tag", 101)] == {"text": "Ausformuliert: Für die Steuererklärung relevant", "source": "Für die Steuererklärung relevant", "active": True}
+    assert calls == [("tag", "Steuern", "Für die Steuererklärung relevant", [], "de")]
 
-    # Unverändert gespeichert -> keine erneute Übersetzung
+    # Unverändert gespeichert -> nicht erneut ausformuliert
     client.post("/descriptions", data=form)
     assert len(calls) == 1
-    # Seite zeigt deutsche Eingabe und englische Fassung
+    # Seite zeigt Stichworte und ausformulierte Fassung
     page = client.get("/descriptions?instance_id=1&kind=tag").text
-    assert "Für die Steuererklärung relevant</textarea>" in page and "EN: EN: Für die" in page
+    assert "Für die Steuererklärung relevant</textarea>" in page and "→ Ausformuliert: Für die" in page
+
+    # Englische Oberfläche -> englische Beschreibung
+    client.cookies.set("lang", "en")
+    client.post("/descriptions", data=form | {"text_101": "tax return"})
+    assert calls[-1][-1] == "en"
+    client.cookies.set("lang", "de")
 
 
 def test_language_switch(client):
