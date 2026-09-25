@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block content %}
-<h2>Job #{{ job.id }} <span class="badge {{ job.status }}">{{ _(STATUS_LABELS.get(job.status, job.status)) }}</span></h2>
+<h2>Job #{{ job.id }} <span style="font-size:1rem;vertical-align:middle" class="badge {{ job.status }}">{{ _(STATUS_LABELS.get(job.status, job.status)) }}</span></h2>
 <p>{{ _("Dokument") }} #{{ job.doc_id }} {{ job.doc_title or "" }}
   {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">{{ _("in Paperless öffnen") }}</a>{% endif %}
   · {{ _("Quelle") }} {{ job.source }} · {{ _("Modell") }} {{ job.model or "–" }} · {{ job.input_tokens or 0 }} Tokens
@@ -11,13 +12,13 @@
   <form method="post" action="/jobs/{{ job.id }}/test" class="inline"><button type="submit" class="secondary" onclick="this.setAttribute('aria-busy','true')" title="{{ _('Sofort neu bewerten, ohne etwas zu schreiben') }}">{{ _("Erneut testen") }}</button></form>
   <form method="post" action="/jobs/{{ job.id }}/retry" class="inline"><button type="submit" class="secondary outline" title="{{ _('Einreihen und im aktuellen Modus verarbeiten') }}">{{ _("Neu klassifizieren") }}</button></form>
 </div>
-{% if not job.result %}<a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary outline view-btn-inline" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">👁 {{ _("Dokument ansehen") }}</a>{% endif %}
+{% if not job.result %}<a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary outline view-btn-inline" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">{{ icon("eye") }}{{ _("Dokument ansehen") }}</a>{% endif %}
 
 {% if job.result %}
 <div class="review-item" style="margin-top:1.5rem">
   <div class="doc-thumb">
     <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}"><img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="{{ _('Vorschau') }}"></a>
-    <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary view-btn" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">👁 {{ _("Dokument ansehen") }}</a>
+    <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary view-btn" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">{{ icon("eye") }}{{ _("Dokument ansehen") }}</a>
   </div>
   <div>
     <h4>{{ _("Vorschlag bearbeiten und übernehmen") }}</h4>

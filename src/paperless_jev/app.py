@@ -75,6 +75,7 @@ templates.env.globals.update(
     MODE_LABELS=MODE_LABELS,
     LANGUAGES=i18n.LANGUAGES,
     version=__version__,
+    asset_v=int((HERE / "static" / "style.css").stat().st_mtime),
     _=_,
     current_lang=i18n.current.get,
 )

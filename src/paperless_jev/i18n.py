@@ -43,6 +43,8 @@ EN: dict[str, str] = {
     "Setup": "Setup",
     "Klassifizierung mit TypeSafe Jev": "Classification with TypeSafe Jev",
     "Sprache": "Language",
+    "Navigation": "Navigation",
+    "Mehr": "More",
     # --- Status, Felder, Arten ------------------------------------------------
     "wartet": "queued",
     "läuft": "running",
@@ -115,6 +117,12 @@ EN: dict[str, str] = {
     "auch bereits bewertete Dokumente neu klassifizieren": "also re-classify documents that were already evaluated",
     "Einreihen": "Queue",
     "Zuletzt verarbeitet": "Recently processed",
+    "ganzes Protokoll": "full log",
+    "Instanz": "Instance",
+    "Anteil der erledigten Dokumente, die nicht ins Review mussten": "share of finished documents that did not need a review",
+    "= aktueller Wert": "= current value",
+    "sicher, = aktueller Wert": "confident, = current value",
+    "widerspricht aktuellem Wert": "contradicts current value",
     # --- Protokoll-Tabelle --------------------------------------------------------
     "ist: {value}": "is: {value}",
     "entspricht dem aktuellen Wert": "matches the current value",
@@ -125,8 +133,9 @@ EN: dict[str, str] = {
     "Details →": "Details →",
     "Noch keine Einträge.": "No entries yet.",
     "keiner passt": "none fits",
-    "Farben: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · <span class=\"badge low\">zu unsicher</span> wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel.":
-        "Colours: <span class=\"badge auto\">confident</span> would be set automatically · <span class=\"badge suggest\">uncertain</span> would go to review · <span class=\"badge low\">too uncertain</span> is ignored · ✓ = matches the current value. Tags: new suggestions only – existing tags are shown in grey below the title.",
+    "Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel. Genaue Werte beim Darüberfahren.":
+        "Bar = confidence: <span class=\"badge auto\">confident</span> would be set automatically · <span class=\"badge suggest\">uncertain</span> would go to review · grey = too uncertain, ignored · ✓ = matches the current value. Tags: new suggestions only – existing tags are shown in grey below the title. Hover for exact values.",
+    "Posteingang einreihen oder ein einzelnes Dokument testen.": "Queue the inbox or test a single document.",
     "Titel oder Dokument-ID suchen": "Search title or document ID",
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
@@ -136,7 +145,8 @@ EN: dict[str, str] = {
     "in Paperless öffnen": "open in Paperless",
     "Details": "Details",
     "Vorschau": "Preview",
-    "Nichts zu prüfen. 🎉": "Nothing to review. 🎉",
+    "Nichts zu prüfen.": "Nothing to review.",
+    "Neue unsichere Fälle erscheinen hier automatisch.": "New uncertain cases show up here automatically.",
     "Quelle": "Source",
     "{n} Fragen": "{n} questions",
     "Neu klassifizieren": "Re-classify",

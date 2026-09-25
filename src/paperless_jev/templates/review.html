@@ -1,21 +1,22 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block content %}
 <h2>{{ _("Review-Queue") }} <small class="muted">({{ items|length }})</small></h2>
 {% for item in items %}
   {% set job = item.job %}{% set meta = item.meta %}{% set title_mode = item.title_mode %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
   <article>
-    <header><strong>{{ job.doc_title or _("Dokument") }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
+    <header>{{ icon("file") }} <strong>{{ job.doc_title or _("Dokument") }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
       {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">{{ _("in Paperless öffnen") }}</a>{% endif %}
       · <a href="/jobs/{{ job.id }}">{{ _("Details") }}</a></header>
     <div class="review-item">
       <div class="doc-thumb">
         <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}"><img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="{{ _('Vorschau') }}" loading="lazy"></a>
-        <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary view-btn" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">👁 {{ _("Dokument ansehen") }}</a>
+        <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary view-btn" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">{{ icon("eye") }}{{ _("Dokument ansehen") }}</a>
       </div>
       <div>{% include "_review_form.html" with context %}</div>
     </div>
   </article>
 {% else %}
-  <p class="muted">{{ _("Nichts zu prüfen. 🎉") }}</p>
+  <article class="empty">{{ icon("party") }}<strong>{{ _("Nichts zu prüfen.") }}</strong>{{ _("Neue unsichere Fälle erscheinen hier automatisch.") }}</article>
 {% endfor %}
 {% endblock %}

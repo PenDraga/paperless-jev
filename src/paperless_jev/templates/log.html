@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block content %}
 <h2>{{ _("Protokoll") }}</h2>
 <form method="get" action="/log" class="grid">
@@ -12,6 +13,6 @@
   </select>
   <button type="submit">{{ _("Filtern") }}</button>
 </form>
-{% if instances %}{% include "_test_form.html" with context %}{% endif %}
-{% include "_jobs_table.html" with context %}
+{% if instances %}<article>{% include "_test_form.html" with context %}</article>{% endif %}
+<article>{% include "_jobs_table.html" with context %}</article>
 {% endblock %}

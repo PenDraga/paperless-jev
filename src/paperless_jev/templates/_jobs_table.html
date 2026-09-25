@@ -1,10 +1,11 @@
+{% from "_icons.html" import icon %}
 {% set jobs = recent if recent is defined else jobs %}
 {% macro cell(v) -%}
   {%- if not v -%}<span class="muted">–</span>
   {%- elif v.label is none -%}<small class="muted">{{ _("ist: {value}", value=v.current) }}</small>
   {%- else -%}
-    <span class="badge {{ v.level }}" title="Confidence {{ '%.2f'|format(v.confidence) }}">{{ v.label }} · {{ '%.0f'|format(v.confidence * 100) }}%</span>
-    {%- if v.match %} <span class="good" title="{{ _('entspricht dem aktuellen Wert') }}">✓</span>
+    <span class="conf {{ v.level }}" title="Confidence {{ '%.0f'|format(v.confidence * 100) }} %"><b>{{ v.label }}</b><span class="m"><span style="width: {{ (v.confidence * 100)|round|int }}%"></span></span></span>
+    {%- if v.match %}<span class="tick" title="{{ _('entspricht dem aktuellen Wert') }}">✓</span>
     {%- elif v.current %}<br><small class="muted">{{ _("ist: {value}", value=v.current) }}</small>{% endif %}
   {%- endif -%}
 {%- endmacro %}
@@ -15,23 +16,25 @@
   {% for j in jobs %}
     <tr>
       <td class="hide-mobile"><a href="/jobs/{{ j.id }}">{{ j.id }}</a></td>
-      <td class="card-title">{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}
-        {{ (j.doc_title or "")[:70] }}
-        <a href="/doc/{{ j.instance_id }}/{{ j.doc_id }}" target="_blank" class="eye" title="{{ _('Dokument ansehen') }}" aria-label="{{ _('Dokument ansehen') }}" data-viewer="{{ j.doc_title or '#' ~ j.doc_id }}">👁</a>
-        {% if j.current_tags %}<br><small class="muted">{{ j.current_tags|join(", ") }}</small>{% endif %}
-        <a href="/jobs/{{ j.id }}" class="show-mobile card-link">{{ _("Details →") }}</a></td>
+      <td class="card-title"><div class="doc">
+        <img class="doc-mini" src="/thumb/{{ j.instance_id }}/{{ j.doc_id }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <div class="doc-text"><b>{{ (j.doc_title or _("Dokument"))[:70] }}</b>
+          <small>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank" title="{{ _('in Paperless öffnen') }}">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}{% if j.current_tags %} · {{ j.current_tags|join(", ") }}{% endif %}</small>
+          <a href="/jobs/{{ j.id }}" class="show-mobile card-link"><small>{{ _("Details →") }}</small></a></div>
+        <a href="/doc/{{ j.instance_id }}/{{ j.doc_id }}" target="_blank" class="eye" title="{{ _('Dokument ansehen') }}" aria-label="{{ _('Dokument ansehen') }}" data-viewer="{{ j.doc_title or '#' ~ j.doc_id }}">{{ icon("eye") }}</a>
+      </div></td>
       <td class="col-status" data-label="{{ _('Status') }}"><div><span class="badge {{ j.status }}">{{ _(STATUS_LABELS.get(j.status, j.status)) }}</span>
         {% if j.error %}<br><small class="bad">{{ _(j.error)[:120] }}</small>{% endif %}
         <br><small class="muted">{{ j.updated_at[5:16].replace("T", " ") }}</small></div></td>
       <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type) }}</div></td>
       <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent) }}</div></td>
       <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created) }}</div></td>
-      <td data-label="{{ _('Tags (neu)') }}"><div>{% for t in j.tags_view %}<span class="badge {{ t.level }}" title="p={{ '%.2f'|format(t.p) }}">{{ t.label }} · {{ '%.0f'|format(t.p * 100) }}%</span> {% else %}<span class="muted">–</span>{% endfor %}</div></td>
+      <td data-label="{{ _('Tags (neu)') }}"><div class="tag-chips">{% for t in j.tags_view %}<span class="conf {{ t.level }}" title="p = {{ '%.0f'|format(t.p * 100) }} %"><b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></span>{% else %}<span class="muted">–</span>{% endfor %}</div></td>
     </tr>
   {% else %}
-    <tr><td colspan="7" class="muted">{{ _("Noch keine Einträge.") }}</td></tr>
+    <tr><td colspan="7" class="empty-cell"><div class="empty">{{ icon("inbox") }}<strong>{{ _("Noch keine Einträge.") }}</strong>{{ _("Posteingang einreihen oder ein einzelnes Dokument testen.") }}</div></td></tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
-<p><small class="muted">{{ _("Farben: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · <span class=\"badge low\">zu unsicher</span> wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel.")|safe }}</small></p>
+<p class="hint">{{ _("Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel. Genaue Werte beim Darüberfahren.")|safe }}</p>

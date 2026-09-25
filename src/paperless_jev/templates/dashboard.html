@@ -1,63 +1,90 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block content %}
-<h2>{{ _("Übersicht") }}</h2>
+<div class="page-head">
+  <h2>{{ _("Übersicht") }}</h2>
+  <span class="chip mode-{{ cfg.mode }}">{{ icon("flask") }}{{ _("Modus") }} <b>{{ _(MODE_LABELS[cfg.mode]) }}</b></span>
+  <span class="chip">{{ icon("cpu") }}{{ _("Modell") }} <b>{{ cfg.model }}</b></span>
+  <span class="chip"><span class="pulse{% if cfg.poll_minutes <= 0 %} off{% endif %}"></span>{% if cfg.poll_minutes > 0 %}{{ _("Polling alle {n} min", n=cfg.poll_minutes) }}{% else %}{{ _("Polling aus") }}{% endif %}</span>
+  <span class="chip">{{ icon("layers") }}{{ _("Warteschlange") }} <b>{{ queue_size }}</b></span>
+</div>
 {% if not cfg.typesafe_api_key or not instances %}
 <p class="flash bad">{{ _("Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.")|safe }}</p>
 {% endif %}
-<p>{{ _("Modus") }}: <span class="badge {{ cfg.mode }}">{{ _(MODE_LABELS[cfg.mode]) }}</span>
- · {{ _("Modell") }} <code>{{ cfg.model }}</code> · {% if cfg.poll_minutes > 0 %}{{ _("Polling alle {n} min", n=cfg.poll_minutes) }}{% else %}{{ _("Polling aus") }}{% endif %}
- · {{ _("Warteschlange") }}: {{ queue_size }}</p>
 
-{% if instances %}{% include "_test_form.html" with context %}{% endif %}
-
+{% set n_review, n_done, n_dry, n_err = counts.get("review", 0), counts.get("done", 0), counts.get("dry_run", 0), counts.get("error", 0) %}
 <div class="stats">
-  <article><span class="num">{{ counts.get("review", 0) }}</span><a href="/review">{{ _("in Review") }}</a></article>
-  <article><span class="num">{{ counts.get("done", 0) }}</span>{{ _("erledigt") }}</article>
-  <article><span class="num">{{ counts.get("dry_run", 0) }}</span>{{ _("Probeläufe") }}</article>
-  <article><span class="num">{{ counts.get("error", 0) }}</span><a href="/log?status=error">{{ _("Fehler") }}</a></article>
-  <article><span class="num">{% if auto_rate is not none %}{{ (auto_rate * 100)|round|int }} %{% else %}–{% endif %}</span>{{ _("ohne Review erledigt") }}</article>
-  <article><span class="num">{{ "{:,}".format(tokens).replace(",", "'") }}</span>{{ _("Tokens (≈ ${cost})", cost="%.4f"|format(cost)) }}</article>
+  <a href="/review" class="stat {{ 'warn' if n_review else 'zero' }}"><span class="ic">{{ icon("inbox") }}</span><span class="num">{{ n_review }}</span><span class="lbl">{{ _("in Review") }} →</span></a>
+  <div class="stat {{ 'ok' if n_done else 'zero' }}"><span class="ic">{{ icon("check") }}</span><span class="num">{{ n_done }}</span><span class="lbl">{{ _("erledigt") }}</span></div>
+  <a href="/log?status=dry_run" class="stat {{ 'info' if n_dry else 'zero' }}"><span class="ic">{{ icon("flask") }}</span><span class="num">{{ n_dry }}</span><span class="lbl">{{ _("Probeläufe") }}</span></a>
+  <a href="/log?status=error" class="stat {{ 'bad' if n_err else 'zero' }}"><span class="ic">{{ icon("alert") }}</span><span class="num">{{ n_err }}</span><span class="lbl">{{ _("Fehler") }}</span></a>
+  <div class="stat acc"><span class="ic">{{ icon("zap") }}</span><span class="num">{{ "{:,}".format(tokens).replace(",", "'") }}</span><span class="lbl">{{ _("Tokens (≈ ${cost})", cost="%.4f"|format(cost)) }}</span></div>
+  <div class="stat ring">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 76 76" aria-hidden="true">
+        <defs><linearGradient id="ring-grad"><stop offset="0" stop-color="#17541f"/><stop offset="1" stop-color="#4cc25e"/></linearGradient></defs>
+        <circle class="track" cx="38" cy="38" r="31" stroke-width="9" fill="none"/>
+        {% if auto_rate %}<circle cx="38" cy="38" r="31" stroke="url(#ring-grad)" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="194.78" stroke-dashoffset="{{ '%.2f'|format(194.78 * (1 - auto_rate)) }}"/>{% endif %}
+      </svg>
+      <span class="val">{% if auto_rate is not none %}{{ (auto_rate * 100)|round|int }}%{% else %}–{% endif %}</span>
+    </div>
+    <div><div class="ttl">{{ _("ohne Review erledigt") }}</div><span class="lbl muted"><small>{{ _("Anteil der erledigten Dokumente, die nicht ins Review mussten") }}</small></span></div>
+  </div>
 </div>
 
-{% if reviewed %}
-<h4>{{ _("Korrekturen im Review ({n} geprüft)", n=reviewed) }}</h4>
-<p>{% for name, n in corrections.items() %}{{ _("{field}: {n}× korrigiert", field=_(FIELD_LABELS[name]), n=n) }}{% if not loop.last %} · {% endif %}{% else %}{{ _("Bisher keine Korrekturen.") }}{% endfor %}</p>
-{% endif %}
-
+<div class="dash-grid">
 {% if evaluation %}
-<h4>{{ _("Auswertung") }} <small class="muted">{{ _("({n} Dokumente, jeweils letzter Lauf)", n=evaluation.docs) }}</small></h4>
-<div class="overflow-auto">
-<table class="cards">
-  <thead><tr><th>{{ _("Feld") }}</th><th>{{ _("sicher") }}</th><th>{{ _("davon = aktueller Wert") }}</th><th>{{ _("würde leeres Feld füllen") }}</th><th>{{ _("unsicher (Review)") }}</th><th>{{ _("keine Antwort") }}</th></tr></thead>
-  <tbody>
+<article>
+  <h3 class="card-h">{{ icon("chart") }}{{ _("Auswertung") }} <small>{{ _("({n} Dokumente, jeweils letzter Lauf)", n=evaluation.docs) }}</small></h3>
   {% for name, s in evaluation.fields.items() if s.auto or s.suggest or s.none %}
-    <tr>
-      <td class="card-title">{{ _(FIELD_LABELS[name]) }}</td>
-      <td data-label="{{ _('sicher') }}"><div>{{ s.auto }}</div></td>
-      <td data-label="{{ _('davon = aktueller Wert') }}"><div>{% if s.compare %}{{ s.match }}/{{ s.compare }} ({{ (s.match / s.compare * 100)|round|int }} %){% else %}–{% endif %}</div></td>
-      <td data-label="{{ _('würde leeres Feld füllen') }}"><div>{{ s.fill }}</div></td>
-      <td data-label="{{ _('unsicher (Review)') }}"><div>{{ s.suggest }}</div></td>
-      <td data-label="{{ _('keine Antwort') }}"><div>{{ s.none }}</div></td>
-    </tr>
+  {% set total = s.auto + s.suggest + s.none %}
+  {% set conflict = s.compare - s.match %}
+  <div class="ev">
+    <div class="ev-row">
+      <span>{{ _(FIELD_LABELS[name]) }}</span>
+      <div class="track" title="{{ _('sicher') }} {{ s.auto }} · {{ _('unsicher (Review)') }} {{ s.suggest }} · {{ _('keine Antwort') }} {{ s.none }}">
+        {% for cls, n in [("seg-match", s.match), ("seg-fill", s.fill), ("seg-conflict", conflict), ("seg-suggest", s.suggest)] if n %}<span class="{{ cls }}" style="width: {{ '%.1f'|format(n / total * 100) }}%"></span>{% endfor %}
+      </div>
+      <span class="pct" title="{{ _('davon = aktueller Wert') }}">{% if s.compare %}{{ s.match }}/{{ s.compare }}{% else %}–{% endif %}</span>
+    </div>
+    <small>{{ _("sicher") }} {{ s.auto }}{% if s.compare %} · {{ _("= aktueller Wert") }} {{ (s.match / s.compare * 100)|round|int }} %{% endif %}{% if s.fill %} · {{ _("würde leeres Feld füllen") }} {{ s.fill }}{% endif %} · {{ _("unsicher (Review)") }} {{ s.suggest }} · {{ _("keine Antwort") }} {{ s.none }}</small>
+  </div>
   {% endfor %}
-  </tbody>
-</table>
-</div>
-<p>{{ _("<strong>Neue Tags</strong> für {n} Dokumente:", n=evaluation.tag_docs)|safe }}
-  {% for label, c in evaluation.top_tags %}<span class="badge auto">{{ label }} {{ c[0] }}</span>{% if c[1] %}<span class="badge suggest">+{{ c[1] }}</span>{% endif %} {% else %}{{ _("keine") }}{% endfor %}
-  <br><small class="muted">{{ _("grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei Dokumenten aus dem ecoDMS-Import ein guter Genauigkeitstest.") }}</small></p>
+  <div class="legend">
+    <span><i class="seg-match"></i>{{ _("sicher, = aktueller Wert") }}</span>
+    <span><i class="seg-fill"></i>{{ _("würde leeres Feld füllen") }}</span>
+    <span><i class="seg-conflict"></i>{{ _("widerspricht aktuellem Wert") }}</span>
+    <span><i class="seg-suggest"></i>{{ _("unsicher (Review)") }}</span>
+    <span><i class="seg-none"></i>{{ _("keine Antwort") }}</span>
+  </div>
+  <p>{{ icon("tag") }} {{ _("<strong>Neue Tags</strong> für {n} Dokumente:", n=evaluation.tag_docs)|safe }}</p>
+  <div class="tag-chips">{% for label, c in evaluation.top_tags %}<span class="badge auto">{{ label }} {{ c[0] }}</span>{% if c[1] %}<span class="badge suggest">+{{ c[1] }}</span>{% endif %}{% else %}<span class="muted">{{ _("keine") }}</span>{% endfor %}</div>
+  <p class="hint" style="margin-top:.8rem">{{ _("grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei Dokumenten aus dem ecoDMS-Import ein guter Genauigkeitstest.") }}</p>
+  {% if reviewed %}
+  <p class="hint"><strong>{{ _("Korrekturen im Review ({n} geprüft)", n=reviewed) }}:</strong>
+    {% for name, n in corrections.items() %}{{ _("{field}: {n}× korrigiert", field=_(FIELD_LABELS[name]), n=n) }}{% if not loop.last %} · {% endif %}{% else %}{{ _("Bisher keine Korrekturen.") }}{% endfor %}</p>
+  {% endif %}
+</article>
 {% endif %}
 
-<h4>{{ _("Posteingang jetzt verarbeiten") }}</h4>
-<form method="post" action="/run" class="grid">
-  <select name="instance_id">
-    <option value="0">{{ _("Alle aktiven Instanzen") }}</option>
-    {% for i in instances %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}
-  </select>
-  <label><input type="checkbox" name="force" value="true"> {{ _("auch bereits bewertete Dokumente neu klassifizieren") }}</label>
-  <button type="submit">{{ _("Einreihen") }}</button>
-</form>
+<article>
+  {% if instances %}{% include "_test_form.html" with context %}<hr>{% endif %}
+  <h3 class="card-h">{{ icon("inbox") }}{{ _("Posteingang jetzt verarbeiten") }}</h3>
+  <form method="post" action="/run">
+    <div class="test-row">
+      <select name="instance_id" aria-label="{{ _('Instanz') }}">
+        <option value="0">{{ _("Alle aktiven Instanzen") }}</option>
+        {% for i in instances %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="soft">{{ icon("plus") }}{{ _("Einreihen") }}</button>
+    </div>
+    <label class="run-opts"><input type="checkbox" name="force" value="true"> {{ _("auch bereits bewertete Dokumente neu klassifizieren") }}</label>
+  </form>
+</article>
+</div>
 
-<h4>{{ _("Zuletzt verarbeitet") }}</h4>
-{% include "_jobs_table.html" with context %}
+<article>
+  <h3 class="card-h">{{ icon("list") }}{{ _("Zuletzt verarbeitet") }} <small><a href="/log">{{ _("ganzes Protokoll") }} →</a></small></h3>
+  {% include "_jobs_table.html" with context %}
+</article>
 {% endblock %}
