@@ -28,7 +28,7 @@ docker compose up -d --build
 4. **Übersicht → Posteingang jetzt verarbeiten** und im Protokoll prüfen, wie gut die Vorschläge sind.
 5. Danach Modus *Automatisch* aktivieren und in Paperless den Webhook-Workflow anlegen (Anleitung auf der Setup-Seite).
 
-Betrieb neben Paperless hinter Traefik/Authentik: [`deploy/compose.yaml`](deploy/compose.yaml).
+Betrieb neben Paperless hinter Traefik, nur aus dem internen Netz erreichbar (IP-Allowlist `admin-only@file`): [`deploy/compose.yaml`](deploy/compose.yaml).
 
 ## Probelauf auf der Kommandozeile (Phase 0)
 
