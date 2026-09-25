@@ -26,14 +26,16 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
 2. Stammdaten der Instanz laden (5 Minuten Cache).
 3. Optional ähnliche, bereits abgelegte Dokumente (`more_like_id`) als Kontext.
 4. **Eine** Jev-Anfrage mit allen Fragen:
-   - `choice` Dokumenttyp, Korrespondent, Speicherpfad – Optionen = Paperless-Stammdaten + „none of these“
+   - `choice` Dokumenttyp, Korrespondent, Speicherpfad – Optionen = Paperless-Stammdaten + „none of these“;
+     pro Option die Beschreibung und (Typ, Speicherpfad) Titel bereits abgelegter Dokumente als Beispiele
    - `choice` Ausstellungsdatum – Optionen = per Regex gefundene Datumsangaben inkl. Kontext
    - je Tag ein `noul` („trifft Tag X zu?“)
 5. Entscheidung nach Modus:
    - **Probelauf**: nur protokollieren.
    - **Nur Vorschläge**: Tag *ai-review* setzen, Review-Queue.
-   - **Automatisch**: sichere Werte setzen. Ist noch etwas offen (leeres Feld ohne sicheren Wert
-     oder Tag im Vorschlagsbereich) → *ai-review*, sonst *ai-klassifiziert* + Posteingang entfernen.
+   - **Automatisch**: sichere Werte setzen. Ist noch ein Feld leer, ohne sicheren Wert → *ai-review*,
+     sonst *ai-klassifiziert* + Posteingang entfernen. Unsichere Tag-Vorschläge allein lösen kein Review
+     aus (umschaltbar) – sie erscheinen aber im Review, wenn das Dokument ohnehin geprüft wird.
 6. In der Review-Queue bestätigte/korrigierte Werte werden geschrieben; Korrekturen werden gezählt
    (Übersicht) und dienen zum Nachjustieren von Beschreibungen und Schwellen.
 
@@ -45,8 +47,13 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
   Beschreibungen daher englisch formulieren; die Schwellen an echten Daten kalibrieren.
 - **Vorhandene Werte bleiben** (Einstellung „überschreiben“ aus), damit Paperless-eigenes Matching
   und manuelle Zuordnungen Vorrang haben. Ausnahme Datum: Paperless setzt immer eines, Jev korrigiert nur bei hoher Confidence.
-- **Korrespondenten-Vorfilter** ab 30 Einträgen (unscharfe Namenssuche im Text + ähnliche Dokumente),
-  weil Choice max. 255 Optionen erlaubt und kurze Listen genauer sind.
+- **Ablage-Konventionen über Beispiele.** Jev liest wörtlich: „Gutschriftsanzeige“ landet ohne Hilfe bei
+  *Gutschrift*, auch wenn du solche Belege unter *Kontoauszug* ablegst. Deshalb bekommt jede Option die
+  Titel von bis zu 5 bereits abgelegten Dokumenten (nicht im Posteingang) als strukturiertes Kriterium
+  (`{"what": …, "titles_of_documents_already_filed_here": […]}`, siehe docs.typesafe.ai/primitives/advanced).
+  Die Beispiele werden eine Stunde gecacht.
+- **Korrespondenten-Vorfilter** erst ab 255 Einträgen (Choice-Limit). Ein früherer Vorfilter ab 30
+  Einträgen hat im ersten Probelauf die richtigen Korrespondenten aussortiert.
 - **Text-Kürzung** auf `max_chars` (Anfang 70 %, Ende 30 %): Absender, Datum und Beträge stehen fast immer dort; Jev erlaubt 32k Tokens für State + längste Frage.
 - **Kein Redis/Celery.** Für Posteingangs-Volumen reicht eine In-Process-Queue; offene Jobs werden nach einem Neustart aus SQLite wieder eingereiht.
 - **Modell pinnen**: `jev-latest` wandert bei Releases mit; wer Schwellen kalibriert hat, trägt eine feste Version ein (z. B. `jev-1.13.0`).

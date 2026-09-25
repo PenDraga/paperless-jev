@@ -124,3 +124,28 @@ def test_instance_host_header():
     inst = Instance(1, "p", "http://paperless:8000", "https://paperless.example.com", "t", True)
     assert inst.host_header == "paperless.example.com"
     assert Instance(1, "p", "https://paperless.example.com", "", "t", True).host_header is None
+
+
+def test_examples_become_structured_criteria():
+    examples = {("document_type", 10): ["Gutschriftsanzeige", "Belastungsanzeige"]}
+    descriptions = {("document_type", 10): {"text": "Bank documents", "active": True}}
+    req = build_request(make_doc(), make_meta(), descriptions, cfg(), examples=examples)
+    q = req.questions["document_type"]
+    assert q["criteria"]["Rechnung #10"] == {
+        "what": "Bank documents",
+        "titles_of_documents_already_filed_here": ["Gutschriftsanzeige", "Belastungsanzeige"],
+    }
+    assert q["criteria"]["Rechnung #12"] is None
+    assert "filing conventions" in q["instructions"]
+    assert "filing conventions" not in req.questions["correspondent"]["instructions"]
+
+
+def test_uncertain_tags_force_review_only_when_enabled():
+    c = cfg()
+    meta = make_meta()
+    doc = make_doc() | {"correspondent": 1, "document_type": 10}
+    req = build_request(doc, meta, {}, c)
+    result = interpret(jev_response(), req, meta, c)
+    assert result["tags"][0]["level"] == "suggest"
+    assert plan(result, doc, c)["needs_review"] is False
+    assert plan(result, doc, cfg(tags_force_review=True))["needs_review"] is True

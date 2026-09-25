@@ -34,6 +34,13 @@ INSTRUCTIONS = {
     ),
 }
 TAG_INSTRUCTION = 'Does the tag "{name}" apply to this document?'
+CONVENTION_HINT = (
+    " Follow the owner's filing conventions: each option lists titles of documents "
+    "that are already filed under it."
+)
+EXAMPLES_KEY = "titles_of_documents_already_filed_here"
+
+Examples = dict[tuple[str, int], list[str]]
 
 KIND_OF_FIELD = {
     "document_type": "document_type",
@@ -82,8 +89,12 @@ def _active(
     }
 
 
-def _criterion(kind: str, oid: int, descriptions: dict) -> str | None:
+def _criterion(kind: str, oid: int, descriptions: dict, examples: Examples) -> Any:
+    """Beschreibung und/oder Beispieltitel als (strukturiertes) Kriterium."""
     text = descriptions.get((kind, oid), {}).get("text", "")
+    titles = examples.get((kind, oid))
+    if titles:
+        return {"what": text, EXAMPLES_KEY: titles} if text else {EXAMPLES_KEY: titles}
     return text or None
 
 
@@ -102,7 +113,9 @@ def build_request(
     descriptions: dict[tuple[str, int], dict[str, Any]],
     cfg: dict[str, Any],
     similar: list[dict[str, Any]] | None = None,
+    examples: Examples | None = None,
 ) -> JevRequest:
+    examples = examples or {}
     text = prepare_text(doc.get("content", ""), int(cfg["max_chars"]))
     state: dict[str, Any] = {
         "document": {"file_name": doc.get("original_file_name") or "", "text": text}
@@ -126,17 +139,20 @@ def build_request(
         items = _active(kind, meta.names(kind), descriptions)
         if name == "correspondent":
             preferred = {s["correspondent"] for s in similar or [] if s.get("correspondent")}
-            items = correspondent_candidates(text, items, preferred)
+            items = correspondent_candidates(text, items, preferred, limit=MAX_CHOICE_OPTIONS)
         if not items:
             continue
         labels = dict(list(_labels(items).items())[:MAX_CHOICE_OPTIONS])
         criteria: dict[str, Any] = {
-            label: _criterion(kind, oid, descriptions) for label, oid in labels.items()
+            label: _criterion(kind, oid, descriptions, examples) for label, oid in labels.items()
         }
         criteria[NONE] = NONE_CRITERION
+        instructions = INSTRUCTIONS[name]
+        if any(isinstance(c, dict) for c in criteria.values()):
+            instructions += CONVENTION_HINT
         req.questions[name] = {
             "type": "choice",
-            "instructions": INSTRUCTIONS[name],
+            "instructions": instructions,
             "criteria": criteria,
         }
         req.options[name] = {**labels, NONE: None}
@@ -162,7 +178,7 @@ def build_request(
                 "type": "noul",
                 "instructions": TAG_INSTRUCTION.format(name=tag_name),
             }
-            if desc := _criterion("tag", tid, descriptions):
+            if desc := _criterion("tag", tid, descriptions, examples):
                 question["criteria"] = {"true": desc, "false": f'The tag "{tag_name}" does not apply.'}
             req.questions[f"tag:{tid}"] = question
 
@@ -242,7 +258,7 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
             needs_review = True
     if cfg["fields"]["tags"]["enabled"]:
         updates["tags_add"] = [t["id"] for t in result["tags"] if t["level"] == "auto"]
-        if any(t["level"] == "suggest" for t in result["tags"]):
+        if cfg.get("tags_force_review") and any(t["level"] == "suggest" for t in result["tags"]):
             needs_review = True
     return {"updates": updates, "needs_review": needs_review}
 

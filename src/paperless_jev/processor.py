@@ -7,16 +7,17 @@ import logging
 import time
 from typing import Any
 
-from .classifier import build_request, interpret, plan, render_title
+from .classifier import build_request, excluded_tags, interpret, plan, render_title
 from .config import Config, Instance
 from .db import Database
 from .jev import JevClient, JevError
-from .paperless import Metadata, PaperlessClient, PaperlessError
+from .paperless import Metadata, PaperlessClient, PaperlessError, collect_examples
 
 log = logging.getLogger("paperless_jev")
 
 ACTIVE = ("queued", "running")
 META_TTL = 300
+EXAMPLES_TTL = 3600
 MAX_ERRORS = 3
 WORKERS = 2
 
@@ -27,6 +28,7 @@ class Processor:
         self.config = config
         self.queue: asyncio.Queue[int] = asyncio.Queue()
         self._meta: dict[int, tuple[float, Metadata]] = {}
+        self._examples: dict[int, tuple[float, dict]] = {}
         self._tasks: list[asyncio.Task] = []
 
     # --- Lebenszyklus -----------------------------------------------------
@@ -54,11 +56,31 @@ class Processor:
         self._meta[inst.id] = (time.monotonic(), meta)
         return meta
 
+    async def examples(
+        self, inst: Instance, pl: PaperlessClient, meta: Metadata, cfg: dict[str, Any]
+    ) -> dict[tuple[str, int], list[str]]:
+        limit = int(cfg["examples"])
+        if limit <= 0:
+            return {}
+        cached = self._examples.get(inst.id)
+        if cached and time.monotonic() - cached[0] < EXAMPLES_TTL:
+            return cached[1]
+        kinds = ["document_type"]
+        if cfg["fields"]["storage_path"]["enabled"]:
+            kinds.append("storage_path")
+        if cfg["fields"]["tags"]["enabled"]:
+            kinds.append("tag")
+        examples = await collect_examples(pl, meta, kinds, limit, excluded_tags(meta, cfg))
+        self._examples[inst.id] = (time.monotonic(), examples)
+        return examples
+
     def forget_metadata(self, instance_id: int | None = None) -> None:
         if instance_id is None:
             self._meta.clear()
+            self._examples.clear()
         else:
             self._meta.pop(instance_id, None)
+            self._examples.pop(instance_id, None)
 
     # --- Einreihen ------------------------------------------------------
 
@@ -152,7 +174,8 @@ class Processor:
                     except PaperlessError as e:
                         log.info("Ähnliche Dokumente nicht verfügbar: %s", e)
 
-                req = build_request(doc, meta, self.config.descriptions(inst.id), cfg, similar)
+                examples = await self.examples(inst, pl, meta, cfg)
+                req = build_request(doc, meta, self.config.descriptions(inst.id), cfg, similar, examples)
                 if not req.questions:
                     self.db.update_job(job_id, status="skipped", error="Keine Fragen - alle Felder deaktiviert?")
                     return

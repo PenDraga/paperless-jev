@@ -33,6 +33,11 @@ DEFAULTS: dict[str, Any] = {
     "poll_minutes": 5,
     "max_chars": 12000,
     "similar_docs": 3,
+    # Titel bereits abgelegter Dokumente je Dokumenttyp/Tag/Speicherpfad als
+    # Beispiele in den Kriterien - so lernt Jev deine Ablage-Konventionen.
+    "examples": 5,
+    # Unsichere Tag-Vorschläge allein schicken ein Dokument nicht ins Review.
+    "tags_force_review": False,
     "overwrite": False,
     "remove_inbox": True,
     "tag_done": "ai-klassifiziert",
@@ -45,7 +50,7 @@ DEFAULTS: dict[str, Any] = {
         "correspondent": {"enabled": True, "auto": 0.85, "review": 0.4},
         "storage_path": {"enabled": False, "auto": 0.85, "review": 0.4},
         "created": {"enabled": True, "auto": 0.9, "review": 0.5},
-        "tags": {"enabled": True, "auto": 0.9, "review": 0.6},
+        "tags": {"enabled": True, "auto": 0.9, "review": 0.7},
     },
     "webhook_secret": "",
 }

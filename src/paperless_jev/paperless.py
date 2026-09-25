@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -121,6 +122,23 @@ class PaperlessClient:
                 meta.inbox_tags.add(t["id"])
         return meta
 
+    async def example_titles(self, kind: str, object_id: int, limit: int) -> list[str]:
+        """Titel bereits abgelegter Dokumente (nicht im Posteingang), ohne Duplikate."""
+        param = "tags__id__all" if kind == "tag" else f"{kind}__id"
+        data = await self._get(
+            "/api/documents/",
+            {param: object_id, "is_in_inbox": "false", "ordering": "-created",
+             "fields": "title", "page_size": limit * 4},
+        )
+        titles: list[str] = []
+        for d in data["results"]:
+            title = " ".join((d.get("title") or "").split())
+            if title and title not in titles:
+                titles.append(title)
+            if len(titles) >= limit:
+                break
+        return titles
+
     async def create_tag(self, name: str) -> int:
         # matching_algorithm 0 = keine automatische Zuordnung durch Paperless
         resp = await self._request(
@@ -134,3 +152,26 @@ class PaperlessClient:
     async def thumbnail(self, doc_id: int) -> tuple[bytes, str]:
         resp = await self._request("GET", f"/api/documents/{doc_id}/thumb/")
         return resp.content, resp.headers.get("content-type", "image/webp")
+
+
+async def collect_examples(
+    pl: PaperlessClient, meta: Metadata, kinds: list[str], limit: int, skip_tags: set[int] | None = None
+) -> dict[tuple[str, int], list[str]]:
+    """Beispieltitel für alle Einträge der gewünschten Arten, parallel geladen."""
+    sem = asyncio.Semaphore(6)
+    targets = [
+        (kind, oid)
+        for kind in kinds
+        for oid in meta.names(kind)
+        if not (kind == "tag" and oid in (skip_tags or set()))
+    ]
+
+    async def fetch(kind: str, oid: int) -> list[str]:
+        async with sem:
+            try:
+                return await pl.example_titles(kind, oid, limit)
+            except PaperlessError:
+                return []
+
+    results = await asyncio.gather(*(fetch(k, o) for k, o in targets))
+    return {t: r for t, r in zip(targets, results, strict=True) if r}

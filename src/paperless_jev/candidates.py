@@ -106,13 +106,14 @@ def correspondent_candidates(
     text: str,
     correspondents: dict[int, str],
     preferred: set[int] | None = None,
-    limit: int = 30,
+    limit: int = 254,
     threshold: int = 75,
 ) -> dict[int, str]:
-    """Vorauswahl bei vielen Korrespondenten.
+    """Vorauswahl bei sehr vielen Korrespondenten.
 
-    Bis ``limit`` Korrespondenten gehen alle an Jev. Darüber zählen nur die,
-    deren Name unscharf im Text vorkommt, plus die aus ähnlichen Dokumenten.
+    Bis ``limit`` (Choice-Limit der API) gehen alle an Jev - ein zu enger
+    Vorfilter wirft sonst den richtigen Korrespondenten hinaus. Darüber zählen
+    nur die, deren Name unscharf im Text vorkommt, plus die aus ähnlichen Dokumenten.
     """
     if len(correspondents) <= limit:
         return dict(correspondents)

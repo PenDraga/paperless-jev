@@ -31,6 +31,7 @@
   </table>
   </div>
   <label><input type="checkbox" name="overwrite" {% if cfg.overwrite %}checked{% endif %}> bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)</label>
+  <label><input type="checkbox" name="tags_force_review" {% if cfg.tags_force_review %}checked{% endif %}> unsichere Tag-Vorschläge allein schicken ein Dokument ins Review</label>
   <label><input type="checkbox" name="remove_inbox" {% if cfg.remove_inbox %}checked{% endif %}> Posteingangs-Tag entfernen, wenn ein Dokument fertig klassifiziert ist</label>
 </article>
 
@@ -56,6 +57,7 @@
     <label>Polling-Intervall (Minuten, 0 = aus) <input type="number" min="0" name="poll_minutes" value="{{ cfg.poll_minutes }}"></label>
     <label>Max. Zeichen Dokumenttext <input type="number" min="1000" step="500" name="max_chars" value="{{ cfg.max_chars }}"><small>Lange Dokumente: Anfang (70 %) + Ende (30 %).</small></label>
     <label>Ähnliche Dokumente als Kontext <input type="number" min="0" max="10" name="similar_docs" value="{{ cfg.similar_docs }}"><small>0 = aus</small></label>
+    <label>Beispieltitel je Typ/Tag <input type="number" min="0" max="20" name="examples" value="{{ cfg.examples }}"><small>Titel bereits abgelegter Dokumente – so lernt Jev deine Ablage-Konventionen. 0 = aus</small></label>
   </div>
 </article>
 <button type="submit">Speichern</button>

@@ -37,6 +37,9 @@ class FakePaperless:
     async def similar_documents(self, doc_id, limit):
         return []
 
+    async def example_titles(self, kind, object_id, limit):
+        return ["Beispiel"] if (kind, object_id) == ("document_type", 10) else []
+
     async def inbox_document_ids(self):
         return list(self.docs)
 

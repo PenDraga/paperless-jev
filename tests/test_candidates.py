@@ -29,7 +29,7 @@ def test_correspondent_prefilter_only_for_many():
     few = {1: "Swisscom", 2: "Stadtwerke"}
     assert correspondent_candidates("irgendwas", few) == few
 
-    many = {i: f"Firma {i:03d} AG" for i in range(100)}
+    many = {i: f"Firma {i:03d} AG" for i in range(300)}
     many[500] = "Swisscom"
     picked = correspondent_candidates("Ihre Rechnung von Swisscom (Schweiz) AG", many, preferred={7})
     assert 500 in picked

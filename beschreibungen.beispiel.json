@@ -1,0 +1,12 @@
+{
+  "document_type": {
+    "Kontoauszug": "Bank documents about account movements: account statements, credit advices (Gutschriftsanzeige) and debit advices (Belastungsanzeige).",
+    "Gutschrift": "A credit note from a merchant or supplier that refunds or reduces an earlier invoice. Not a bank credit advice (Gutschriftsanzeige) - that is a Kontoauszug.",
+    "Rechnung": "An invoice or bill requesting payment for goods or services.",
+    "Vertrag": "A contract or agreement signed by the parties, including purchase and subscription contracts.",
+    "Schreiben": "A general letter or notice that is not an invoice, contract or bank document."
+  },
+  "tag": {
+    "Steuerrelevant": "The document is needed for the annual tax return (e.g. salary statements, donation receipts, bank interest, insurance premiums, property)."
+  }
+}

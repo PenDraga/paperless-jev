@@ -358,6 +358,8 @@ async def save_rules(request: Request):
             "poll_minutes": int(num("poll_minutes", 5)),
             "max_chars": max(int(num("max_chars", 12000)), 1000),
             "similar_docs": max(int(num("similar_docs", 3)), 0),
+            "examples": max(int(num("examples", 5)), 0),
+            "tags_force_review": "tags_force_review" in form,
             "overwrite": "overwrite" in form,
             "remove_inbox": "remove_inbox" in form,
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),

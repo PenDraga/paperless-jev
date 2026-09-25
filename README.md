@@ -41,7 +41,10 @@ docker run --rm -it --network paperless_paperless-internal \
   paperless-jev:latest paperless-jev-spike --limit 20
 ```
 
-Mit `--doc 123 --doc 456` lassen sich gezielt bereits abgelegte Dokumente prüfen (Vergleich mit dem Ist-Zustand).
+Mit `--doc 123 --doc 456` lassen sich gezielt bereits abgelegte Dokumente prüfen; am Ende steht die
+Übereinstimmung mit dem Ist-Zustand pro Feld. Beschreibungen lassen sich vorab testen – Vorlage:
+[`beschreibungen.beispiel.json`](beschreibungen.beispiel.json), eingebunden per
+`-v $PWD/beschreibungen.beispiel.json:/b.json ... --descriptions /b.json`.
 
 ## Entwicklung
 
