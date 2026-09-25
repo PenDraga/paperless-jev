@@ -7,6 +7,7 @@
     "Schreiben": "A general letter or notice that is not an invoice, contract or bank document."
   },
   "tag": {
-    "Steuerrelevant": "The document is needed for the annual tax return (e.g. salary statements, donation receipts, bank interest, insurance premiums, property)."
+    "Steuerrelevant": "The document is needed for the annual tax return: salary statements, tax certificates, tax assessments, donation receipts, pillar 3a contributions, invoices for property maintenance. Regular monthly account statements are not.",
+    "Persönlich": false
   }
 }

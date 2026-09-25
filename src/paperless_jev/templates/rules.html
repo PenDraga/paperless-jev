@@ -31,6 +31,7 @@
   </table>
   </div>
   <label><input type="checkbox" name="overwrite" {% if cfg.overwrite %}checked{% endif %}> bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)</label>
+  <label>Sammel-Korrespondent, wenn keiner passt <input name="correspondent_fallback" value="{{ cfg.correspondent_fallback }}" placeholder="z. B. Diverses – leer = Feld bleibt leer"></label>
   <label><input type="checkbox" name="tags_force_review" {% if cfg.tags_force_review %}checked{% endif %}> unsichere Tag-Vorschläge allein schicken ein Dokument ins Review</label>
   <label><input type="checkbox" name="remove_inbox" {% if cfg.remove_inbox %}checked{% endif %}> Posteingangs-Tag entfernen, wenn ein Dokument fertig klassifiziert ist</label>
 </article>

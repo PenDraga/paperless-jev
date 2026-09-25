@@ -30,7 +30,9 @@ INSTRUCTIONS = {
     "created": (
         "Which of these dates is the issue date of the document, i.e. the date the "
         "letter, invoice or statement was written? Not a due date, delivery date, "
-        "service period, date of birth or a date mentioned in passing."
+        "service period, date of birth or a date mentioned in passing. If the document "
+        "covers a period (e.g. an account statement or an annual certificate), choose "
+        "the last day of that period."
     ),
 }
 TAG_INSTRUCTION = 'Does the tag "{name}" apply to this document?'
@@ -210,6 +212,14 @@ def interpret(
         label = answer.get("choice")
         value = req.options[name].get(label)
         confidence = float(answer.get("confidence", 0.0))
+        fallback = None
+        if value is None and name == "correspondent" and cfg.get("correspondent_fallback"):
+            # "keiner davon" heisst hier: Sammel-Korrespondent (z. B. "Diverses")
+            fallback = {v.lower(): k for k, v in meta.correspondents.items()}.get(
+                cfg["correspondent_fallback"].strip().lower()
+            )
+        if fallback is not None:
+            value, label = fallback, meta.correspondents[fallback]
         probs = sorted(
             answer.get("probabilities", {}).items(), key=lambda kv: kv[1], reverse=True
         )

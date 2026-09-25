@@ -149,3 +149,13 @@ def test_uncertain_tags_force_review_only_when_enabled():
     assert result["tags"][0]["level"] == "suggest"
     assert plan(result, doc, c)["needs_review"] is False
     assert plan(result, doc, cfg(tags_force_review=True))["needs_review"] is True
+
+
+def test_correspondent_fallback_when_none_fits():
+    c = cfg(correspondent_fallback="stadtwerke")
+    meta = make_meta()
+    req = build_request(make_doc(), meta, {}, c)
+    resp = jev_response()
+    resp["answers"]["correspondent"] = {"type": "choice", "choice": NONE, "confidence": 0.96, "probabilities": {}}
+    f = interpret(resp, req, meta, c)["fields"]["correspondent"]
+    assert (f["value"], f["label"], f["level"]) == (2, "Stadtwerke", "auto")

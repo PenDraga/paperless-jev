@@ -38,6 +38,9 @@ DEFAULTS: dict[str, Any] = {
     "examples": 5,
     # Unsichere Tag-Vorschläge allein schicken ein Dokument nicht ins Review.
     "tags_force_review": False,
+    # Korrespondent, der gesetzt wird, wenn keiner der bestehenden passt
+    # (Sammel-Korrespondent wie "Diverses"); leer = Feld bleibt leer.
+    "correspondent_fallback": "",
     "overwrite": False,
     "remove_inbox": True,
     "tag_done": "ai-klassifiziert",
