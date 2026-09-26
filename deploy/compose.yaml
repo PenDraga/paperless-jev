@@ -1,12 +1,15 @@
-# Betrieb neben den Paperless-Instanzen: im Netz paperless_paperless-internal
-# (Zugriff auf http://paperless:8000 usw., Webhooks von dort) und
-# hinter Traefik; die Web-UI ist nur aus dem internen Netz erreichbar
-# (admin-only@file = IP-Allowlist LAN/DMZ/VPN), ohne Login.
-# Eigene Domain in deploy/.env: PJ_DOMAIN=paperless-jev.meine-domain.ch
+# Beispiel: paperless-jev neben Paperless-ngx hinter Traefik.
+# Anpassen: Domain, Middlewares, Cert-Resolver und die Netznamen deiner Umgebung.
+#
+# - Netz "paperless": damit paperless-jev Paperless intern erreicht (http://<paperless-container>:8000)
+#   und Paperless den Webhook an http://paperless-jev:8000/hook/... senden kann.
+# - Middleware: KEINE mit frameDeny/X-Frame-Options DENY, sonst blockiert der Browser den
+#   Dokument-Viewer. paperless-jev setzt selbst X-Frame-Options: SAMEORIGIN.
+# - Die Web-UI hat kein eigenes Login: per IP-Allowlist, Authentik o. ä. schützen
+#   oder PJ_ADMIN_PASSWORD setzen.
 services:
   paperless-jev:
-    image: paperless-jev:latest
-    build: ..
+    image: ghcr.io/pendraga/paperless-jev:latest
     container_name: paperless-jev
     restart: unless-stopped
     environment:
@@ -20,12 +23,10 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik
       - traefik.http.routers.paperless-jev.entrypoints=https
-      - traefik.http.routers.paperless-jev.rule=Host(`${PJ_DOMAIN:-paperless-jev.example.com}`)
-      # hsts-headers-ha statt hsts-headers: ohne frameDeny, sonst blockiert der Browser den Dokument-Viewer.
-      # Einbetten durch fremde Seiten verhindert die App selbst (X-Frame-Options: SAMEORIGIN).
-      - traefik.http.routers.paperless-jev.middlewares=admin-only@file,hsts-headers-ha@file
+      - traefik.http.routers.paperless-jev.rule=Host(`paperless-jev.example.com`)
+      - traefik.http.routers.paperless-jev.middlewares=lan-only@file
       - traefik.http.routers.paperless-jev.tls=true
-      - traefik.http.routers.paperless-jev.tls.certresolver=cloudflare
+      - traefik.http.routers.paperless-jev.tls.certresolver=letsencrypt
       - traefik.http.services.paperless-jev.loadbalancer.server.port=8000
 
 volumes:
@@ -33,7 +34,7 @@ volumes:
 
 networks:
   paperless:
-    name: paperless_paperless-internal
+    name: paperless_default  # Netz deines Paperless-Stacks
     external: true
   traefik:
     external: true
