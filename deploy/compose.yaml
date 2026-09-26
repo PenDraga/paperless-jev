@@ -2,6 +2,7 @@
 # (Zugriff auf http://paperless:8000 usw., Webhooks von dort) und
 # hinter Traefik; die Web-UI ist nur aus dem internen Netz erreichbar
 # (admin-only@file = IP-Allowlist LAN/DMZ/VPN), ohne Login.
+# Eigene Domain in deploy/.env: PJ_DOMAIN=paperless-jev.meine-domain.ch
 services:
   paperless-jev:
     image: paperless-jev:latest
@@ -19,7 +20,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik
       - traefik.http.routers.paperless-jev.entrypoints=https
-      - traefik.http.routers.paperless-jev.rule=Host(`paperless-jev.example.com`)
+      - traefik.http.routers.paperless-jev.rule=Host(`${PJ_DOMAIN:-paperless-jev.example.com}`)
       # hsts-headers-ha statt hsts-headers: ohne frameDeny, sonst blockiert der Browser den Dokument-Viewer.
       # Einbetten durch fremde Seiten verhindert die App selbst (X-Frame-Options: SAMEORIGIN).
       - traefik.http.routers.paperless-jev.middlewares=admin-only@file,hsts-headers-ha@file
