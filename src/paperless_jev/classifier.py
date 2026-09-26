@@ -63,6 +63,8 @@ class JevRequest:
     questions: dict[str, dict[str, Any]] = field(default_factory=dict)
     # Frage-Key -> Optionslabel -> Wert (Paperless-ID bzw. ISO-Datum)
     options: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # Tags, die das Dokument schon hat und die Jev nur gegenprüft
+    checked_tags: set[int] = field(default_factory=set)
 
 
 def prepare_text(content: str, max_chars: int) -> str:
@@ -208,8 +210,14 @@ def build_request(
             req.options["created"][NONE] = None
 
     if fields["tags"]["enabled"]:
-        skip = excluded_tags(meta, cfg) | set(doc.get("tags", []))
-        tags = {tid: n for tid, n in _active("tag", meta.tags, descriptions).items() if tid not in skip}
+        hidden = excluded_tags(meta, cfg)
+        present = set(doc.get("tags", []))
+        active = {tid: n for tid, n in _active("tag", meta.tags, descriptions).items() if tid not in hidden}
+        # Vorhandene Tags zuerst (Gegenprüfung), danach mögliche neue
+        if cfg.get("verify_tags", True):
+            req.checked_tags = {tid for tid in active if tid in present}
+        tags = {tid: n for tid, n in active.items() if tid in req.checked_tags}
+        tags |= {tid: n for tid, n in active.items() if tid not in present}
         for tid, tag_name in list(tags.items())[:MAX_TAG_QUESTIONS]:
             question: dict[str, Any] = {
                 "type": "noul",
@@ -239,6 +247,7 @@ def interpret(
         "usage": response.get("usage", {}),
         "fields": {},
         "tags": [],
+        "tag_checks": [],
     }
     for name in SINGLE_FIELDS:
         answer = answers.get(name)
@@ -271,11 +280,21 @@ def interpret(
             continue
         tid = int(key[4:])
         p = float(answer.get("noul", 0.0))
-        result["tags"].append(
-            {"id": tid, "label": meta.tags.get(tid, str(tid)), "p": round(p, 4), "level": _level(p, tag_spec)}
-        )
+        label = meta.tags.get(tid, str(tid))
+        if tid in req.checked_tags:
+            result["tag_checks"].append({"id": tid, "label": label, "p": round(p, 4), "verdict": tag_verdict(p, tag_spec)})
+            continue
+        result["tags"].append({"id": tid, "label": label, "p": round(p, 4), "level": _level(p, tag_spec)})
     result["tags"].sort(key=lambda t: t["p"], reverse=True)
+    result["tag_checks"].sort(key=lambda t: t["p"])
     return result
+
+
+def tag_verdict(p: float, spec: dict[str, Any]) -> str:
+    """Gegenprüfung eines vorhandenen Tags: so sicher "nein" wie sonst "ja" -> Widerspruch."""
+    if p <= 1 - float(spec["auto"]):
+        return "conflict"
+    return "ok" if p >= 0.5 else "unsure"
 
 
 def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
@@ -314,6 +333,9 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
     if cfg["fields"]["tags"]["enabled"]:
         updates["tags_add"] = [t["id"] for t in result["tags"] if t["level"] == "auto"]
         if cfg.get("tags_force_review") and any(t["level"] == "suggest" for t in result["tags"]):
+            needs_review = True
+        # Ein vorhandener Tag passt laut Jev sicher nicht: ein Mensch entscheidet, entfernt wird nichts
+        if cfg.get("review_conflicts", True) and any(t["verdict"] == "conflict" for t in result.get("tag_checks", [])):
             needs_review = True
     return {"updates": updates, "needs_review": needs_review}
 

@@ -39,13 +39,14 @@ def test_build_request_questions():
     descriptions = {("document_type", 11): {"text": "", "active": False}}
     req = build_request(make_doc(), make_meta(), descriptions, cfg())
 
-    assert set(req.questions) == {"document_type", "correspondent", "created", "tag:101"}
+    # tag:103 ist schon gesetzt und wird gegengeprüft
+    assert set(req.questions) == {"document_type", "correspondent", "created", "tag:101", "tag:103"}
     dt = req.questions["document_type"]
     # doppelte Namen werden eindeutig, deaktivierte fehlen, NONE ist immer dabei
     assert set(dt["criteria"]) == {"Rechnung #10", "Rechnung #12", NONE}
     assert req.options["created"]["12.03.2026"] == "2026-03-12"
-    # Posteingang, Status-Tags und bereits gesetzte Tags werden nicht gefragt
-    assert "tag:100" not in req.questions and "tag:102" not in req.questions and "tag:103" not in req.questions
+    # Posteingang und Status-Tags werden nicht gefragt; gesetzte Tags nur zur Gegenprüfung
+    assert "tag:100" not in req.questions and "tag:102" not in req.questions and req.checked_tags == {103}
 
 
 def jev_response() -> dict:
@@ -192,9 +193,37 @@ def test_paperless_rules_become_hints():
     assert q["criteria"]["Stadtwerke"] is None
     assert "matching rule" in q["instructions"] and "filing conventions" not in q["instructions"]
     assert "matching rule" not in req.questions["document_type"]["instructions"]
-    # Tag 103 ist schon gesetzt und wird nicht gefragt; ohne Regel kein Kriterium
-    assert "tag:103" not in req.questions and "criteria" not in req.questions["tag:101"]
+    # Tag 103 ist schon gesetzt und wird mit Regel gegengeprüft; ohne Regel kein Kriterium
+    assert "Octavia" in str(req.questions["tag:103"]["criteria"]) and "criteria" not in req.questions["tag:101"]
 
     # Standard: aus (Vergleich an 60 Dokumenten ohne messbaren Vorteil, +40 % Tokens)
     req = build_request(make_doc(), meta, {}, cfg())
     assert req.questions["correspondent"]["criteria"]["Swisscom"] is None
+
+
+def test_existing_tags_are_verified():
+    from paperless_jev.classifier import plan
+
+    doc = make_doc()  # hat Tag 103 (Auto) und den Posteingang
+    req = build_request(doc, make_meta(), {}, cfg())
+    assert req.checked_tags == {103}
+    assert list(req.questions).index("tag:103") < list(req.questions).index("tag:101")  # zuerst geprüft
+    assert "tag:100" not in req.questions and "tag:102" not in req.questions
+
+    response = {"answers": {"tag:103": {"noul": 0.03}, "tag:101": {"noul": 0.95}}}
+    result = interpret(response, req, make_meta(), cfg())
+    assert result["tags"] == [{"id": 101, "label": "Steuern", "p": 0.95, "level": "auto"}]
+    assert result["tag_checks"] == [{"id": 103, "label": "Auto", "p": 0.03, "verdict": "conflict"}]
+    p = plan(result, doc, cfg())
+    assert p["needs_review"] and p["updates"]["tags_add"] == [101]
+
+    # nur der Widerspruch löst das Review aus (Dokument sonst vollständig)
+    complete = doc | {"document_type": 10, "correspondent": 1}
+    assert plan(result, complete, cfg())["needs_review"]
+    assert not plan(result, complete, cfg(review_conflicts=False))["needs_review"]
+    result["tag_checks"][0].update(p=0.8, verdict="ok")
+    assert not plan(result, complete, cfg())["needs_review"]
+
+    # abschaltbar: vorhandene Tags werden dann nicht gefragt
+    req = build_request(doc, make_meta(), {}, cfg(verify_tags=False))
+    assert req.checked_tags == set() and "tag:103" not in req.questions

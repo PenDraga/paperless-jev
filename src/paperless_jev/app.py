@@ -259,8 +259,10 @@ def _view(row: dict[str, Any], meta: Metadata | None, hidden: set[int] | None = 
     row["tags_view"] = [t for t in result.get("tags", []) if t["level"] != "low"]
     # Tags, die das Dokument beim Lauf schon hatte (ohne Posteingang und eigene Status-Tags)
     hidden = hidden if hidden is not None else (set(meta.inbox_tags) if meta else set())
+    checks = {c["id"]: c for c in result.get("tag_checks", [])}
     row["current_tags"] = [
-        meta.tags.get(t, f"#{t}") if meta else f"#{t}" for t in current.get("tags", []) if t not in hidden
+        {"label": meta.tags.get(t, f"#{t}") if meta else f"#{t}", "check": checks.get(t)}
+        for t in current.get("tags", []) if t not in hidden
     ]
 
 
@@ -518,6 +520,9 @@ async def apply_job(request: Request, job_id: int):
         else:
             choice[name] = int(raw) if raw else None
     choice["tags_add"] = [int(t) for t in form.getlist("tags")]
+    # Vorhandene Tags, deren Häkchen entfernt wurde, werden aus Paperless gelöscht
+    kept = {int(t) for t in form.getlist("keep_tags")}
+    choice["tags_remove"] = [int(t) for t in form.getlist("shown_tags") if int(t) not in kept]
     if title := str(form.get("title") or "").strip():
         choice["title"] = title[:128]
     try:
@@ -687,6 +692,7 @@ async def save_rules(request: Request):
             "overwrite": "overwrite" in form,
             "review_conflicts": "review_conflicts" in form,
             "paperless_rules": "paperless_rules" in form,
+            "verify_tags": "verify_tags" in form,
             "remove_inbox": "remove_inbox" in form,
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),

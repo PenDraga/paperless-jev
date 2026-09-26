@@ -164,6 +164,10 @@ a.stat:hover { border-color: var(--pj-accent-text); }
 a.conf { color: inherit; text-decoration: none; }
 .conf.existing { background: transparent; box-shadow: inset 0 0 0 1px var(--pj-line); color: var(--pj-muted); }
 .conf.existing .tick { margin-left: 0; }
+.conf.existing.conflict { color: var(--pj-bad); box-shadow: inset 0 0 0 1px var(--pj-bad-bar); }
+.conf.existing.conflict b { text-decoration: line-through; }
+.conf.existing.conflict .cross { font-weight: 700; }
+.conf.existing.unsure { color: var(--pj-warn); box-shadow: inset 0 0 0 1px var(--pj-warn-bar); }
 a.conf:hover { box-shadow: inset 0 0 0 1px var(--pj-accent-text); }
 .conf > b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .conf .m { width: 2rem; height: .3rem; border-radius: .2rem; background: var(--pj-track); overflow: hidden; flex: none; }

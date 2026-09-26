@@ -45,8 +45,22 @@
     <span id="title-suggest-{{ job.id }}" class="title-suggest-result"><small class="muted">{{ _("zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts") }}</small></span>
   </div>
   {% endif %}
+  {% set checks = {} %}{% for c in res.get("tag_checks", []) %}{% if checks.update({c.id: c}) %}{% endif %}{% endfor %}
+  {% set existing = current.get("tags", [])|select("in", tag_options)|list %}
+  {% if existing %}
   <fieldset>
-    <legend><strong>{{ _("Tags") }}</strong> <small class="muted">{{ _("(zusätzlich zu den vorhandenen)") }}</small></legend>
+    <legend><strong>{{ _("Vorhandene Tags") }}</strong> <small class="muted">{{ _("(Häkchen entfernen = beim Übernehmen aus Paperless löschen)") }}</small></legend>
+    <div class="tags">
+    {% for tid in existing %}{% set c = checks.get(tid) %}
+      <input type="hidden" name="shown_tags" value="{{ tid }}">
+      <label{% if c and c.verdict == "conflict" %} class="bad"{% endif %}><input type="checkbox" name="keep_tags" value="{{ tid }}" checked> {{ tag_options[tid] }}
+        {% if c %}<span class="badge {{ 'error' if c.verdict == 'conflict' else ('suggest' if c.verdict == 'unsure' else 'auto') }}" title="p = {{ '%.0f'|format(c.p * 100) }} %">{{ _({"conflict": "laut Jev falsch", "unsure": "unsicher", "ok": "bestätigt"}[c.verdict]) }}</span>{% endif %}</label>
+    {% endfor %}
+    </div>
+  </fieldset>
+  {% endif %}
+  <fieldset>
+    <legend><strong>{{ _("Neue Tags") if existing else _("Tags") }}</strong> <small class="muted">{{ _("(zusätzlich zu den vorhandenen)") }}</small></legend>
     <div class="tags">
     {% set scored = res.get("tags", []) %}
     {% for t in scored if t.level != "low" %}

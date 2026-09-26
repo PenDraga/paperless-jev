@@ -368,3 +368,12 @@ def test_existing_tags_shown_as_chips(client):
     # Steuern (101) ist schon gesetzt; Posteingang (100) und der Status-Tag ai-review (102) bleiben verborgen
     assert 'class="conf existing"' in page and "<b>Steuern</b>" in page
     assert "<b>Posteingang</b>" not in page and "<b>ai-review</b>" not in page
+
+
+def test_review_can_remove_existing_tag(client):
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT id FROM jobs")
+    client.post(f"/jobs/{job['id']}/apply", data={"action": "apply", "shown_tags": ["103"], "tags": ["101"]})
+    _, data = FakePaperless.patches[-1]
+    assert 103 not in data["tags"] and 101 in data["tags"]
