@@ -94,6 +94,13 @@ if (/[?&](msg|err)=/.test(location.search)) {
   u.searchParams.delete("msg"); u.searchParams.delete("err");
   history.replaceState(null, "", u.pathname + u.search + u.hash);
 }
+// Textfelder wachsen mit dem Inhalt (Safari kennt field-sizing noch nicht)
+function autosize(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
+if (!CSS.supports("field-sizing", "content")) {
+  document.querySelectorAll("textarea[data-autosize]").forEach(autosize);
+  document.addEventListener("input", (e) => { if (e.target.matches("textarea[data-autosize]")) autosize(e.target); });
+  window.addEventListener("resize", () => document.querySelectorAll("textarea[data-autosize]").forEach(autosize));
+}
 // Ladebalken bei normalen Formularen
 document.addEventListener("submit", (e) => {
   if (!e.defaultPrevented && e.target.target !== "_blank") document.getElementById("pj-loader").classList.add("on");

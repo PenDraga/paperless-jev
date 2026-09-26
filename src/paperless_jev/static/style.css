@@ -200,6 +200,7 @@ td.empty-cell:hover { background: transparent !important; }
 .tags { display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
 .tags label { white-space: nowrap; }
 td textarea { min-height: 2.4rem; margin: 0; }
+textarea[data-autosize] { field-sizing: content; min-height: 3.2rem; max-height: 60vh; resize: vertical; overflow-y: auto; }
 pre.json { max-height: 30rem; overflow: auto; font-size: .8rem; }
 .thresholds td input { margin: 0; max-width: 6rem; }
 .rule { display: block; font-weight: 400; margin-top: .2rem; }
@@ -309,7 +310,10 @@ button.soft:hover { background: var(--pj-accent); color: #fff; }
   table.desc td.card-title { grid-row: 1; grid-column: 1; padding-bottom: 0; }
   table.desc td.desc-active { grid-row: 1; grid-column: 2; }
   table.desc td.desc-text { grid-column: 1 / -1; }
-  table.desc textarea { min-height: 3.2rem; }
+  table.desc textarea { min-height: 5rem; font-size: 1rem; line-height: 1.4; }
+  .sticky-actions { padding: .4rem 0; }
+  .sticky-actions button { padding: .55rem; }
+  .sticky-actions .translate-toggle { font-size: .78rem; margin-bottom: .3rem; }
 
   /* Review: Vorschaubild kompakt, Felder volle Breite */
   .review-item { grid-template-columns: 1fr; gap: .8rem; }
