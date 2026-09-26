@@ -43,6 +43,12 @@ MODE_LABELS = {
     "auto": "Automatisch + Review",
 }
 
+# Offen = braucht noch Aufmerksamkeit oder ist nur probeweise gelaufen; erledigt = abgeschlossen
+STATUS_GROUPS = {
+    "open": ["queued", "running", "review", "dry_run", "error"],
+    "closed": ["done", "dismissed", "skipped"],
+}
+
 STATUS_LABELS = {
     "queued": "wartet",
     "running": "läuft",
@@ -147,7 +153,35 @@ def _redirect(url: str, msg: str | None = None, err: str | None = None) -> Redir
     from urllib.parse import urlencode
 
     params = {k: v for k, v in (("msg", msg), ("err", err)) if v}
-    return RedirectResponse(f"{url}?{urlencode(params)}" if params else url, status_code=303)
+    sep = "&" if "?" in url else "?"
+    return RedirectResponse(f"{url}{sep}{urlencode(params)}" if params else url, status_code=303)
+
+
+def _local_path(url: str | None, default: str) -> str:
+    """Nur Pfade dieser App als Rücksprungziel (kein offener Redirect), ohne msg/err."""
+    from urllib.parse import parse_qsl, urlencode, urlsplit
+
+    if not url:
+        return default
+    parts = urlsplit(url)
+    if parts.scheme or parts.netloc or not parts.path.startswith("/") or parts.path.startswith("//") or "\\" in url:
+        return default
+    query = urlencode([(k, v) for k, v in parse_qsl(parts.query) if k not in ("msg", "err")])
+    return parts.path + (f"?{query}" if query else "")
+
+
+# Listen, zu denen man nach dem Übernehmen auf der Job-Seite zurückkehrt
+BACK_PAGES = ("/", "/log", "/review")
+
+
+def _back_from_referer(request: Request) -> str:
+    from urllib.parse import urlsplit
+
+    ref = urlsplit(request.headers.get("referer") or "")
+    if ref.netloc and ref.netloc != request.url.netloc:
+        return "/log"
+    path = _local_path(ref.path + (f"?{ref.query}" if ref.query else ""), "/log")
+    return path if path.split("?")[0] in BACK_PAGES else "/log"
 
 
 # --- Dashboard und Log ---------------------------------------------------
@@ -179,7 +213,7 @@ async def dashboard(request: Request):
         reviewed=reviewed,
         corrections=corrections,
         queue_size=_proc(request).queue.qsize(),
-        recent=await _jobs(request, limit=10),
+        recent=await _jobs(request, "open", limit=10),
         evaluation=await _evaluation(request),
     )
 
@@ -218,6 +252,8 @@ def _view(row: dict[str, Any], meta: Metadata | None) -> None:
             "level": f["level"],
             "current": cur_label,
             "match": f["value"] is not None and f["value"] == cur,
+            # Wert fürs Filtern im Protokoll (Label wie in der Auswertung gespeichert)
+            "filter": f["label"] if f["value"] is not None and name != "created" else None,
         }
     row["view"] = view
     row["tags_view"] = [t for t in result.get("tags", []) if t["level"] != "low"]
@@ -227,18 +263,35 @@ def _view(row: dict[str, Any], meta: Metadata | None) -> None:
 
 
 async def _jobs(
-    request: Request, status: str | None = None, limit: int = 100, q: str | None = None
+    request: Request, status: str | None = None, limit: int = 100, q: str | None = None,
+    filters: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     db: Database = request.app.state.db
     names = {i.id: i for i in _cfg(request).instances()}
     metas = await _metas(request)
     sql, where, params = "SELECT * FROM jobs", [], []
-    if status:
+    if status in STATUS_GROUPS:
+        states = STATUS_GROUPS[status]
+        where.append(f"status IN ({','.join('?' * len(states))})")
+        params += states
+    elif status and status != "all":
         where.append("status = ?")
         params.append(status)
     if q:
         where.append("(doc_title LIKE ? OR CAST(doc_id AS TEXT) = ?)")
         params += [f"%{q}%", q]
+    # Filter nach dem Vorschlag von Jev (Name, damit es über mehrere Instanzen passt)
+    for name, value in (filters or {}).items():
+        if not value:
+            continue
+        if name == "tag":
+            where.append(
+                "EXISTS (SELECT 1 FROM json_each(jobs.result, '$.tags') t"
+                " WHERE json_extract(t.value, '$.label') = ? AND json_extract(t.value, '$.level') != 'low')"
+            )
+        else:
+            where.append(f"json_extract(result, '$.fields.{name}.label') = ?")
+        params.append(value)
     if where:
         sql += " WHERE " + " AND ".join(where)
     rows = db.query(sql + " ORDER BY id DESC LIMIT ?", [*params, limit])
@@ -287,11 +340,22 @@ async def _evaluation(request: Request) -> dict[str, Any] | None:
 
 
 @app.get("/log", response_class=HTMLResponse)
-async def job_log(request: Request, status: str | None = None, q: str | None = None, limit: int = 200):
-    jobs = await _jobs(request, status or None, limit=min(limit, 2000), q=q or None)
+async def job_log(
+    request: Request, status: str = "open", q: str | None = None, limit: int = 200,
+    document_type: str = "", correspondent: str = "", tag: str = "",
+):
+    filters = {"document_type": document_type, "correspondent": correspondent, "tag": tag}
+    jobs = await _jobs(request, status or "all", limit=min(limit, 2000), q=q or None, filters=filters)
+    options: dict[str, set[str]] = {"document_type": set(), "correspondent": set(), "tag": set()}
+    for meta in (await _metas(request)).values():
+        if meta:
+            options["document_type"] |= set(meta.document_types.values())
+            options["correspondent"] |= set(meta.correspondents.values())
+            options["tag"] |= {n for tid, n in meta.tags.items() if tid not in meta.inbox_tags}
     return _render(
         request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit, instances=_cfg(request).instances(),
-        cleanup=_cleanup_counts(request.app.state.db),
+        cleanup=_cleanup_counts(request.app.state.db), filters=filters,
+        filter_options={k: sorted(v, key=str.lower) for k, v in options.items()},
     )
 
 
@@ -430,7 +494,7 @@ async def job_detail(request: Request, job_id: int):
     job = request.app.state.db.job(job_id)
     if not job:
         raise HTTPException(404)
-    return _render(request, "job.html", job=job, **await _review_context(request, job))
+    return _render(request, "job.html", job=job, back_url=_back_from_referer(request), **await _review_context(request, job))
 
 
 @app.post("/jobs/{job_id}/apply")
@@ -438,7 +502,7 @@ async def apply_job(request: Request, job_id: int):
     form = await request.form()
     if form.get("action") == "dismiss":
         await _proc(request).dismiss(job_id)
-        return _redirect(str(form.get("back") or "/review"), msg=_("Verworfen"))
+        return _redirect(_local_path(str(form.get("back") or ""), "/review"), msg=_("Verworfen"))
     choice: dict[str, Any] = {}
     for name in SINGLE_FIELDS:
         if f"use_{name}" not in form:
@@ -456,7 +520,7 @@ async def apply_job(request: Request, job_id: int):
         await _proc(request).apply_review(job_id, choice)
     except PaperlessError as e:
         return _redirect(f"/jobs/{job_id}", err=str(e))
-    return _redirect(str(form.get("back") or "/review"), msg=_("Übernommen"))
+    return _redirect(_local_path(str(form.get("back") or ""), "/review"), msg=_("Übernommen"))
 
 
 @app.get("/doc/{instance_id}/{doc_id}")

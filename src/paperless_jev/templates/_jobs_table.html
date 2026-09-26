@@ -1,10 +1,11 @@
 {% from "_icons.html" import icon %}
 {% set jobs = recent if recent is defined else jobs %}
-{% macro cell(v) -%}
+{% macro cell(v, name) -%}
   {%- if not v -%}<span class="muted">–</span>
   {%- elif v.label is none -%}<small class="muted">{{ _("ist: {value}", value=v.current) }}</small>
   {%- else -%}
-    <span class="conf {{ v.level }}" title="Confidence {{ '%.0f'|format(v.confidence * 100) }} %"><b>{{ v.label }}</b><span class="m"><span style="width: {{ (v.confidence * 100)|round|int }}%"></span></span></span>
+    {%- set tag = "a" if v.filter else "span" -%}
+    <{{ tag }} class="conf {{ v.level }}"{% if v.filter %} href="/log?{{ name }}={{ v.filter|urlencode }}"{% endif %} title="Confidence {{ '%.0f'|format(v.confidence * 100) }} %"><b>{{ v.label }}</b><span class="m"><span style="width: {{ (v.confidence * 100)|round|int }}%"></span></span></{{ tag }}>
     {%- if v.match %}<span class="tick" title="{{ _('entspricht dem aktuellen Wert') }}">✓</span>
     {%- elif v.current %}<br><small class="muted">{{ _("ist: {value}", value=v.current) }}</small>{% endif %}
   {%- endif -%}
@@ -26,10 +27,10 @@
       <td class="col-status" data-label="{{ _('Status') }}"><div><span class="badge {{ j.status }}">{{ _(STATUS_LABELS.get(j.status, j.status)) }}</span>
         {% if j.error %}<br><small class="bad">{{ _(j.error)[:120] }}</small>{% endif %}
         <br><small class="muted">{{ j.updated_at[5:16].replace("T", " ") }}</small></div></td>
-      <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type) }}</div></td>
-      <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent) }}</div></td>
-      <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created) }}</div></td>
-      <td data-label="{{ _('Tags (neu)') }}"><div class="tag-chips">{% for t in j.tags_view %}<span class="conf {{ t.level }}" title="p = {{ '%.0f'|format(t.p * 100) }} %"><b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></span>{% else %}<span class="muted">–</span>{% endfor %}</div></td>
+      <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type, 'document_type') }}</div></td>
+      <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent, 'correspondent') }}</div></td>
+      <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created, 'created') }}</div></td>
+      <td data-label="{{ _('Tags (neu)') }}"><div class="tag-chips">{% for t in j.tags_view %}<a class="conf {{ t.level }}" href="/log?tag={{ t.label|urlencode }}" title="p = {{ '%.0f'|format(t.p * 100) }} %"><b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></a>{% else %}<span class="muted">–</span>{% endfor %}</div></td>
     </tr>
   {% else %}
     <tr><td colspan="7" class="empty-cell"><div class="empty">{{ icon("inbox") }}<strong>{{ _("Noch keine Einträge.") }}</strong>{{ _("Posteingang einreihen oder ein einzelnes Dokument testen.") }}</div></td></tr>

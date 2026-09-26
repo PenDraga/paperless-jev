@@ -23,7 +23,7 @@
   </div>
   <div>
     <h4>{{ _("Vorschlag bearbeiten und übernehmen") }}</h4>
-    {% set back = "/jobs/" ~ job.id %}
+    {% set back = back_url %}
     {% include "_review_form.html" with context %}
   </div>
 </div>

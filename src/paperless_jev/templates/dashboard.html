@@ -84,7 +84,7 @@
 </div>
 
 <article>
-  <h3 class="card-h">{{ icon("list") }}{{ _("Zuletzt verarbeitet") }} <small><a href="/log">{{ _("ganzes Protokoll") }} →</a></small></h3>
+  <h3 class="card-h">{{ icon("list") }}{{ _("Offen") }} <small>{{ _("Review, Probeläufe und Fehler") }} · <a href="/log?status=all">{{ _("ganzes Protokoll") }} →</a></small></h3>
   {% include "_jobs_table.html" with context %}
 </article>
 {% endblock %}

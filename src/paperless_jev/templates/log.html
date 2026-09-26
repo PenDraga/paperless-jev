@@ -2,16 +2,34 @@
 {% from "_icons.html" import icon %}
 {% block content %}
 <h2>{{ _("Protokoll") }}</h2>
-<form method="get" action="/log" class="grid">
-  <input name="q" value="{{ q }}" placeholder="{{ _('Titel oder Dokument-ID suchen') }}">
-  <select name="status">
-    <option value="">{{ _("alle Status") }}</option>
-    {% for key, label in STATUS_LABELS.items() %}<option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ _(label) }}</option>{% endfor %}
-  </select>
-  <select name="limit">
-    {% for n in [50, 200, 1000] %}<option value="{{ n }}" {% if limit == n %}selected{% endif %}>{{ _("{n} Einträge", n=n) }}</option>{% endfor %}
-  </select>
-  <button type="submit">{{ _("Filtern") }}</button>
+<form method="get" action="/log" class="log-filter">
+  <div class="grid">
+    <input name="q" value="{{ q }}" type="search" placeholder="{{ _('Titel oder Dokument-ID suchen') }}">
+    <select name="status" onchange="this.form.submit()" aria-label="{{ _('Status') }}">
+      <option value="open"{% if status == "open" %} selected{% endif %}>{{ _("offen") }}</option>
+      <option value="closed"{% if status == "closed" %} selected{% endif %}>{{ _("erledigt (inkl. verworfen)") }}</option>
+      <option value="all"{% if status == "all" %} selected{% endif %}>{{ _("alle Status") }}</option>
+      <optgroup label="{{ _('einzeln') }}">
+      {% for key, label in STATUS_LABELS.items() %}<option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ _(label) }}</option>{% endfor %}
+      </optgroup>
+    </select>
+    <select name="limit" onchange="this.form.submit()" aria-label="{{ _('Anzahl') }}">
+      {% for n in [50, 200, 1000] %}<option value="{{ n }}" {% if limit == n %}selected{% endif %}>{{ _("{n} Einträge", n=n) }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="grid">
+    {% for name, all_label in [("document_type", "alle Dokumenttypen"), ("correspondent", "alle Korrespondenten"), ("tag", "alle Tags")] %}
+    <select name="{{ name }}" onchange="this.form.submit()" aria-label="{{ _(all_label) }}"{% if filters[name] %} class="active-filter"{% endif %}>
+      <option value="">{{ _(all_label) }}</option>
+      {% for opt in filter_options[name] %}<option value="{{ opt }}"{% if filters[name] == opt %} selected{% endif %}>{{ opt }}</option>{% endfor %}
+    </select>
+    {% endfor %}
+  </div>
+  <div class="filter-actions">
+    <button type="submit">{{ icon("search") }} {{ _("Filtern") }}</button>
+    {% if q or status != "open" or filters.values()|select|list %}<a href="/log" class="secondary">{{ _("Filter zurücksetzen") }}</a>{% endif %}
+    <small class="muted">{{ _("Dokumenttyp, Korrespondent und Tags filtern nach dem Vorschlag von Jev.") }}</small>
+  </div>
 </form>
 {% if instances %}<article>{% include "_test_form.html" with context %}</article>{% endif %}
 <article>{% include "_jobs_table.html" with context %}</article>

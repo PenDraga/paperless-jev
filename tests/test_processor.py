@@ -321,3 +321,39 @@ def test_suggest_title_writes_nothing(client, monkeypatch):
     assert "Swisscom - Rechnung Mobile" in r.text and 'data-title="Swisscom - Rechnung Mobile"' in r.text
     assert len(FakePaperless.patches) == patches
     assert "Titel vorschlagen" in client.get(f"/jobs/{job['id']}").text
+
+
+def test_log_filters_and_back_after_apply(client):
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT id, result FROM jobs")
+    dt = job["result"]["fields"]["document_type"]["label"]
+    page = client.get("/log").text
+    from urllib.parse import quote_plus
+    assert "alle Dokumenttypen" in page and f'/log?document_type={quote_plus(dt)}' in page.replace("%20", "+")
+    assert f"/jobs/{job['id']}" in client.get("/log", params={"document_type": dt}).text
+    assert "Noch keine Einträge" in client.get("/log?document_type=gibtesnicht").text
+    assert "Noch keine Einträge" in client.get("/log?tag=gibtesnicht").text
+
+    # Job-Seite merkt sich die Liste, von der man kam; nach dem Übernehmen geht es dorthin zurück
+    page = client.get(f"/jobs/{job['id']}", headers={"referer": "http://testserver/log?status=review&msg=x"}).text
+    assert 'name="back" value="/log?status=review"' in page
+    r = client.post(f"/jobs/{job['id']}/apply", data={"action": "apply", "back": "/log?status=review"}, follow_redirects=False)
+    assert r.headers["location"].startswith("/log?status=review&msg=")
+    # fremde Ziele werden ignoriert
+    r = client.post(f"/jobs/{job['id']}/apply", data={"action": "dismiss", "back": "//evil.example/x"}, follow_redirects=False)
+    assert r.headers["location"].startswith("/review?")
+    assert 'value="/log"' in client.get(f"/jobs/{job['id']}", headers={"referer": "https://evil.example/log"}).text
+
+
+def test_log_shows_open_entries_by_default(client):
+    db = client.app.state.db
+    done = db.create_job(1, 950, "poll"); db.update_job(done, status="done", doc_title="Erledigtes Dok")
+    rev = db.create_job(1, 951, "poll"); db.update_job(rev, status="review", doc_title="Offenes Dok")
+    page = client.get("/log").text
+    assert "Offenes Dok" in page and "Erledigtes Dok" not in page
+    assert "Erledigtes Dok" in client.get("/log?status=closed").text
+    page = client.get("/log?status=all").text
+    assert "Offenes Dok" in page and "Erledigtes Dok" in page
+    page = client.get("/").text
+    assert "Offenes Dok" in page and "Erledigtes Dok" not in page
