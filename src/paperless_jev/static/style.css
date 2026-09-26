@@ -336,6 +336,7 @@ button.soft:hover { background: var(--pj-accent); color: #fff; }
   .field-row { grid-template-columns: 1.8rem 1fr; gap: .3rem .5rem; margin-bottom: .9rem; }
   .field-row > :nth-child(n+3) { grid-column: 1 / -1; }
   .title-suggest { margin-left: 0; }
+  .field-row > small, .field-row > span { display: block; margin-top: .15rem; }
   .tags { gap: .5rem 1rem; }
   .tags label { white-space: normal; }
   article { padding: 1rem; }
