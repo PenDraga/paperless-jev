@@ -272,8 +272,9 @@ class Processor:
         doc: dict[str, Any],
         merged: dict[str, Any],
         cfg: dict[str, Any],
+        strict: bool = False,
     ) -> str | None:
-        """Titel nach Einstellung; bei Fehlern bleibt der bisherige Titel."""
+        """Titel nach Einstellung; bei Fehlern bleibt der bisherige Titel (strict: Fehler weitergeben)."""
         values = {
             "document_type": meta.document_types.get(merged.get("document_type")),
             "correspondent": meta.correspondents.get(merged.get("correspondent")),
@@ -304,8 +305,24 @@ class Processor:
         try:
             return await generate_title(llm, doc.get("content", ""), facts, examples)
         except LLMError as e:
+            if strict:
+                raise
             log.warning("Titel für Dokument %s nicht erzeugt: %s", doc.get("id"), e)
             return None
+
+    async def suggest_title(self, job_id: int) -> str | None:
+        """Titel, den paperless-jev beim Übernehmen erzeugen würde - schreibt nichts."""
+        job = self.db.job(job_id)
+        inst = self.config.instance(job["instance_id"]) if job else None
+        if not job or not inst:
+            raise PaperlessError("Job oder Instanz nicht gefunden")
+        cfg = self.config.all()
+        fields = (job.get("result") or {}).get("fields", {})
+        async with self.client(inst) as pl:
+            doc = await pl.document(job["doc_id"])
+            meta = await self.metadata(inst, pl)
+            suggested = {k: f["value"] for k, f in fields.items() if f.get("value") is not None}
+            return await self.make_title(pl, meta, doc, {**doc, **suggested}, cfg, strict=True)
 
     async def apply_review(self, job_id: int, choice: dict[str, Any]) -> dict[str, Any]:
         """Übernimmt die in der Review-Queue bestätigten oder korrigierten Werte."""

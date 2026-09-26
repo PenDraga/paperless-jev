@@ -301,3 +301,23 @@ def test_log_cleanup_and_delete(client):
     assert db.job(ids["dry"]) is None
     r = client.post(f"/jobs/{ids['run']}/delete", follow_redirects=False)
     assert "err=" in r.headers["location"] and db.job(ids["run"])
+
+
+def test_suggest_title_writes_nothing(client, monkeypatch):
+    async def fake_title(llm, text, facts, examples):
+        return "Swisscom - Rechnung Mobile"
+
+    monkeypatch.setattr(processor_module, "generate_title", fake_title)
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT id FROM jobs")
+    patches = len(FakePaperless.patches)
+
+    client.app.state.config.update({"title_mode": "off"})
+    assert "ausgeschaltet" in client.post(f"/jobs/{job['id']}/title").text
+
+    client.app.state.config.update({"title_mode": "llm", "llm_provider": "ollama", "llm_url": "http://ollama:11434", "llm_model": "qwen3:8b"})
+    r = client.post(f"/jobs/{job['id']}/title")
+    assert "Swisscom - Rechnung Mobile" in r.text and 'data-title="Swisscom - Rechnung Mobile"' in r.text
+    assert len(FakePaperless.patches) == patches
+    assert "Titel vorschlagen" in client.get(f"/jobs/{job['id']}").text

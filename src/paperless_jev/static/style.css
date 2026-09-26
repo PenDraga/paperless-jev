@@ -235,6 +235,9 @@ pre.json { max-height: 30rem; overflow: auto; font-size: .8rem; }
 .run-opts { margin: .7rem 0 0; font-size: .85rem; }
 button.soft { background: var(--pj-accent-soft); border-color: transparent; color: var(--pj-accent-text); }
 button.soft:hover { background: var(--pj-accent); color: #fff; }
+.title-suggest { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin: -.1rem 0 .8rem calc(1.4rem + 10.5rem + 1.2rem); }
+.title-suggest button { width: auto; margin: 0; padding: .3rem .8rem; font-size: .85rem; }
+.title-suggestion { display: inline-flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
 .job-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 
 .show-mobile, .show-mobile-inline { display: none; }
@@ -320,6 +323,7 @@ button.soft:hover { background: var(--pj-accent); color: #fff; }
   .review-item img { max-width: 9rem; }
   .field-row { grid-template-columns: 1.8rem 1fr; gap: .3rem .5rem; margin-bottom: .9rem; }
   .field-row > :nth-child(n+3) { grid-column: 1 / -1; }
+  .title-suggest { margin-left: 0; }
   .tags { gap: .5rem 1rem; }
   .tags label { white-space: normal; }
   article { padding: 1rem; }

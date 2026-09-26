@@ -140,6 +140,11 @@ EN: dict[str, str] = {
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
     "Filtern": "Filter",
+    "Titel vorschlagen": "Suggest title",
+    "zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts": "shows the title that applying would create – writes nothing",
+    "ins Titelfeld": "use as title",
+    "Titel sind unter Regeln ausgeschaltet": "Titles are switched off under Rules",
+    "Kein Titel erzeugt – Sprachmodell unter Regeln prüfen": "No title created – check the language model under Rules",
     "Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben":
         "pass Paperless matching rules (search terms like policy or account numbers) to Jev as a hint",
     "Zuweisungsregel aus Paperless – geht als Hinweis an Jev": "Matching rule from Paperless – passed to Jev as a hint",

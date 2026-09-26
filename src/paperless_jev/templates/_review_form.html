@@ -39,6 +39,12 @@
     <input name="title" enterkeyhint="done" placeholder="{{ _('leer = automatisch (Sprachmodell)') if title_mode == 'llm' else (_('leer = automatisch (Vorlage)') if title_mode == 'template' else _('leer = unverändert')) }}">
     <small class="muted">{{ _("aktuell: {value}", value=job.doc_title or "–") }}</small>
   </div>
+  {% if title_mode != "off" %}
+  <div class="title-suggest">
+    <button type="button" class="secondary outline" hx-post="/jobs/{{ job.id }}/title" hx-target="#title-suggest-{{ job.id }}" hx-swap="innerHTML">{{ _("Titel vorschlagen") }}</button>
+    <span id="title-suggest-{{ job.id }}" class="title-suggest-result"><small class="muted">{{ _("zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts") }}</small></span>
+  </div>
+  {% endif %}
   <fieldset>
     <legend><strong>{{ _("Tags") }}</strong> <small class="muted">{{ _("(zusätzlich zu den vorhandenen)") }}</small></legend>
     <div class="tags">

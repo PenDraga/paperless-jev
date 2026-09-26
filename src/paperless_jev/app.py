@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import html
 import re
 import logging
 import os
@@ -327,6 +328,26 @@ async def test_job(request: Request, job_id: int):
         raise HTTPException(404)
     new_id = await _proc(request).test_document(job["instance_id"], job["doc_id"])
     return _redirect(f"/jobs/{new_id}", msg=_("Test abgeschlossen – nichts wurde in Paperless geändert"))
+
+
+@app.post("/jobs/{job_id}/title", response_class=HTMLResponse)
+async def suggest_title(request: Request, job_id: int):
+    """Titelvorschlag fürs Review-Formular (htmx) - schreibt nichts nach Paperless."""
+    if _cfg(request).all()["title_mode"] == "off":
+        return HTMLResponse(f'<span class="muted">{html.escape(_("Titel sind unter Regeln ausgeschaltet"))}</span>')
+    try:
+        title = await _proc(request).suggest_title(job_id)
+    except (LLMError, PaperlessError) as e:
+        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
+    if not title:
+        return HTMLResponse(f'<span class="bad">{html.escape(_("Kein Titel erzeugt – Sprachmodell unter Regeln prüfen"))}</span>')
+    t = html.escape(title, quote=True)
+    return HTMLResponse(
+        f'<span class="title-suggestion"><strong>{t}</strong> '
+        f'<button type="button" class="secondary outline" data-title="{t}" '
+        f"""onclick="this.closest('form').querySelector('input[name=title]').value=this.dataset.title">"""
+        f'{html.escape(_("ins Titelfeld"))}</button></span>'
+    )
 
 
 @app.post("/jobs/{job_id}/delete")
