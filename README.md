@@ -117,3 +117,7 @@ PJ_DATA_DIR=./data paperless-jev
 ```
 
 Architektur, Designentscheidungen und Messungen: [DOKUMENTATION.md](DOKUMENTATION.md).
+
+## Lizenz
+
+[MIT](LICENSE)
