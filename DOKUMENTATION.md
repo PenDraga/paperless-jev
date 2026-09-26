@@ -44,8 +44,9 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
 
 - **Jev nur für Entscheidungen.** Laut [Jev-1.13-Jaggedness](https://docs.typesafe.ai/model-jaggedness/jev-1.13)
   sind Rechnen, Datumsvergleiche und Zählen schwach – Datumskandidaten findet daher Code, Jev wählt nur.
-- **Englische Fragen, deutscher Text.** Jev ist primär auf Englisch trainiert. Fragen und
-  Beschreibungen daher englisch formulieren; die Schwellen an echten Daten kalibrieren.
+- **Englische Fragen, Beschreibungen in der Sprache der Oberfläche.** Jev ist primär auf Englisch
+  trainiert, die festen Fragen sind darum englisch. Für die Beschreibungen hat ein Vergleich keinen
+  Vorteil von Englisch gezeigt (siehe *Messungen*), sie bleiben in der Sprache der Oberfläche.
 - **Vorhandene Werte bleiben** (Einstellung „überschreiben“ aus), damit Paperless-eigenes Matching
   und manuelle Zuordnungen Vorrang haben. Ausnahme Datum: Paperless setzt immer eines, Jev korrigiert nur bei hoher Confidence.
 - **Ablage-Konventionen über Beispiele.** Jev liest wörtlich: „Gutschriftsanzeige“ landet ohne Hilfe bei
@@ -76,11 +77,40 @@ paperless-jev und haben damit das letzte Wort.
 
 ## Beschreibungen aus Stichworten
 
-Unter *Beschreibungen* genügen deutsche Stichworte („Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung“).
-Beim Speichern baut das Sprachmodell geänderte Einträge zu einer englischen Regel aus („… Not: …“) und nutzt dazu
-die Titel bereits abgelegter Dokumente. Gespeichert werden beide Fassungen: die Stichworte (im Eingabefeld) und
-der englische Text für Jev (darunter angezeigt). Erfundene Ausschlüsse werden entfernt, wenn die Stichworte kein
-„nicht/kein/ohne“ enthalten.
+Unter *Beschreibungen* genügen Stichworte („Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung“).
+Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer Beschreibung aus – in der Sprache der
+Oberfläche, mit „Nicht: …“ bzw. „Not: …“ für Ausschlüsse – und nutzt dazu die Titel bereits abgelegter
+Dokumente. Gespeichert werden beide Fassungen: die Stichworte (im Eingabefeld) und der Text für Jev
+(darunter mit „→“). Erfundene Ausschlüsse werden entfernt, wenn die Stichworte kein „nicht/kein/ohne“ enthalten.
+Ein Eintrag wird nur neu ausformuliert, wenn sich seine Stichworte ändern.
+
+Die Zuweisungsregeln aus Paperless (Suchbegriff und Algorithmus) stehen grau beim Eintrag. Unter *Regeln*
+lassen sie sich zusätzlich als Hinweis an Jev mitgeben (Standard: aus, siehe *Messungen*).
+
+## Protokoll
+
+Jeder Lauf ist ein Job in SQLite. Die Jobs sind zugleich das Gedächtnis fürs Polling: ein Dokument, das
+schon bewertet wurde, wird nicht erneut klassifiziert. *Protokoll bereinigen* löscht darum nur Fehler,
+Einzeltests, verworfene und übersprungene Einträge; Probeläufe nur mit Warnung. Laufende, wartende und
+erledigte Einträge bleiben immer stehen.
+
+## Messungen
+
+Blindtests an je 60 bereits abgelegten Dokumenten (Jev sieht die heutige Ablage nicht; verglichen wird
+mit ihr). Zwei identische Läufe unterscheiden sich um ±2 Treffer – kleinere Unterschiede sind Zufall.
+
+| Frage | Ergebnis |
+|---|---|
+| Beschreibungen englisch oder deutsch? | Dokumenttyp EN 44–46/60, DE 49/60, ohne 46/60. Der Vorsprung von DE kam fast ganz von 4 Dividenden-Belegen, die eine englische Abgrenzung falsch lenkte. Beschreibungen senken vor allem falsche Tags (Steuerrelevant: 8 statt 14 Fehlalarme). |
+| Paperless-Zuweisungsregeln als Hinweis? | Korrespondent 52/59 mit und ohne, Tags gleich (innerhalb der Schwankung), aber +40 % Tokens. Deshalb standardmässig aus. |
+
+## Dokument-Viewer
+
+Die Vorschau öffnet das PDF auf dem Desktop in einem Overlay (iframe), auf dem Handy in einem neuen Tab.
+Die App sendet `X-Frame-Options: SAMEORIGIN` und `frame-ancestors 'self'`. Ein Reverse Proxy darf nicht
+zusätzlich `X-Frame-Options: DENY` setzen (Traefik: `frameDeny: true`), sonst meldet der Browser
+„Verbindung abgelehnt“. Der Viewer hängt `?view=…` an, damit der Browser kein zwischengespeichertes PDF
+mit alten Headern verwendet.
 
 ## Webhook
 
@@ -101,5 +131,5 @@ dem Tag *ai-ignorieren* versehen (z. B. per Paperless-Workflow nach Speicherpfad
 
 ## Kosten
 
-jev-1.13: 0.042 USD pro Mio. Input-Tokens, Output kostenlos. Ein Dokument mit 12'000 Zeichen und
-~50 Fragen liegt bei grob 4–6k Tokens, also rund 0.0002 USD. Die Übersicht zeigt die Summe.
+jev-1.13: 0.042 USD pro Mio. Input-Tokens, Output kostenlos. Gemessen: im Schnitt rund 10k Tokens pro
+Dokument (Text bis 12'000 Zeichen, ~50 Tag-Fragen, Beispieltitel), also rund 0.0004 USD. Die Übersicht zeigt die Summe.
