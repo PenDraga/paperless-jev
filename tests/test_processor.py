@@ -357,3 +357,14 @@ def test_log_shows_open_entries_by_default(client):
     assert "Offenes Dok" in page and "Erledigtes Dok" in page
     page = client.get("/").text
     assert "Offenes Dok" in page and "Erledigtes Dok" not in page
+
+
+def test_existing_tags_shown_as_chips(client):
+    db = client.app.state.db
+    job = db.create_job(1, 960, "poll")
+    db.update_job(job, status="dry_run", doc_title="Mit Tags",
+                  result={"fields": {}, "tags": [], "current": {"tags": [100, 101, 102]}})
+    page = client.get("/log").text
+    # Steuern (101) ist schon gesetzt; Posteingang (100) und der Status-Tag ai-review (102) bleiben verborgen
+    assert 'class="conf existing"' in page and "<b>Steuern</b>" in page
+    assert "<b>Posteingang</b>" not in page and "<b>ai-review</b>" not in page

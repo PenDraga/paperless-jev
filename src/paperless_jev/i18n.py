@@ -133,13 +133,14 @@ EN: dict[str, str] = {
     "Details →": "Details →",
     "Noch keine Einträge.": "No entries yet.",
     "keiner passt": "none fits",
-    "Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel. Genaue Werte beim Darüberfahren.":
-        "Bar = confidence: <span class=\"badge auto\">confident</span> would be set automatically · <span class=\"badge suggest\">uncertain</span> would go to review · grey = too uncertain, ignored · ✓ = matches the current value. Tags: new suggestions only – existing tags are shown in grey below the title. Hover for exact values.",
+    "Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: Vorschläge mit Balken, schon in Paperless gesetzte Tags umrandet mit ✓. Genaue Werte beim Darüberfahren.":
+        "Bar = confidence: <span class=\"badge auto\">confident</span> would be set automatically · <span class=\"badge suggest\">uncertain</span> would go to review · grey = too uncertain, ignored · ✓ = matches the current value. Tags: suggestions with a bar, tags already set in Paperless outlined with ✓. Hover for exact values.",
     "Posteingang einreihen oder ein einzelnes Dokument testen.": "Queue the inbox or test a single document.",
     "Titel oder Dokument-ID suchen": "Search title or document ID",
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
     "Filtern": "Filter",
+    "schon in Paperless gesetzt": "already set in Paperless",
     "offen": "open",
     "erledigt (inkl. verworfen)": "finished (incl. dismissed)",
     "einzeln": "individual",

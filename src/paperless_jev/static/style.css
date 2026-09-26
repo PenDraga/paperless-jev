@@ -162,6 +162,8 @@ a.stat:hover { border-color: var(--pj-accent-text); }
 .badge.dry_run, .badge.running, .badge.queued { background: var(--pj-info-soft); color: var(--pj-info); }
 .conf { display: inline-flex; align-items: center; gap: .45rem; border-radius: .5rem; padding: .15rem .5rem; font-size: .8rem; background: var(--pj-gray-soft); max-width: 100%; }
 a.conf { color: inherit; text-decoration: none; }
+.conf.existing { background: transparent; box-shadow: inset 0 0 0 1px var(--pj-line); color: var(--pj-muted); }
+.conf.existing .tick { margin-left: 0; }
 a.conf:hover { box-shadow: inset 0 0 0 1px var(--pj-accent-text); }
 .conf > b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .conf .m { width: 2rem; height: .3rem; border-radius: .2rem; background: var(--pj-track); overflow: hidden; flex: none; }

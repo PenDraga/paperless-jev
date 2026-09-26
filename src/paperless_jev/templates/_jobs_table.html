@@ -12,7 +12,7 @@
 {%- endmacro %}
 <div class="overflow-auto">
 <table class="striped jobs cards">
-  <thead><tr><th class="hide-mobile">#</th><th>{{ _("Dokument") }}</th><th>{{ _("Status") }}</th><th>{{ _("Dokumenttyp") }}</th><th>{{ _("Korrespondent") }}</th><th>{{ _("Datum") }}</th><th>{{ _("Tags (neu)") }}</th></tr></thead>
+  <thead><tr><th class="hide-mobile">#</th><th>{{ _("Dokument") }}</th><th>{{ _("Status") }}</th><th>{{ _("Dokumenttyp") }}</th><th>{{ _("Korrespondent") }}</th><th>{{ _("Datum") }}</th><th>{{ _("Tags") }}</th></tr></thead>
   <tbody>
   {% for j in jobs %}
     <tr>
@@ -20,7 +20,7 @@
       <td class="card-title"><div class="doc">
         <img class="doc-mini" src="/thumb/{{ j.instance_id }}/{{ j.doc_id }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         <div class="doc-text"><b>{{ (j.doc_title or _("Dokument"))[:70] }}</b>
-          <small>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank" title="{{ _('in Paperless öffnen') }}">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}{% if j.current_tags %} · {{ j.current_tags|join(", ") }}{% endif %}</small>
+          <small>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank" title="{{ _('in Paperless öffnen') }}">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}</small>
           <a href="/jobs/{{ j.id }}" class="show-mobile card-link"><small>{{ _("Details →") }}</small></a></div>
         <a href="/doc/{{ j.instance_id }}/{{ j.doc_id }}" target="_blank" class="eye" title="{{ _('Dokument ansehen') }}" aria-label="{{ _('Dokument ansehen') }}" data-viewer="{{ j.doc_title or '#' ~ j.doc_id }}">{{ icon("eye") }}</a>
       </div></td>
@@ -30,7 +30,9 @@
       <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type, 'document_type') }}</div></td>
       <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent, 'correspondent') }}</div></td>
       <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created, 'created') }}</div></td>
-      <td data-label="{{ _('Tags (neu)') }}"><div class="tag-chips">{% for t in j.tags_view %}<a class="conf {{ t.level }}" href="/log?tag={{ t.label|urlencode }}" title="p = {{ '%.0f'|format(t.p * 100) }} %"><b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></a>{% else %}<span class="muted">–</span>{% endfor %}</div></td>
+      <td data-label="{{ _('Tags') }}"><div class="tag-chips">{% for t in j.tags_view %}<a class="conf {{ t.level }}" href="/log?tag={{ t.label|urlencode }}" title="p = {{ '%.0f'|format(t.p * 100) }} %"><b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></a>{% endfor %}
+        {%- for name in j.current_tags %}<span class="conf existing" title="{{ _('schon in Paperless gesetzt') }}"><b>{{ name }}</b><span class="tick">✓</span></span>{% endfor %}
+        {%- if not j.tags_view and not j.current_tags %}<span class="muted">–</span>{% endif %}</div></td>
     </tr>
   {% else %}
     <tr><td colspan="7" class="empty-cell"><div class="empty">{{ icon("inbox") }}<strong>{{ _("Noch keine Einträge.") }}</strong>{{ _("Posteingang einreihen oder ein einzelnes Dokument testen.") }}</div></td></tr>
@@ -38,4 +40,4 @@
   </tbody>
 </table>
 </div>
-<p class="hint">{{ _("Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: nur neue Vorschläge – vorhandene Tags stehen grau unter dem Titel. Genaue Werte beim Darüberfahren.")|safe }}</p>
+<p class="hint">{{ _("Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: Vorschläge mit Balken, schon in Paperless gesetzte Tags umrandet mit ✓. Genaue Werte beim Darüberfahren.")|safe }}</p>

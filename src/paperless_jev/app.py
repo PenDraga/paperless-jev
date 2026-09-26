@@ -230,7 +230,7 @@ async def _metas(request: Request) -> dict[int, Metadata | None]:
     return metas
 
 
-def _view(row: dict[str, Any], meta: Metadata | None) -> None:
+def _view(row: dict[str, Any], meta: Metadata | None, hidden: set[int] | None = None) -> None:
     """Pro Feld: Vorschlag, Confidence, Stufe und Vergleich mit dem aktuellen Wert."""
     result = row.get("result") or {}
     current = result.get("current", {})
@@ -257,9 +257,11 @@ def _view(row: dict[str, Any], meta: Metadata | None) -> None:
         }
     row["view"] = view
     row["tags_view"] = [t for t in result.get("tags", []) if t["level"] != "low"]
+    # Tags, die das Dokument beim Lauf schon hatte (ohne Posteingang und eigene Status-Tags)
+    hidden = hidden if hidden is not None else (set(meta.inbox_tags) if meta else set())
     row["current_tags"] = [
-        meta.tags.get(t, f"#{t}") for t in current.get("tags", []) if not meta or t not in meta.inbox_tags
-    ] if current.get("tags") else []
+        meta.tags.get(t, f"#{t}") if meta else f"#{t}" for t in current.get("tags", []) if t not in hidden
+    ]
 
 
 async def _jobs(
@@ -269,6 +271,7 @@ async def _jobs(
     db: Database = request.app.state.db
     names = {i.id: i for i in _cfg(request).instances()}
     metas = await _metas(request)
+    cfg = _cfg(request).all()
     sql, where, params = "SELECT * FROM jobs", [], []
     if status in STATUS_GROUPS:
         states = STATUS_GROUPS[status]
@@ -297,7 +300,8 @@ async def _jobs(
     rows = db.query(sql + " ORDER BY id DESC LIMIT ?", [*params, limit])
     for row in rows:
         row["instance"] = names.get(row["instance_id"])
-        _view(row, metas.get(row["instance_id"]))
+        meta = metas.get(row["instance_id"])
+        _view(row, meta, excluded_tags(meta, cfg) if meta else None)
     return rows
 
 
