@@ -110,8 +110,8 @@ EN: dict[str, str] = {
     "keine Antwort": "no answer",
     "<strong>Neue Tags</strong> für {n} Dokumente:": "<strong>New tags</strong> for {n} documents:",
     "keine": "none",
-    "grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei Dokumenten aus dem ecoDMS-Import ein guter Genauigkeitstest.":
-        "green = confident, yellow = uncertain. “of which = current value” compares with what Paperless holds today – a good accuracy test for documents from the ecoDMS import.",
+    "grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei bereits sauber abgelegten Dokumenten ein guter Genauigkeitstest.":
+        "green = confident, yellow = uncertain. “of which = current value” compares with what Paperless holds today – a good accuracy test for documents that are already filed correctly.",
     "Posteingang jetzt verarbeiten": "Process inbox now",
     "Alle aktiven Instanzen": "All active instances",
     "auch bereits bewertete Dokumente neu klassifizieren": "also re-classify documents that were already evaluated",

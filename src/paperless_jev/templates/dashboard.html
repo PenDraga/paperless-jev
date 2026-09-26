@@ -59,7 +59,7 @@
   </div>
   <p>{{ icon("tag") }} {{ _("<strong>Neue Tags</strong> für {n} Dokumente:", n=evaluation.tag_docs)|safe }}</p>
   <div class="tag-chips">{% for label, c in evaluation.top_tags %}<span class="badge auto">{{ label }} {{ c[0] }}</span>{% if c[1] %}<span class="badge suggest">+{{ c[1] }}</span>{% endif %}{% else %}<span class="muted">{{ _("keine") }}</span>{% endfor %}</div>
-  <p class="hint" style="margin-top:.8rem">{{ _("grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei Dokumenten aus dem ecoDMS-Import ein guter Genauigkeitstest.") }}</p>
+  <p class="hint" style="margin-top:.8rem">{{ _("grün = sicher, gelb = unsicher. „davon = aktueller Wert“ vergleicht mit dem, was heute in Paperless steht – bei bereits sauber abgelegten Dokumenten ein guter Genauigkeitstest.") }}</p>
   {% if reviewed %}
   <p class="hint"><strong>{{ _("Korrekturen im Review ({n} geprüft)", n=reviewed) }}:</strong>
     {% for name, n in corrections.items() %}{{ _("{field}: {n}× korrigiert", field=_(FIELD_LABELS[name]), n=n) }}{% if not loop.last %} · {% endif %}{% else %}{{ _("Bisher keine Korrekturen.") }}{% endfor %}</p>

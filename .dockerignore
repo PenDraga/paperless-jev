@@ -8,3 +8,6 @@ tests
 *.json
 deploy
 .env
+docs
+.github
+demo

@@ -6,6 +6,14 @@ Classifies new documents in the [Paperless-ngx](https://docs.paperless-ngx.com/)
 [TypeSafe Jev](https://docs.typesafe.ai/introduction): document type, correspondent, storage path,
 issue date and tags. Runs as a Docker container and is configured entirely through a web UI.
 
+![Overview](docs/screenshots/uebersicht-en.png)
+
+| Review | Log (phone) | Descriptions (phone) | Dark mode |
+|---|---|---|---|
+| ![Review](docs/screenshots/review-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
+
+<sub>Screenshots with made-up demo data, see [`demo/`](demo/).</sub>
+
 ## Features
 
 - **Classification with confidence** – Jev chooses from your existing Paperless metadata and returns a
@@ -41,12 +49,21 @@ OCR text beforehand. Each document is sent to Jev as **one** request containing 
 
 ## Quick start
 
+Ready-made image (amd64 and arm64):
+
+```bash
+docker run -d --name paperless-jev -p 8090:8000 -v paperless-jev-data:/data \
+  ghcr.io/pendraga/paperless-jev:latest
+# → http://localhost:8090
+```
+
+Or build it yourself:
+
 ```bash
 git clone https://github.com/PenDraga/paperless-jev.git
 cd paperless-jev
 cp .env.example .env
 docker compose up -d --build
-# → http://localhost:8090
 ```
 
 1. **Setup** – enter your TypeSafe API key, add a Paperless instance with URL and API token, "Test connection".
