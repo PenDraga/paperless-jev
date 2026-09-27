@@ -49,11 +49,11 @@
   {% set existing = current.get("tags", [])|select("in", tag_options)|list %}
   {% if existing %}
   <fieldset>
-    <legend><strong>{{ _("Vorhandene Tags") }}</strong> <small class="muted">{{ _("(Häkchen entfernen = beim Übernehmen aus Paperless löschen)") }}</small></legend>
+    <legend><strong>{{ _("Vorhandene Tags") }}</strong> <small class="muted">{{ _("(ohne Häkchen = beim Übernehmen aus Paperless löschen; laut Jev falsche Tags sind vorab abgewählt)") }}</small></legend>
     <div class="tags">
     {% for tid in existing %}{% set c = checks.get(tid) %}
       <input type="hidden" name="shown_tags" value="{{ tid }}">
-      <label{% if c and c.verdict == "conflict" %} class="bad"{% endif %}><input type="checkbox" name="keep_tags" value="{{ tid }}" checked> {{ tag_options[tid] }}
+      <label{% if c and c.verdict == "conflict" %} class="bad"{% endif %}><input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (c and c.verdict == "conflict") %} checked{% endif %}> {{ tag_options[tid] }}
         {% if c %}<span class="badge {{ 'error' if c.verdict == 'conflict' else ('suggest' if c.verdict == 'unsure' else 'auto') }}" title="p = {{ '%.0f'|format(c.p * 100) }} %">{{ _({"conflict": "laut Jev falsch", "unsure": "unsicher", "ok": "bestätigt"}[c.verdict]) }}</span>{% endif %}</label>
     {% endfor %}
     </div>

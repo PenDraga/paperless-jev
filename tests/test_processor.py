@@ -397,3 +397,15 @@ def test_recheck_reviews_replaces_old_entry(client):
     assert page.count('action="/jobs/') == 1 and f'action="/jobs/{rows[1]["id"]}/apply"' in page
     assert "Alle erneut prüfen" in page
     assert "ersetzt" in client.get("/log?status=closed").text
+
+
+def test_conflicting_existing_tag_is_unticked_in_review(client):
+    db = client.app.state.db
+    job = db.create_job(1, 42, "poll")
+    db.update_job(job, status="review", doc_title="Test", result={
+        "fields": {}, "tags": [], "current": {"tags": [101, 103]},
+        "tag_checks": [{"id": 101, "label": "Steuern", "p": 0.95, "verdict": "ok"},
+                       {"id": 103, "label": "Auto", "p": 0.02, "verdict": "conflict"}]})
+    page = client.get(f"/jobs/{job}").text
+    assert 'name="keep_tags" value="101" checked' in page
+    assert 'name="keep_tags" value="103">' in page

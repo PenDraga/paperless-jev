@@ -149,7 +149,7 @@ EN: dict[str, str] = {
     "schon gesetzt – Jev ist unsicher (p = {p} %)": "already set – Jev is uncertain (p = {p} %)",
     "schon gesetzt – von Jev bestätigt (p = {p} %)": "already set – confirmed by Jev (p = {p} %)",
     "Vorhandene Tags": "Existing tags",
-    "(Häkchen entfernen = beim Übernehmen aus Paperless löschen)": "(untick = remove from Paperless when applying)",
+    "(ohne Häkchen = beim Übernehmen aus Paperless löschen; laut Jev falsche Tags sind vorab abgewählt)": "(unticked = removed from Paperless when applying; tags Jev considers wrong are unticked in advance)",
     "laut Jev falsch": "wrong according to Jev",
     "unsicher": "uncertain",
     "bestätigt": "confirmed",
