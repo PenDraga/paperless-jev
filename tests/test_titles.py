@@ -67,3 +67,26 @@ async def test_generate_title_retries_once_then_gives_up(monkeypatch):
     import pytest
     with pytest.raises(LLMError):
         await titles.generate_title(llm, "Text", {}, [])
+
+
+async def test_generate_title_asks_for_shorter_and_accepts_long_title(monkeypatch):
+    from paperless_jev import titles
+    from paperless_jev.llm import LLM
+
+    long_title = "Bauhaus - Teelicht, Servietten, Frosch Nachfüllung, Schubladenboxen und Papiere"
+    llm = LLM("ollama", "http://ollama:11434", "qwen3:8b")
+    prompts = []
+
+    async def fake(answers):
+        async def complete(llm, prompt, max_tokens):
+            prompts.append(prompt)
+            return answers.pop(0)
+        monkeypatch.setattr(titles, "complete", complete)
+
+    await fake([long_title, "Bauhaus - Haushaltsartikel"])
+    assert await titles.generate_title(llm, "Text", {}, []) == "Bauhaus - Haushaltsartikel"
+    assert "zu lang" in prompts[-1] and long_title in prompts[-1]
+
+    # bleibt es zu lang, wird der kürzere von beiden genommen statt gar keiner
+    await fake([long_title, long_title + " Einkauf"])
+    assert await titles.generate_title(llm, "Text", {}, []) == long_title

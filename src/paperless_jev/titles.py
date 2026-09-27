@@ -14,7 +14,8 @@ from .llm import LLM, LLMError, complete
 
 MAX_TITLE = 128  # Feldlänge in Paperless
 MAX_TEXT = 4000
-GOOD_TITLE = 60  # so verlangt es der Prompt; längere Antworten sind meist Erklärungen
+GOOD_TITLE = 60  # so verlangt es der Prompt; länger -> einmal um eine kürzere Fassung bitten
+MAX_GOOD = 100  # darüber sind es praktisch immer Erklärungen statt Titel
 MAX_EXAMPLE = 100  # Beispieltitel aus dem Archiv dürfen etwas länger sein
 
 # Typische Antworten eines Chat-Modells statt eines Titels (auch Reste von paperless-gpt im Archiv)
@@ -77,18 +78,24 @@ def build_prompt(text: str, facts: dict[str, Any], examples: list[str]) -> str:
     return PROMPT.format(facts=fact_lines, examples=example_lines, text=body)
 
 
-RETRY_HINT = "\n\nWichtig: Antworte ausschliesslich mit dem Titel selbst, höchstens 60 Zeichen, ohne Erklärung.\nTitel:"
+RETRY_HINT = "Wichtig: Antworte ausschliesslich mit dem Titel selbst, höchstens 60 Zeichen, ohne Erklärung.\nTitel:"
+SHORTER_HINT = "Dein Vorschlag war zu lang: „{title}“\nFormuliere ihn kürzer (höchstens 60 Zeichen), nur das Wichtigste.\nTitel:"
 
 
 async def generate_title(llm: LLM, text: str, facts: dict[str, Any], examples: list[str]) -> str:
-    """Titel vom Sprachmodell; unbrauchbare Antworten werden einmal neu angefragt, dann verworfen."""
+    """Titel vom Sprachmodell. Unbrauchbare oder zu lange Antworten werden einmal neu angefragt;
+    ein etwas zu langer, sonst sauberer Titel wird danach akzeptiert."""
     prompt = build_prompt(text, facts, examples)
-    title = ""
-    for attempt in range(2):
-        title = clean_title(await complete(llm, prompt if attempt == 0 else prompt.removesuffix("Titel:") + RETRY_HINT.lstrip("\n"), max_tokens=60))
-        if looks_like_title(title):
-            return title
-    raise LLMError(f"Sprachmodell lieferte keinen brauchbaren Titel: {title[:80]!r}")
+    first = clean_title(await complete(llm, prompt, max_tokens=60))
+    if looks_like_title(first):
+        return first
+    too_long = looks_like_title(first, MAX_GOOD)
+    hint = SHORTER_HINT.format(title=first) if too_long else RETRY_HINT
+    second = clean_title(await complete(llm, prompt.removesuffix("Titel:") + hint, max_tokens=60))
+    usable = [t for t in (second, first if too_long else "") if looks_like_title(t, MAX_GOOD)]
+    if usable:
+        return min(usable, key=len)
+    raise LLMError(f"Sprachmodell lieferte keinen brauchbaren Titel: {(second or first)[:80]!r}")
 
 
 DESCRIBE_PROMPT_DE = """Du formulierst kurze Kategorie-Beschreibungen für einen Dokument-Klassifizierer in einem privaten Schweizer Haushaltsarchiv.
