@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
 {% block content %}
-<h2>{{ _("Review-Queue") }} <small class="muted">({{ items|length }})</small></h2>
+<div class="page-head">
+  <h2>{{ _("Review-Queue") }} <small class="muted">({{ items|length }})</small></h2>
+  {% if items %}<form method="post" action="/review/recheck" class="inline" onsubmit="return confirm('{{ _('Alle Dokumente im Review mit der aktuellen Konfiguration neu von Jev prüfen lassen?') }}')">
+    <button type="submit" class="secondary outline recheck-btn">{{ icon("play") }} {{ _("Alle erneut prüfen") }}</button></form>
+  <small class="muted">{{ _("nach Änderungen an Regeln oder Beschreibungen – sichere Ergebnisse werden je nach Modus gesetzt, unsichere bleiben im Review") }}</small>{% endif %}
+</div>
 {% for item in items %}
   {% set job = item.job %}{% set meta = item.meta %}{% set title_mode = item.title_mode %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
   <article>

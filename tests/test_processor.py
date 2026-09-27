@@ -377,3 +377,23 @@ def test_review_can_remove_existing_tag(client):
     client.post(f"/jobs/{job['id']}/apply", data={"action": "apply", "shown_tags": ["103"], "tags": ["101"]})
     _, data = FakePaperless.patches[-1]
     assert 103 not in data["tags"] and 101 in data["tags"]
+
+
+def test_recheck_reviews_replaces_old_entry(client):
+    secret = client.app.state.config.all()["webhook_secret"]
+    client.post(f"/hook/home?token={secret}", data={"doc_id": "42"})
+    _wait(client)
+    db = client.app.state.db
+    old = db.one("SELECT id, status FROM jobs")
+    assert old["status"] == "review"
+
+    r = client.post("/review/recheck", follow_redirects=False)
+    assert r.status_code == 303 and "msg=1+" in r.headers["location"]
+    _wait(client)
+    rows = db.query("SELECT id, status FROM jobs ORDER BY id")
+    assert [row["status"] for row in rows] == ["superseded", "review"]
+    # Review-Liste zeigt das Dokument nur einmal, mit dem neuen Lauf
+    page = client.get("/review").text
+    assert page.count('action="/jobs/') == 1 and f'action="/jobs/{rows[1]["id"]}/apply"' in page
+    assert "Alle erneut prüfen" in page
+    assert "ersetzt" in client.get("/log?status=closed").text

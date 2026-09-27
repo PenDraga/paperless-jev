@@ -250,6 +250,7 @@ button.soft:hover { background: var(--pj-accent); color: #fff; }
 .log-filter select.active-filter { border-color: var(--pj-accent-text); box-shadow: 0 0 0 1px var(--pj-accent-text); }
 .filter-actions { display: flex; gap: .9rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
 .filter-actions button { width: auto; margin: 0; display: inline-flex; gap: .4rem; align-items: center; }
+.recheck-btn { width: auto; margin: 0; padding: .35rem .8rem; font-size: .85rem; display: inline-flex; gap: .4rem; align-items: center; }
 .job-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 
 .show-mobile, .show-mobile-inline { display: none; }

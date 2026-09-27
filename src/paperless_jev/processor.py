@@ -107,6 +107,22 @@ class Processor:
         await self.queue.put(job_id)
         return job_id
 
+    def _supersede(self, job: dict[str, Any]) -> None:
+        """Ältere offene Review-Einträge desselben Dokuments durch den neuen Lauf ersetzen."""
+        self.db.execute(
+            "UPDATE jobs SET status = 'superseded', error = ? WHERE instance_id = ? AND doc_id = ?"
+            " AND status = 'review' AND id < ?",
+            (None, job["instance_id"], job["doc_id"], job["id"]),
+        )
+
+    async def recheck_reviews(self) -> int:
+        """Alle Dokumente im Review mit der aktuellen Konfiguration neu klassifizieren."""
+        count = 0
+        for row in self.db.query("SELECT DISTINCT instance_id, doc_id FROM jobs WHERE status = 'review'"):
+            if await self.enqueue(row["instance_id"], row["doc_id"], "manual", force=True):
+                count += 1
+        return count
+
     async def test_document(self, instance_id: int, doc_id: int) -> int:
         """Klassifiziert ein Dokument sofort als Probelauf und liefert die Job-ID."""
         job_id = self.db.create_job(instance_id, doc_id, TEST)
@@ -219,9 +235,11 @@ class Processor:
                     updates = decision["updates"] if mode == "auto" else {}
                     applied = await self.apply(inst, pl, meta, doc, updates, cfg, finished=False)
                     self.db.update_job(job_id, status="review", applied=applied)
+                    self._supersede(job)
                 else:
                     applied = await self.apply(inst, pl, meta, doc, decision["updates"], cfg, finished=True)
                     self.db.update_job(job_id, status="done", applied=applied)
+                    self._supersede(job)
         except (PaperlessError, JevError) as e:
             self.db.update_job(job_id, status="error", error=str(e))
 

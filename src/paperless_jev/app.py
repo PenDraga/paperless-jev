@@ -46,7 +46,7 @@ MODE_LABELS = {
 # Offen = braucht noch Aufmerksamkeit oder ist nur probeweise gelaufen; erledigt = abgeschlossen
 STATUS_GROUPS = {
     "open": ["queued", "running", "review", "dry_run", "error"],
-    "closed": ["done", "dismissed", "skipped"],
+    "closed": ["done", "dismissed", "skipped", "superseded"],
 }
 
 STATUS_LABELS = {
@@ -58,6 +58,7 @@ STATUS_LABELS = {
     "dismissed": "verworfen",
     "skipped": "übersprungen",
     "error": "Fehler",
+    "superseded": "ersetzt",
 }
 
 
@@ -493,6 +494,12 @@ async def review_queue(request: Request):
     for job in await _jobs(request, "review", limit=50):
         items.append({"job": job, **await _review_context(request, job)})
     return _render(request, "review.html", items=items)
+
+
+@app.post("/review/recheck")
+async def recheck_reviews(request: Request):
+    n = await _proc(request).recheck_reviews()
+    return _redirect("/review", msg=_("{n} Dokument(e) werden mit der aktuellen Konfiguration neu geprüft – Seite gleich neu laden", n=n))
 
 
 @app.get("/jobs/{job_id}", response_class=HTMLResponse)
