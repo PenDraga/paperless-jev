@@ -227,3 +227,23 @@ def test_existing_tags_are_verified():
     # abschaltbar: vorhandene Tags werden dann nicht gefragt
     req = build_request(doc, make_meta(), {}, cfg(verify_tags=False))
     assert req.checked_tags == set() and "tag:103" not in req.questions
+
+
+def test_confident_contradiction_overwrites_existing_value():
+    from paperless_jev.classifier import plan
+
+    doc = make_doc() | {"document_type": 10, "correspondent": 2}  # heute: Stadtwerke
+    result = {"fields": {
+        "document_type": {"value": 10, "confidence": 0.99, "level": "auto"},
+        "correspondent": {"value": 1, "confidence": 0.99, "level": "auto"},
+    }, "tags": [], "tag_checks": []}
+    # Standard: nie überschreiben, Widerspruch -> Review
+    p = plan(result, doc, cfg())
+    assert "correspondent" not in p["updates"] and p["needs_review"]
+    # ab 0.98: Jev korrigiert selbst, kein Review
+    p = plan(result, doc, cfg(overwrite_above=0.98))
+    assert p["updates"]["correspondent"] == 1 and not p["needs_review"]
+    # knapperer Widerspruch bleibt beim Review
+    result["fields"]["correspondent"]["confidence"] = 0.9
+    p = plan(result, doc, cfg(overwrite_above=0.98))
+    assert "correspondent" not in p["updates"] and p["needs_review"]

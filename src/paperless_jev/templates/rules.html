@@ -34,6 +34,9 @@
   <label><input type="checkbox" name="tags_force_review" {% if cfg.tags_force_review %}checked{% endif %}> {{ _("unsichere Tag-Vorschläge allein schicken ein Dokument ins Review") }}</label>
   <label><input type="checkbox" name="verify_tags" {% if cfg.verify_tags %}checked{% endif %}> {{ _("vorhandene Tags von Jev gegenprüfen (ein Widerspruch schickt das Dokument ins Review, entfernt wird nichts automatisch)") }}</label>
   <label><input type="checkbox" name="paperless_rules" {% if cfg.paperless_rules %}checked{% endif %}> {{ _("Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben") }}</label>
+  <label>{{ _("Vorhandenen Wert (Dokumenttyp, Korrespondent, Speicherpfad) durch Jev ersetzen, wenn Jev widerspricht mit mindestens") }}
+    <input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="overwrite_above" value="{{ cfg.overwrite_above }}" style="max-width:7rem">
+    <small>{{ _("0 = nie. Z. B. 0.98: nur bei sehr sicherem Widerspruch wird korrigiert, knappere Widersprüche kommen ins Review (Option unten).") }}</small></label>
   <label><input type="checkbox" name="review_conflicts" {% if cfg.review_conflicts %}checked{% endif %}> {{ _("ins Review, wenn Jev einem vorhandenen Wert sicher widerspricht (z. B. falsche Paperless-Zuordnung)") }}</label>
   <label><input type="checkbox" name="remove_inbox" {% if cfg.remove_inbox %}checked{% endif %}> {{ _("Posteingangs-Tag entfernen, wenn ein Dokument fertig klassifiziert ist") }}</label>
 </article>

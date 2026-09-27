@@ -700,6 +700,7 @@ async def save_rules(request: Request):
             "review_conflicts": "review_conflicts" in form,
             "paperless_rules": "paperless_rules" in form,
             "verify_tags": "verify_tags" in form,
+            "overwrite_above": min(max(num("overwrite_above", 0), 0.0), 1.0),
             "remove_inbox": "remove_inbox" in form,
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),

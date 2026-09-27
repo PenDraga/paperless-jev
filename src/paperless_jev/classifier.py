@@ -315,15 +315,19 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
                     needs_review = True
             continue
         if current and not cfg["overwrite"]:
-            # Vorhandener Wert bleibt - widerspricht Jev aber sicher, soll ein
-            # Mensch entscheiden (z. B. zu breite Paperless-Zuordnungsregeln).
-            if (
-                cfg.get("review_conflicts", True)
-                and found
+            conflict = (
+                found is not None
                 and found["level"] == "auto"
                 and found["value"] is not None
                 and found["value"] != current
-            ):
+            )
+            # Sehr sicherer Widerspruch: Jev korrigiert den vorhandenen Wert selbst (0 = nie)
+            overwrite_above = float(cfg.get("overwrite_above") or 0)
+            if conflict and overwrite_above > 0 and found["confidence"] >= overwrite_above:
+                updates[name] = found["value"]
+            # Sonst bleibt der vorhandene Wert - bei sicherem Widerspruch entscheidet ein Mensch
+            # (z. B. zu breite Paperless-Zuordnungsregeln).
+            elif conflict and cfg.get("review_conflicts", True):
                 needs_review = True
             continue
         if found and found["level"] == "auto" and found["value"] != current:

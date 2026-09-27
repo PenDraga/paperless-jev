@@ -140,6 +140,10 @@ EN: dict[str, str] = {
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
     "Filtern": "Filter",
+    "Vorhandenen Wert (Dokumenttyp, Korrespondent, Speicherpfad) durch Jev ersetzen, wenn Jev widerspricht mit mindestens":
+        "Replace an existing value (document type, correspondent, storage path) with Jev's when Jev disagrees with at least",
+    "0 = nie. Z. B. 0.98: nur bei sehr sicherem Widerspruch wird korrigiert, knappere Widersprüche kommen ins Review (Option unten).":
+        "0 = never. E.g. 0.98: only very confident contradictions are corrected, closer ones go to review (option below).",
     "ersetzt": "superseded",
     "{n} Dokument(e) werden mit der aktuellen Konfiguration neu geprüft – Seite gleich neu laden": "{n} document(s) are being re-checked with the current configuration – reload the page shortly",
     "Alle Dokumente im Review mit der aktuellen Konfiguration neu von Jev prüfen lassen?": "Let Jev re-check all documents in review with the current configuration?",
