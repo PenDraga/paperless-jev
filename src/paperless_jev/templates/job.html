@@ -10,6 +10,7 @@
 {% if job.source == "test" %}<p class="flash info">{{ _("Test – dieses Ergebnis wurde nicht in Paperless geschrieben. Passt es, kannst du es unten von Hand übernehmen.") }}</p>{% endif %}
 <div class="job-actions">
   <form method="post" action="/jobs/{{ job.id }}/test" class="inline"><button type="submit" class="secondary" onclick="this.setAttribute('aria-busy','true')" title="{{ _('Sofort neu bewerten, ohne etwas zu schreiben') }}">{{ _("Erneut testen") }}</button></form>
+  {% if job.status not in ("queued", "running", "deleted") %}<form method="post" action="/jobs/{{ job.id }}/delete-document" class="inline" onsubmit="return confirm('{{ _('Dieses Dokument in Paperless löschen? Es landet im Papierkorb von Paperless und lässt sich dort wiederherstellen.') }}')"><input type="hidden" name="back" value="/log"><button type="submit" class="secondary outline rv-danger-btn">{{ icon("trash") }} {{ _("Dokument löschen") }}</button></form>{% endif %}
   {% if job.status not in ("queued", "running") %}<form method="post" action="/jobs/{{ job.id }}/delete" class="inline" onsubmit="return confirm('{{ _('Diesen Eintrag endgültig löschen?') }}')"><button type="submit" class="secondary outline">{{ icon("trash") }} {{ _("Eintrag löschen") }}</button></form>{% endif %}
   <form method="post" action="/jobs/{{ job.id }}/retry" class="inline"><button type="submit" class="secondary outline" title="{{ _('Einreihen und im aktuellen Modus verarbeiten') }}">{{ _("Neu klassifizieren") }}</button></form>
 </div>

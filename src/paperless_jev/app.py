@@ -48,7 +48,7 @@ MODE_LABELS = {
 # Offen = braucht noch Aufmerksamkeit oder ist nur probeweise gelaufen; erledigt = abgeschlossen
 STATUS_GROUPS = {
     "open": ["queued", "running", "review", "dry_run", "error"],
-    "closed": ["done", "dismissed", "skipped", "superseded"],
+    "closed": ["done", "dismissed", "skipped", "superseded", "deleted"],
 }
 
 STATUS_LABELS = {
@@ -61,6 +61,7 @@ STATUS_LABELS = {
     "skipped": "übersprungen",
     "error": "Fehler",
     "superseded": "ersetzt",
+    "deleted": "gelöscht",
 }
 
 
@@ -450,6 +451,17 @@ async def suggest_title(request: Request, job_id: int, format: str = "html"):
         f"""onclick="this.closest('form').querySelector('input[name=title]').value=this.dataset.title">"""
         f'{html.escape(_("ins Titelfeld"))}</button></span>'
     )
+
+
+@app.post("/jobs/{job_id}/delete-document")
+async def delete_document(request: Request, job_id: int):
+    form = await request.form()
+    back = _local_path(str(form.get("back") or ""), "/review")
+    try:
+        await _proc(request).delete_document(job_id)
+    except PaperlessError as e:
+        return _redirect(f"/jobs/{job_id}", err=str(e))
+    return _redirect(back, msg=_("Dokument in Paperless gelöscht (Papierkorb)"))
 
 
 @app.post("/jobs/{job_id}/delete")

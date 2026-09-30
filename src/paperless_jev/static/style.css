@@ -372,6 +372,8 @@ button.soft:hover { background: var(--pj-accent); color: #fff; }
 body.rv-noscroll { overflow: hidden; }
 .rv-data { background: var(--pj-card); border: 1px solid var(--pj-line); border-radius: var(--pj-radius); padding: .6rem 1.1rem 1rem; }
 .rv-meta { font-size: .8rem; color: var(--pj-muted); padding: .3rem 0 .4rem; }
+.rv-danger { color: var(--pj-bad) !important; }
+.rv-danger-btn { color: var(--pj-bad) !important; border-color: var(--pj-bad-bar) !important; }
 .rv-link { all: unset; cursor: pointer; color: var(--pico-primary); text-decoration: underline; text-underline-offset: .2em; }
 .rv-row { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: .7rem; width: 100%; padding: .75rem .1rem; border-bottom: 1px solid var(--pj-line); }
 label.rv-row { cursor: default; margin: 0; }

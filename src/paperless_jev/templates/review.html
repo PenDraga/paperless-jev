@@ -42,6 +42,9 @@
     <div class="rv-meta">
       {% if job.instance %}<a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">{{ _("in Paperless öffnen") }}</a> · {% endif %}
       <a href="/jobs/{{ job.id }}">{{ _("Details") }}</a>
+      <form method="post" action="/jobs/{{ job.id }}/delete-document" class="inline" onsubmit="return confirm('{{ _('Dieses Dokument in Paperless löschen? Es landet im Papierkorb von Paperless und lässt sich dort wiederherstellen.') }}')">
+        <input type="hidden" name="back" value="/review?after={{ job.id }}">
+        · <button type="submit" class="rv-link rv-danger">{{ _("Dokument löschen") }}</button></form>
       <form method="post" action="/review/recheck" class="inline" onsubmit="return confirm('{{ _('Alle Dokumente im Review mit der aktuellen Konfiguration neu von Jev prüfen lassen?') }}')">
         · <button type="submit" class="rv-link">{{ _("Alle erneut prüfen") }}</button></form>
     </div>

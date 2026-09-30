@@ -63,6 +63,11 @@ class FakePaperless:
     async def task(self, task_id):
         return self.tasks.get(task_id)
 
+    deleted: list[int] = []
+
+    async def delete_document(self, doc_id):
+        self.deleted.append(doc_id)
+
 
 class FakeJev:
     response: dict = {}
@@ -404,7 +409,7 @@ def test_recheck_reviews_replaces_old_entry(client):
     assert [row["status"] for row in rows] == ["superseded", "review"]
     # Review-Liste zeigt das Dokument nur einmal, mit dem neuen Lauf
     page = client.get("/review").text
-    assert page.count('action="/jobs/') == 1 and f'action="/jobs/{rows[1]["id"]}/apply"' in page
+    assert page.count('/apply"') == 1 and f'action="/jobs/{rows[1]["id"]}/apply"' in page
     assert "Alle erneut prüfen" in page
     assert "ersetzt" in client.get("/log?status=closed").text
 
@@ -489,3 +494,18 @@ async def test_task_status_paperless_2_and_3():
     assert (await Fake(v2).task("x"))["document_id"] == 77
     assert await Fake(fail).task("x") == {"status": "FAILURE", "document_id": None, "error": "Duplikat"}
     assert await Fake({"results": []}).task("x") is None
+
+
+def test_delete_document_from_review(client):
+    FakePaperless.deleted.clear()
+    db = client.app.state.db
+    old = db.create_job(1, 42, "poll"); db.update_job(old, status="review", result={"fields": {}, "tags": [], "current": {}})
+    job = db.create_job(1, 42, "manual"); db.update_job(job, status="review", result={"fields": {}, "tags": [], "current": {}})
+    done = db.create_job(1, 43, "poll"); db.update_job(done, status="done")
+    assert "Dokument löschen" in client.get("/review").text
+    r = client.post(f"/jobs/{job}/delete-document", data={"back": f"/review?after={job}"}, follow_redirects=False)
+    assert r.headers["location"].startswith(f"/review?after={job}&msg=")
+    assert FakePaperless.deleted == [42]
+    assert db.job(job)["status"] == "deleted" and db.job(old)["status"] == "deleted"
+    assert db.job(done)["status"] == "done"  # anderes Dokument bleibt
+    assert "Nichts zu prüfen" in client.get("/review").text

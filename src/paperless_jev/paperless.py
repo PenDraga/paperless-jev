@@ -198,6 +198,10 @@ class PaperlessClient:
         error = t.get("result") or result_data.get("error") or result_data.get("message") or ""
         return {"status": str(t.get("status", "")).upper(), "document_id": int(doc) if doc else None, "error": str(error)}
 
+    async def delete_document(self, doc_id: int) -> None:
+        """Löscht ein Dokument; Paperless legt es in den Papierkorb (wiederherstellbar)."""
+        await self._request("DELETE", f"/api/documents/{doc_id}/")
+
     async def preview(self, doc_id: int) -> tuple[bytes, str]:
         """Anzeigbare Fassung: das Archiv-PDF, sonst das Original (z. B. Bild)."""
         resp = await self._request("GET", f"/api/documents/{doc_id}/preview/")

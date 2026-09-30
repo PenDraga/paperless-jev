@@ -365,6 +365,20 @@ class Processor:
         )
         return applied
 
+    async def delete_document(self, job_id: int) -> None:
+        """Dokument in Paperless löschen (Papierkorb); offene Einträge dazu als gelöscht markieren."""
+        job = self.db.job(job_id)
+        inst = self.config.instance(job["instance_id"]) if job else None
+        if not job or not inst:
+            raise PaperlessError("Job oder Instanz nicht gefunden")
+        async with self.client(inst) as pl:
+            await pl.delete_document(job["doc_id"])
+        self.db.execute(
+            "UPDATE jobs SET status = 'deleted' WHERE instance_id = ? AND doc_id = ?"
+            " AND (id = ? OR status IN ('review', 'dry_run', 'error'))",
+            (job["instance_id"], job["doc_id"], job_id),
+        )
+
     async def dismiss(self, job_id: int) -> None:
         job = self.db.job(job_id)
         inst = self.config.instance(job["instance_id"]) if job else None
