@@ -633,13 +633,11 @@ async def scan_status(request: Request, instance_id: int, task_id: str):
         return JSONResponse({"state": "error", "error": str(e)})
     if not task:
         return JSONResponse({"state": "queued"})
-    status = str(task.get("status", "")).upper()
-    if status == "FAILURE":
-        return JSONResponse({"state": "error", "error": str(task.get("result") or "")[:300]})
-    doc_id = task.get("related_document")
-    if status != "SUCCESS" or not doc_id:
+    if task["status"] in ("FAILURE", "REVOKED"):
+        return JSONResponse({"state": "error", "error": task["error"][:300]})
+    doc_id = task["document_id"]
+    if task["status"] != "SUCCESS" or not doc_id:
         return JSONResponse({"state": "processing"})
-    doc_id = int(doc_id)
     db: Database = request.app.state.db
     job = db.one(
         "SELECT * FROM jobs WHERE instance_id = ? AND doc_id = ? AND source != 'test' ORDER BY id DESC LIMIT 1",

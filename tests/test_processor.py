@@ -461,12 +461,31 @@ def test_scan_upload_and_status(client):
     # Status: Paperless verarbeitet noch -> dann fertig -> paperless-jev klassifiziert selbst
     FakePaperless.tasks = {}
     assert client.get("/scan/status/1/task-1").json()["state"] == "queued"
-    FakePaperless.tasks = {"task-1": {"status": "STARTED"}}
+    FakePaperless.tasks = {"task-1": {"status": "STARTED", "document_id": None, "error": ""}}
     assert client.get("/scan/status/1/task-1").json()["state"] == "processing"
-    FakePaperless.tasks = {"task-1": {"status": "SUCCESS", "related_document": "42"}}
+    FakePaperless.tasks = {"task-1": {"status": "SUCCESS", "document_id": 42, "error": ""}}
     assert client.get("/scan/status/1/task-1").json()["state"] == "classifying"
     _wait(client)
     s = client.get("/scan/status/1/task-1").json()
     assert s["state"] == "done" and s["doc_id"] == 42 and s["fields"] and s["browse_url"].endswith("/documents/42/details")
-    FakePaperless.tasks = {"task-1": {"status": "FAILURE", "result": "kaputt"}}
+    FakePaperless.tasks = {"task-1": {"status": "FAILURE", "document_id": None, "error": "kaputt"}}
     assert client.get("/scan/status/1/task-1").json() == {"state": "error", "error": "kaputt"}
+
+
+async def test_task_status_paperless_2_and_3():
+    from paperless_jev.paperless import PaperlessClient
+
+    class Fake(PaperlessClient):
+        def __init__(self, data):
+            self.data = data
+
+        async def _get(self, path, params=None):
+            return self.data
+
+    v3 = {"count": 1, "results": [{"status": "success", "result_data": {"document_id": 2496}, "related_document_ids": [2496]}]}
+    v2 = [{"status": "SUCCESS", "related_document": "77", "result": "Success. New document id 77 created"}]
+    fail = {"results": [{"status": "failure", "result_data": {"error": "Duplikat"}, "related_document_ids": []}]}
+    assert await Fake(v3).task("x") == {"status": "SUCCESS", "document_id": 2496, "error": ""}
+    assert (await Fake(v2).task("x"))["document_id"] == 77
+    assert await Fake(fail).task("x") == {"status": "FAILURE", "document_id": None, "error": "Duplikat"}
+    assert await Fake({"results": []}).task("x") is None

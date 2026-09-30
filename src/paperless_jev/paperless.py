@@ -185,10 +185,18 @@ class PaperlessClient:
         return str(resp.json()).strip('"')
 
     async def task(self, task_id: str) -> dict[str, Any] | None:
-        """Status einer Verarbeitung: status (PENDING/STARTED/SUCCESS/FAILURE), related_document, result."""
+        """Status einer Verarbeitung, vereinheitlicht für Paperless 2.x und 3.x:
+        {"status": PENDING/STARTED/SUCCESS/FAILURE, "document_id": int | None, "error": str}."""
         data = await self._get("/api/tasks/", {"task_id": task_id})
         items = data if isinstance(data, list) else data.get("results", [])
-        return items[0] if items else None
+        if not items:
+            return None
+        t = items[0]
+        result_data = t.get("result_data") if isinstance(t.get("result_data"), dict) else {}
+        ids = t.get("related_document_ids") or []
+        doc = t.get("related_document") or (ids[0] if ids else None) or result_data.get("document_id")
+        error = t.get("result") or result_data.get("error") or result_data.get("message") or ""
+        return {"status": str(t.get("status", "")).upper(), "document_id": int(doc) if doc else None, "error": str(error)}
 
     async def preview(self, doc_id: int) -> tuple[bytes, str]:
         """Anzeigbare Fassung: das Archiv-PDF, sonst das Original (z. B. Bild)."""
