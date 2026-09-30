@@ -576,6 +576,96 @@ async def recheck_reviews(request: Request):
     return _redirect("/review", msg=_("{n} Dokument(e) werden mit der aktuellen Konfiguration neu geprüft – Seite gleich neu laden", n=n))
 
 
+# --- Scannen ------------------------------------------------------------------
+
+MAX_UPLOAD = 60 * 1024 * 1024
+UPLOAD_TYPES = ("application/pdf", "image/jpeg", "image/png", "image/tiff", "image/webp", "image/heic")
+
+
+@app.get("/scan", response_class=HTMLResponse)
+async def scan_page(request: Request):
+    instances = [i for i in _cfg(request).instances() if i.enabled]
+    tags: dict[int, list[list[Any]]] = {}
+    for inst in instances:
+        try:
+            async with _proc(request).client(inst) as pl:
+                meta = await _proc(request).metadata(inst, pl)
+            hidden = excluded_tags(meta, _cfg(request).all())
+            tags[inst.id] = sorted(([t, n] for t, n in meta.tags.items() if t not in hidden), key=lambda x: x[1].lower())
+        except PaperlessError:
+            tags[inst.id] = []
+    return _render(request, "scan.html", instances=instances, scan_tags=tags)
+
+
+@app.post("/scan/upload")
+async def scan_upload(request: Request):
+    form = await request.form()
+    upload = form.get("file")
+    inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
+    if not inst or upload is None or not hasattr(upload, "read"):
+        return JSONResponse({"error": _("Datei oder Instanz fehlt")}, status_code=400)
+    content = await upload.read()
+    ctype = (upload.content_type or "application/octet-stream").split(";")[0]
+    if ctype not in UPLOAD_TYPES:
+        return JSONResponse({"error": _("Dateityp nicht unterstützt: {type}", type=ctype)}, status_code=400)
+    if len(content) > MAX_UPLOAD:
+        return JSONResponse({"error": _("Datei zu gross (max. 60 MB)")}, status_code=400)
+    tags = [int(t) for t in form.getlist("tags") if str(t).isdigit()]
+    title = str(form.get("title") or "").strip()[:128] or None
+    try:
+        async with _proc(request).client(inst) as pl:
+            task_id = await pl.post_document(content, upload.filename or "scan.pdf", ctype, title, tags)
+    except PaperlessError as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+    return JSONResponse({"task_id": task_id, "instance_id": inst.id, "size": len(content)})
+
+
+@app.get("/scan/status/{instance_id}/{task_id}")
+async def scan_status(request: Request, instance_id: int, task_id: str):
+    """Fortschritt: Paperless-Verarbeitung, danach die Klassifizierung durch Jev."""
+    inst = _cfg(request).instance(instance_id)
+    if not inst:
+        raise HTTPException(404)
+    try:
+        async with _proc(request).client(inst) as pl:
+            task = await pl.task(task_id)
+    except PaperlessError as e:
+        return JSONResponse({"state": "error", "error": str(e)})
+    if not task:
+        return JSONResponse({"state": "queued"})
+    status = str(task.get("status", "")).upper()
+    if status == "FAILURE":
+        return JSONResponse({"state": "error", "error": str(task.get("result") or "")[:300]})
+    doc_id = task.get("related_document")
+    if status != "SUCCESS" or not doc_id:
+        return JSONResponse({"state": "processing"})
+    doc_id = int(doc_id)
+    db: Database = request.app.state.db
+    job = db.one(
+        "SELECT * FROM jobs WHERE instance_id = ? AND doc_id = ? AND source != 'test' ORDER BY id DESC LIMIT 1",
+        (instance_id, doc_id),
+    )
+    if not job:
+        # nicht auf Webhook oder Polling warten
+        await _proc(request).enqueue(instance_id, doc_id, "scan")
+        return JSONResponse({"state": "classifying", "doc_id": doc_id})
+    if job["status"] in ("queued", "running"):
+        return JSONResponse({"state": "classifying", "doc_id": doc_id, "job_id": job["id"]})
+    fields = []
+    metas = await _metas(request)
+    meta = metas.get(instance_id)
+    for name, f in ((job.get("result") or {}).get("fields") or {}).items():
+        if f.get("value") is None:
+            continue
+        label = f["label"] if name == "created" or not meta else meta.names(name).get(f["value"], f["label"])
+        fields.append({"name": _(FIELD_LABELS[name]), "label": label, "confidence": f["confidence"], "level": f["level"]})
+    return JSONResponse({
+        "state": "done", "doc_id": doc_id, "job_id": job["id"], "status": job["status"],
+        "status_label": _(STATUS_LABELS.get(job["status"], job["status"])), "fields": fields,
+        "title": job.get("doc_title"), "browse_url": f"{inst.browse_url}/documents/{doc_id}/details",
+    })
+
+
 @app.get("/jobs/{job_id}", response_class=HTMLResponse)
 async def job_detail(request: Request, job_id: int):
     job = request.app.state.db.job(job_id)

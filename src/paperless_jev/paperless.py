@@ -170,6 +170,26 @@ class PaperlessClient:
     async def patch_document(self, doc_id: int, data: dict[str, Any]) -> dict[str, Any]:
         return (await self._request("PATCH", f"/api/documents/{doc_id}/", json=data)).json()
 
+    async def post_document(
+        self, content: bytes, filename: str, content_type: str, title: str | None = None, tags: list[int] | None = None
+    ) -> str:
+        """Lädt ein Dokument hoch; Paperless verarbeitet es asynchron und liefert die Task-ID."""
+        # als dict: eine Liste von Paaren sieht httpx als synchronen Datenstrom an
+        data: dict[str, Any] = {"tags": [str(t) for t in tags or []]}
+        if title:
+            data["title"] = title
+        resp = await self._request(
+            "POST", "/api/documents/post_document/",
+            files={"document": (filename, content, content_type)}, data=data, timeout=120,
+        )
+        return str(resp.json()).strip('"')
+
+    async def task(self, task_id: str) -> dict[str, Any] | None:
+        """Status einer Verarbeitung: status (PENDING/STARTED/SUCCESS/FAILURE), related_document, result."""
+        data = await self._get("/api/tasks/", {"task_id": task_id})
+        items = data if isinstance(data, list) else data.get("results", [])
+        return items[0] if items else None
+
     async def preview(self, doc_id: int) -> tuple[bytes, str]:
         """Anzeigbare Fassung: das Archiv-PDF, sonst das Original (z. B. Bild)."""
         resp = await self._request("GET", f"/api/documents/{doc_id}/preview/")

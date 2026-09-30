@@ -8,9 +8,9 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
 
 ![Overview](docs/screenshots/uebersicht-en.png)
 
-| Review | Review (phone) | Log (phone) | Descriptions (phone) | Dark mode |
-|---|---|---|---|---|
-| ![Review](docs/screenshots/review-en.png) | ![Review phone](docs/screenshots/review-handy-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
+| Review | Review (phone) | Scan (phone) | Log (phone) | Descriptions (phone) | Dark mode |
+|---|---|---|---|---|---|
+| ![Review](docs/screenshots/review-en.png) | ![Review phone](docs/screenshots/review-handy-en.png) | ![Scan](docs/screenshots/scannen-handy.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
 
 <sub>Screenshots with made-up demo data, see [`demo/`](demo/).</sub>
 
@@ -25,6 +25,7 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
 - **Evaluation** on the overview: hit rate per field compared with your current filing.
 - **Descriptions from keywords** – a local language model (Ollama or OpenAI-compatible, e.g. Qwen)
   turns your keywords into a full description in the interface language.
+- **Scan documents** with your phone: edges detected and straightened automatically, several pages into one PDF, straight to Paperless.
 - **Titles** optionally by language model (in the style of documents already filed) or by template.
 - **Filing conventions** – titles of documents already filed are sent to Jev as examples.
 - **Webhook and polling**, multiple Paperless instances, log with cleanup.

@@ -112,6 +112,18 @@ zusätzlich `X-Frame-Options: DENY` setzen (Traefik: `frameDeny: true`), sonst m
 „Verbindung abgelehnt“. Der Viewer hängt `?view=…` an, damit der Browser kein zwischengespeichertes PDF
 mit alten Headern verwendet.
 
+## Scannen
+
+Unter *Scannen* nimmt das Handy Belege direkt im Browser auf (Kamera nur über HTTPS). OpenCV.js erkennt den
+Belegrand live, entzerrt die Seite perspektivisch und bietet die Filter Original, Graustufen und «Scan»
+(Beleuchtung ausgeglichen, kontrastreich). Mehrere Seiten werden im Browser mit jsPDF zu einem PDF und über
+paperless-jev an `POST /api/documents/post_document/` geschickt; das API-Token bleibt auf dem Server. Die Seite
+verfolgt den Paperless-Task und reiht das neue Dokument sofort zur Klassifizierung ein, ohne auf Webhook oder
+Polling zu warten. Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich auf derselben Seite hochladen.
+
+Bibliotheken werden zur Laufzeit vom CDN geladen, nicht mitgeliefert: OpenCV.js (`@techstark/opencv-js`,
+Apache 2.0, ~10 MB, erst beim Start der Kamera), jsPDF (MIT), pdf.js (Apache 2.0, im Review).
+
 ## Webhook
 
 Paperless (≥ 2.14) → *Workflows* → neuer Workflow:

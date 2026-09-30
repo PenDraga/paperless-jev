@@ -53,6 +53,16 @@ class FakePaperless:
         self.docs[doc_id].update(data)
         return self.docs[doc_id]
 
+    uploads: list[dict] = []
+    tasks: dict[str, dict] = {}
+
+    async def post_document(self, content, filename, content_type, title=None, tags=None):
+        self.uploads.append({"size": len(content), "filename": filename, "type": content_type, "title": title, "tags": tags})
+        return "task-1"
+
+    async def task(self, task_id):
+        return self.tasks.get(task_id)
+
 
 class FakeJev:
     response: dict = {}
@@ -433,3 +443,30 @@ def test_review_shows_one_document_at_a_time(client):
     # Titelvorschlag als JSON
     client.app.state.config.update({"title_mode": "off"})
     assert "error" in client.post(f"/jobs/{ids[0]}/title?format=json").json()
+
+
+def test_scan_upload_and_status(client):
+    FakePaperless.uploads.clear()
+    page = client.get("/scan").text
+    assert 'id="sc-data"' in page and "scan.js" in page and "Kamera starten" in page
+
+    files = {"file": ("scan.pdf", b"%PDF-1.4 test", "application/pdf")}
+    r = client.post("/scan/upload", files=files, data={"instance_id": "1", "title": "Beleg", "tags": ["101", "103"]})
+    assert r.status_code == 200 and r.json()["task_id"] == "task-1"
+    assert FakePaperless.uploads[-1] == {"size": 13, "filename": "scan.pdf", "type": "application/pdf", "title": "Beleg", "tags": [101, 103]}
+    # falscher Typ wird abgelehnt
+    bad = client.post("/scan/upload", files={"file": ("x.exe", b"MZ", "application/x-msdownload")}, data={"instance_id": "1"})
+    assert bad.status_code == 400
+
+    # Status: Paperless verarbeitet noch -> dann fertig -> paperless-jev klassifiziert selbst
+    FakePaperless.tasks = {}
+    assert client.get("/scan/status/1/task-1").json()["state"] == "queued"
+    FakePaperless.tasks = {"task-1": {"status": "STARTED"}}
+    assert client.get("/scan/status/1/task-1").json()["state"] == "processing"
+    FakePaperless.tasks = {"task-1": {"status": "SUCCESS", "related_document": "42"}}
+    assert client.get("/scan/status/1/task-1").json()["state"] == "classifying"
+    _wait(client)
+    s = client.get("/scan/status/1/task-1").json()
+    assert s["state"] == "done" and s["doc_id"] == 42 and s["fields"] and s["browse_url"].endswith("/documents/42/details")
+    FakePaperless.tasks = {"task-1": {"status": "FAILURE", "result": "kaputt"}}
+    assert client.get("/scan/status/1/task-1").json() == {"state": "error", "error": "kaputt"}

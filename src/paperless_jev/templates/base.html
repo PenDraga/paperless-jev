@@ -18,7 +18,7 @@
 <div id="pj-loader" aria-hidden="true"></div>
 {% set path = request.url.path %}
 {% set here = request.url.path ~ ("?" ~ request.url.query if request.url.query else "") %}
-{% set nav = [("/", "Übersicht", "dashboard"), ("/review", "Review", "inbox"), ("/log", "Protokoll", "list"), ("/rules", "Regeln", "filter"), ("/descriptions", "Beschreibungen", "file"), ("/setup", "Setup", "settings")] %}
+{% set nav = [("/", "Übersicht", "dashboard"), ("/review", "Review", "inbox"), ("/scan", "Scannen", "camera"), ("/log", "Protokoll", "list"), ("/rules", "Regeln", "filter"), ("/descriptions", "Beschreibungen", "file"), ("/setup", "Setup", "settings")] %}
 {% macro current(href) %}{% if path == href or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
 {% macro badge(href) %}{% if href == "/review" and review_count %}<span class="count">{{ review_count }}</span>{% endif %}{% endmacro %}
 <header class="appbar">
@@ -34,7 +34,7 @@
 </header>
 <nav class="bottom-nav" aria-label="{{ _('Navigation') }}">
   {% for href, label, ic in nav[:4] %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}{{ badge(href) }}</a>{% endfor %}
-  <details{% if current("/descriptions") or current("/setup") %} class="current"{% endif %}>
+  <details{% if current("/rules") or current("/descriptions") or current("/setup") %} class="current"{% endif %}>
     <summary>{{ icon("more") }}{{ _("Mehr") }}</summary>
     <div class="more-menu">{% for href, label, ic in nav[4:] %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}</a>{% endfor %}</div>
   </details>

@@ -8,9 +8,9 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
 
 ![Übersicht](docs/screenshots/uebersicht.png)
 
-| Review | Review (Handy) | Protokoll (Handy) | Beschreibungen (Handy) | Dark Mode |
-|---|---|---|---|---|
-| ![Review](docs/screenshots/review.png) | ![Review Handy](docs/screenshots/review-handy.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
+| Review | Review (Handy) | Scannen (Handy) | Protokoll (Handy) | Beschreibungen (Handy) | Dark Mode |
+|---|---|---|---|---|---|
+| ![Review](docs/screenshots/review.png) | ![Review Handy](docs/screenshots/review-handy.png) | ![Scannen](docs/screenshots/scannen-handy.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
 
 <sub>Screenshots mit erfundenen Demodaten, siehe [`demo/`](demo/).</sub>
 
@@ -25,6 +25,7 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
 - **Auswertung** auf der Übersicht: Trefferquote je Feld im Vergleich zur heutigen Ablage.
 - **Beschreibungen aus Stichworten** – ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel,
   z. B. Qwen) formuliert deine Stichworte in der Sprache der Oberfläche aus.
+- **Belege scannen** mit dem Handy: Rand wird automatisch erkannt und entzerrt, mehrere Seiten zu einem PDF, direkt nach Paperless.
 - **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten) oder per Vorlage.
 - **Ablage-Konventionen** – Titel bereits abgelegter Dokumente gehen als Beispiele an Jev.
 - **Webhook und Polling**, mehrere Paperless-Instanzen, Protokoll mit Bereinigen.

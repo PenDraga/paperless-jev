@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block body_class %}page-scan{% endblock %}
+{% block content %}
+{% if not instances %}
+<h2>{{ _("Scannen") }}</h2>
+<p class="flash bad">{{ _("Zuerst unter <a href=\"/setup\">Setup</a> eine Instanz anlegen.")|safe }}</p>
+{% else %}
+<div class="sc">
+  <!-- Übersicht: Seiten, Ziel, Hochladen -->
+  <section class="sc-view" id="sc-overview">
+    <div class="sc-head"><a href="/" class="rv-close" aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</a>
+      <div class="rv-headtext"><strong>{{ _("Neuer Beleg") }}</strong><small id="sc-count">{{ _("noch keine Seiten") }}</small></div></div>
+    <div class="sc-body">
+      <div class="sc-empty" id="sc-empty">
+        <button type="button" class="sc-big" data-go="capture">{{ icon("camera") }}<span>{{ _("Kamera starten") }}</span><small>{{ _("Seiten nacheinander fotografieren – der Rand wird automatisch erkannt") }}</small></button>
+        <label class="sc-big secondary">{{ icon("upload") }}<span>{{ _("Dateien wählen") }}</span><small>{{ _("PDF oder Bilder, z. B. aus «Dokumente scannen» auf dem iPhone") }}</small>
+          <input type="file" id="sc-files" accept="application/pdf,image/*" multiple hidden></label>
+      </div>
+      <div id="sc-pages-wrap" hidden>
+        <div class="rv-lbl">{{ _("Seiten") }} <span>{{ _("– antippen zum Bearbeiten, ‹ › zum Sortieren") }}</span></div>
+        <div class="sc-grid" id="sc-grid"></div>
+      </div>
+      <div class="rv-lbl">{{ _("Paperless-Instanz") }}</div>
+      <select id="sc-instance">{% for i in instances %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}</select>
+      <div class="rv-lbl">{{ _("Titel (optional)") }}</div>
+      <input id="sc-title" placeholder="{{ _('leer = automatisch') }}" maxlength="128">
+      <div class="rv-lbl">{{ _("Tags (optional)") }}</div>
+      <div class="rv-chips" id="sc-tags"></div>
+      <p class="hint">{{ _("Paperless erkennt den Text, danach klassifiziert paperless-jev den Beleg wie jeden anderen.") }}</p>
+    </div>
+    <div class="sc-foot">
+      <button type="button" class="rv-btn primary sc-upload" id="sc-upload" disabled>{{ icon("upload") }} <span id="sc-upload-label">{{ _("Als PDF hochladen") }}</span></button>
+      <div class="sc-alt"><button type="button" class="rv-link" data-go="capture">{{ _("weitere Seite fotografieren") }}</button> · <label class="rv-link">{{ _("Dateien wählen") }}<input type="file" id="sc-files2" accept="application/pdf,image/*" multiple hidden></label></div>
+    </div>
+  </section>
+
+  <!-- Kamera -->
+  <section class="sc-view sc-dark" id="sc-capture" hidden>
+    <div class="sc-head"><button type="button" class="rv-close" data-go="overview" aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</button>
+      <div class="rv-headtext"><strong>{{ _("Scannen") }}</strong><small id="sc-capcount"></small></div></div>
+    <div class="sc-cam">
+      <video id="sc-video" playsinline muted autoplay></video>
+      <canvas id="sc-overlay"></canvas>
+      <div class="sc-hint" id="sc-hint">{{ _("Kamera wird gestartet …") }}</div>
+      <div class="sc-flash" id="sc-flash"></div>
+    </div>
+    <div class="sc-camfoot">
+      <div class="sc-thumbs" id="sc-thumbs"></div>
+      <button type="button" class="sc-shutter" id="sc-shutter" aria-label="{{ _('Foto aufnehmen') }}"><i></i></button>
+      <button type="button" class="sc-done" data-go="overview">{{ _("Fertig") }}</button>
+    </div>
+    <label class="sc-nocam" id="sc-nocam" hidden>{{ icon("camera") }} {{ _("Foto mit der Kamera-App aufnehmen") }}<input type="file" id="sc-native" accept="image/*" capture="environment" hidden></label>
+  </section>
+
+  <!-- Seite bearbeiten -->
+  <section class="sc-view sc-dark" id="sc-edit" hidden>
+    <div class="sc-head"><button type="button" class="rv-close" data-go="overview" aria-label="{{ _('Zurück') }}">‹</button>
+      <div class="rv-headtext"><strong id="sc-edit-title"></strong><small id="sc-edit-sub">{{ _("Ecken bei Bedarf verschieben") }}</small></div></div>
+    <div class="sc-editarea" id="sc-editarea"><canvas id="sc-editcanvas"></canvas><svg id="sc-quad"></svg></div>
+    <div class="sc-editbar">
+      <div class="sc-tools">
+        <button type="button" data-act="rotate">{{ icon("rotate") }}<span>{{ _("Drehen") }}</span></button>
+        <button type="button" data-act="reset">{{ icon("more") }}<span>{{ _("Ganzes Bild") }}</span></button>
+        <button type="button" data-act="retake">{{ icon("camera") }}<span>{{ _("Neu") }}</span></button>
+        <button type="button" data-act="delete">{{ icon("trash") }}<span>{{ _("Löschen") }}</span></button>
+      </div>
+      <div class="sc-filters" id="sc-filters">
+        <button type="button" data-filter="color">{{ _("Original") }}</button>
+        <button type="button" data-filter="gray">{{ _("Graustufen") }}</button>
+        <button type="button" data-filter="scan">{{ _("Scan") }}</button>
+      </div>
+      <div class="sc-btnrow"><button type="button" class="sc-btn" data-go="overview">{{ _("Abbrechen") }}</button><button type="button" class="sc-btn primary" id="sc-apply">{{ _("Übernehmen") }}</button></div>
+    </div>
+  </section>
+
+  <!-- Status -->
+  <section class="sc-view" id="sc-status" hidden>
+    <div class="sc-head"><a href="/" class="rv-close" aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</a>
+      <div class="rv-headtext"><strong>{{ _("Hochgeladen") }}</strong><small id="sc-status-sub"></small></div></div>
+    <div class="sc-body">
+      <ol class="sc-steps" id="sc-steps">
+        <li data-step="upload"><span class="sc-dot"></span><div><b>{{ _("An Paperless gesendet") }}</b><small></small></div></li>
+        <li data-step="ocr"><span class="sc-dot"></span><div><b>{{ _("Texterkennung") }}</b><small></small></div></li>
+        <li data-step="jev"><span class="sc-dot"></span><div><b>{{ _("Klassifizierung durch Jev") }}</b><small></small></div></li>
+        <li data-step="done"><span class="sc-dot"></span><div><b>{{ _("Fertig") }}</b><small></small></div></li>
+      </ol>
+      <div class="sc-result" id="sc-result" hidden></div>
+      <button type="button" class="rv-btn primary sc-upload" id="sc-again">{{ icon("camera") }} {{ _("Nächsten Beleg scannen") }}</button>
+      <div class="sc-alt" id="sc-links"></div>
+    </div>
+  </section>
+</div>
+
+<script type="application/json" id="sc-data">{{ {
+  "tags": scan_tags,
+  "t": {"pages": _("{n} Seite(n)"), "none": _("noch keine Seiten"), "upload": _("Als PDF hochladen ({n} Seiten)"), "uploadFiles": _("{n} Datei(en) hochladen"),
+        "page": _("Seite {n}"), "detected": _("Beleg erkannt – ruhig halten"), "search": _("Beleg ins Bild halten"), "loadingCv": _("Randerkennung wird geladen …"),
+        "nocam": _("Keine Kamera verfügbar – Foto mit der Kamera-App aufnehmen"), "uploading": _("wird hochgeladen …"), "sent": _("{size} gesendet"),
+        "ocr": _("läuft in Paperless …"), "docid": _("Dokument #{id}"), "jev": _("läuft …"), "failed": _("Fehler: {error}"),
+        "view": _("Dokument ansehen"), "job": _("Details"), "overview": _("zur Übersicht"), "status": _("Status: {status}"), "more": _("+ weitere")}
+}|tojson }}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script type="module" src="/static/scan.js?v={{ asset_v }}"></script>
+{% endif %}
+{% endblock %}

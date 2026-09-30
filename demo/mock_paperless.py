@@ -186,6 +186,26 @@ def preview(doc_id: int) -> Response:
     return Response(_pdf(doc), media_type="application/pdf")
 
 
+_polls: dict[str, int] = {}
+
+
+@app.post("/api/documents/post_document/")
+async def post_document(request: Request) -> str:
+    form = await request.form()
+    upload = form.get("document")
+    print(f"Upload: {getattr(upload, 'filename', '?')} {len(await upload.read())} Bytes, tags={form.getlist('tags')}", flush=True)
+    _polls["demo-task"] = 0
+    return "demo-task"
+
+
+@app.get("/api/tasks/")
+def tasks(task_id: str) -> list[dict[str, Any]]:
+    # nach zwei Abfragen "fertig" - wie ein kurzer OCR-Lauf
+    _polls[task_id] = _polls.get(task_id, 0) + 1
+    done = _polls[task_id] > 2
+    return [{"task_id": task_id, "status": "SUCCESS" if done else "STARTED", "related_document": "110" if done else None}]
+
+
 @app.post("/api/tags/")
 def create_tag() -> dict[str, Any]:
     return {"id": 999}
