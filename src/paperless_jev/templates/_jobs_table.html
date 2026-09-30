@@ -26,7 +26,7 @@
       </div></td>
       <td class="col-status" data-label="{{ _('Status') }}"><div><span class="badge {{ j.status }}">{{ _(STATUS_LABELS.get(j.status, j.status)) }}</span>
         {% if j.error %}<br><small class="bad">{{ _(j.error)[:120] }}</small>{% endif %}
-        <br><small class="muted">{{ j.updated_at[5:16].replace("T", " ") }}</small></div></td>
+        <br><small class="muted">{{ j.updated_at|localtime }}</small></div></td>
       <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type, 'document_type') }}</div></td>
       <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent, 'correspondent') }}</div></td>
       <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created, 'created') }}</div></td>

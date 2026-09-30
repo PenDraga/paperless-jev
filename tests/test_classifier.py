@@ -247,3 +247,11 @@ def test_confident_contradiction_overwrites_existing_value():
     result["fields"]["correspondent"]["confidence"] = 0.9
     p = plan(result, doc, cfg(overwrite_above=0.98))
     assert "correspondent" not in p["updates"] and p["needs_review"]
+
+
+def test_localtime_filter():
+    from paperless_jev.app import localtime
+
+    assert localtime("2026-09-30T14:05:00+00:00") == "30.09. 16:05"  # Sommerzeit Zürich
+    assert localtime("2026-12-01T14:05:00+00:00") == "01.12. 15:05"
+    assert localtime(None) == "" and localtime("kaputt") == "kaputt"

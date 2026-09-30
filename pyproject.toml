@@ -16,6 +16,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "rapidfuzz>=3.9",
     "cryptography>=43",
+    "tzdata>=2024.1",  # Zeitzonen auch in schlanken Images ohne /usr/share/zoneinfo
 ]
 
 [project.optional-dependencies]
