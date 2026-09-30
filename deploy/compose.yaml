@@ -5,6 +5,8 @@
 #   und Paperless den Webhook an http://paperless-jev:8000/hook/... senden kann.
 # - Middleware: KEINE mit frameDeny/X-Frame-Options DENY, sonst blockiert der Browser den
 #   Dokument-Viewer. paperless-jev setzt selbst X-Frame-Options: SAMEORIGIN.
+# - Scannen braucht die Kamera: ein Permissions-Policy-Header darf "camera" nicht sperren
+#   (camera=(self) statt camera=()).
 # - Die Web-UI hat kein eigenes Login: per IP-Allowlist, Authentik o. ä. schützen
 #   oder PJ_ADMIN_PASSWORD setzen.
 services:

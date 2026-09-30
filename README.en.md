@@ -93,7 +93,7 @@ Everything else is configured in the web UI. The environment only covers:
 Example: [`deploy/compose.yaml`](deploy/compose.yaml) – in the same network as Paperless, web UI reachable
 from the internal network only (IP allowlist). Note: a headers middleware with `frameDeny: true`
 (`X-Frame-Options: DENY`) blocks the document viewer. paperless-jev sends
-`X-Frame-Options: SAMEORIGIN` itself, so a middleware without `frameDeny` is enough.
+`X-Frame-Options: SAMEORIGIN` itself, so a middleware without `frameDeny` is enough. For scanning, a `Permissions-Policy` header must not block the camera (`camera=(self)` instead of `camera=()`), and the page must be served over HTTPS.
 
 ### Webhook in Paperless
 
