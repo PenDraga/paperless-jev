@@ -9,6 +9,8 @@ import logging
 import os
 import secrets
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pathlib import Path
 from typing import Any
 
@@ -77,6 +79,27 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="paperless-jev", version=__version__, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
 templates = Jinja2Templates(directory=HERE / "templates")
+
+# Anzeige in lokaler Zeit (gespeichert wird UTC); Zeitzone per TZ, Standard Europe/Zurich
+try:
+    LOCAL_TZ = ZoneInfo(os.environ.get("TZ") or "Europe/Zurich")
+except (ZoneInfoNotFoundError, ValueError):
+    LOCAL_TZ = ZoneInfo("UTC")
+
+
+def localtime(value: str | None, fmt: str = "%d.%m. %H:%M") -> str:
+    if not value:
+        return ""
+    try:
+        ts = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=UTC)
+    return ts.astimezone(LOCAL_TZ).strftime(fmt)
+
+
+templates.env.filters["localtime"] = localtime
 templates.env.globals.update(
     FIELD_LABELS=FIELD_LABELS,
     STATUS_LABELS=STATUS_LABELS,
@@ -402,8 +425,16 @@ async def test_job(request: Request, job_id: int):
 
 
 @app.post("/jobs/{job_id}/title", response_class=HTMLResponse)
-async def suggest_title(request: Request, job_id: int):
-    """Titelvorschlag fürs Review-Formular (htmx) - schreibt nichts nach Paperless."""
+async def suggest_title(request: Request, job_id: int, format: str = "html"):
+    """Titelvorschlag fürs Review-Formular (htmx oder JSON) - schreibt nichts nach Paperless."""
+    if format == "json":
+        if _cfg(request).all()["title_mode"] == "off":
+            return JSONResponse({"error": _("Titel sind unter Regeln ausgeschaltet")})
+        try:
+            title = await _proc(request).suggest_title(job_id)
+        except (LLMError, PaperlessError) as e:
+            return JSONResponse({"error": str(e)})
+        return JSONResponse({"title": title} if title else {"error": _("Kein Titel erzeugt – Sprachmodell unter Regeln prüfen")})
     if _cfg(request).all()["title_mode"] == "off":
         return HTMLResponse(f'<span class="muted">{html.escape(_("Titel sind unter Regeln ausgeschaltet"))}</span>')
     try:
@@ -488,12 +519,55 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
     }
 
 
+def _review_choices(job: dict[str, Any], meta: Metadata) -> dict[str, Any]:
+    """Daten für die Auswahl-Blätter: alle Optionen und Jevs Vorschläge mit Wahrscheinlichkeit."""
+    result = job.get("result") or {}
+    current = result.get("current", {})
+    choices: dict[str, Any] = {}
+    for name in ("document_type", "correspondent", "storage_path"):
+        names = meta.names(name)
+        by_name = {n: oid for oid, n in names.items()}
+        field = result.get("fields", {}).get(name) or {}
+        top = []
+        for label, p in field.get("top", []):
+            m = re.search(r" #(\d+)$", label)
+            oid = int(m.group(1)) if m else by_name.get(label)
+            if oid in names:
+                top.append({"id": oid, "name": names[oid], "p": p})
+        choices[name] = {
+            "options": sorted(([oid, n] for oid, n in names.items()), key=lambda o: o[1].lower()),
+            "top": top,
+            "current": current.get(name),
+            "value": field.get("value") if field.get("value") is not None else current.get(name),
+        }
+    return choices
+
+
 @app.get("/review", response_class=HTMLResponse)
-async def review_queue(request: Request):
-    items = []
-    for job in await _jobs(request, "review", limit=50):
-        items.append({"job": job, **await _review_context(request, job)})
-    return _render(request, "review.html", items=items)
+async def review_queue(request: Request, job: int | None = None, after: int | None = None):
+    """Ein Dokument nach dem anderen; ?job=ID zeigt ein bestimmtes, ?after=ID das nächste danach."""
+    jobs = await _jobs(request, "review", limit=500)
+    if not jobs:
+        return _render(request, "review.html", rv_job=None, total=0)
+    ids = [j["id"] for j in jobs]
+    if job in ids:
+        idx = ids.index(job)
+    elif after in ids:
+        idx = (ids.index(after) + 1) % len(ids)
+    elif after is not None:
+        # das eben bearbeitete ist weg: nächstes in derselben Reihenfolge (absteigende IDs)
+        idx = next((k for k, i in enumerate(ids) if i < after), 0)
+    else:
+        idx = 0
+    current = jobs[idx]
+    ctx = await _review_context(request, current)
+    return _render(
+        request, "review.html", rv_job=current, total=len(jobs), pos=idx + 1,
+        next_id=ids[(idx + 1) % len(ids)] if len(ids) > 1 else None,
+        prev_id=ids[idx - 1] if len(ids) > 1 else None,
+        choices=_review_choices(current, ctx["meta"]) if ctx.get("meta") else None,
+        **ctx,
+    )
 
 
 @app.post("/review/recheck")

@@ -409,3 +409,27 @@ def test_conflicting_existing_tag_is_unticked_in_review(client):
     page = client.get(f"/jobs/{job}").text
     assert 'name="keep_tags" value="101" checked' in page
     assert 'name="keep_tags" value="103">' in page
+
+
+def test_review_shows_one_document_at_a_time(client):
+    db = client.app.state.db
+    ids = []
+    for doc in (42, 43, 44):
+        j = db.create_job(1, doc, "poll")
+        db.update_job(j, status="review", doc_title=f"Dok {doc}", result={
+            "fields": {"correspondent": {"value": 1, "label": "Swisscom", "confidence": 0.8, "level": "suggest",
+                                         "top": [["Swisscom", 0.8], ["Stadtwerke", 0.15]]}},
+            "tags": [], "current": {"correspondent": 2, "tags": []}})
+        ids.append(j)
+    page = client.get("/review").text
+    assert "1 von 3" in page and "Dok 44" in page and "Dok 42" not in page  # neuestes zuerst
+    assert f'name="back" value="/review?after={ids[2]}"' in page
+    assert "bisher: Stadtwerke" in page and 'id="rv-data"' in page and "review.js" in page
+    assert "2 von 3" in client.get(f"/review?job={ids[1]}").text
+    # nach dem Übernehmen von Dok 44 kommt Dok 43
+    db.update_job(ids[2], status="done")
+    page = client.get(f"/review?after={ids[2]}").text
+    assert "Dok 43" in page and "1 von 2" in page
+    # Titelvorschlag als JSON
+    client.app.state.config.update({"title_mode": "off"})
+    assert "error" in client.post(f"/jobs/{ids[0]}/title?format=json").json()

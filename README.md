@@ -8,9 +8,9 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
 
 ![Übersicht](docs/screenshots/uebersicht.png)
 
-| Review | Protokoll (Handy) | Beschreibungen (Handy) | Dark Mode |
-|---|---|---|---|
-| ![Review](docs/screenshots/review.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
+| Review | Review (Handy) | Protokoll (Handy) | Beschreibungen (Handy) | Dark Mode |
+|---|---|---|---|---|
+| ![Review](docs/screenshots/review.png) | ![Review Handy](docs/screenshots/review-handy.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
 
 <sub>Screenshots mit erfundenen Demodaten, siehe [`demo/`](demo/).</sub>
 
@@ -20,7 +20,7 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
   zu jeder Antwort eine kalibrierte Sicherheit. Sichere Werte werden gesetzt, unsichere landen im Review.
 - **Drei Modi** – *Probelauf* (nur protokollieren), *Nur Vorschläge* (alles ins Review) und
   *Automatisch* (sichere Werte setzen, Rest ins Review).
-- **Review-Queue** mit Vorschaubild, Dokument-Viewer, Alternativen und Korrektur per Klick.
+- **Review** Dokument für Dokument: PDF direkt im Review mit markierten Jev-Werten, Korrektur per Antippen, fürs Handy gemacht.
 - **Einzeltest** – ein Dokument per ID oder Paperless-Link prüfen, ohne etwas zu schreiben.
 - **Auswertung** auf der Übersicht: Trefferquote je Feld im Vergleich zur heutigen Ablage.
 - **Beschreibungen aus Stichworten** – ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel,
@@ -83,6 +83,7 @@ Alles Fachliche wird in der Web-UI eingestellt. Per Umgebung gibt es nur:
 | `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optionaler Basic-Auth-Schutz der Web-UI (`/hook/*` und `/health` bleiben offen). |
 | `PJ_LOG_LEVEL` | `INFO` | Log-Level |
 | `PJ_DATA_DIR` | `/data` | Datenverzeichnis (SQLite, Schlüssel) |
+| `TZ` | `Europe/Zurich` | Zeitzone für die Anzeige |
 
 **`/data` sichern** – `paperless-jev.db` und `secret.key` gehören zusammen, sonst sind die gespeicherten Tokens nicht mehr lesbar.
 

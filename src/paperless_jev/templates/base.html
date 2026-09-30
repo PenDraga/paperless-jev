@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 </head>
-<body hx-indicator="#pj-loader">
+<body class="{% block body_class %}{% endblock %}" hx-indicator="#pj-loader">
 <div id="pj-loader" aria-hidden="true"></div>
 {% set path = request.url.path %}
 {% set here = request.url.path ~ ("?" ~ request.url.query if request.url.query else "") %}

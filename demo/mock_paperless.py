@@ -151,9 +151,39 @@ def thumb(doc_id: int) -> Response:
     return Response(_svg(doc), media_type="image/svg+xml")
 
 
+def _pdf(doc: dict[str, Any]) -> bytes:
+    """Einfaches einseitiges PDF mit Textebene (für pdf.js und die Markierungen)."""
+    corr = next(c["name"] for c in CORRESPONDENTS if c["id"] == doc["correspondent"])
+    dtype = next(t["name"] for t in DOCUMENT_TYPES if t["id"] == doc["document_type"])
+    y, m, d = doc["created"].split("-")
+    lines = [(18, 60, 780, corr), (9, 60, 764, "Seestrasse 12, 3000 Musterstadt"),
+             (10, 360, 700, "Familie Muster"), (10, 360, 686, "Dorfweg 4, 3000 Musterstadt"),
+             (15, 60, 620, f"{dtype} Nr. 2026-{doc['id']}"), (10, 60, 598, f"Datum: {d}.{m}.{y}"),
+             (10, 60, 584, f"Betreff: {doc['title']}"), (10, 60, 540, "Position                                   Betrag CHF"),
+             (10, 60, 522, "Leistung gemaess Vereinbarung                  142.30"),
+             (10, 60, 506, "Zuschlaege und Abgaben                          21.60"),
+             (11, 60, 480, "Total CHF 163.90"), (9, 60, 440, "Zahlbar innert 30 Tagen. Besten Dank fuer Ihren Auftrag.")]
+    esc = lambda t: t.encode("latin-1", "replace").decode("latin-1").replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    stream = "".join(f"BT /F1 {size} Tf {x} {yy} Td ({esc(text)}) Tj ET\n" for size, x, yy, text in lines).encode("latin-1", "replace")
+    objs = [b"<< /Type /Catalog /Pages 2 0 R >>", b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"endstream",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"]
+    out, offsets = bytearray(b"%PDF-1.4\n"), []
+    for i, o in enumerate(objs, 1):
+        offsets.append(len(out)); out += b"%d 0 obj\n" % i + o + b"\nendobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1) + b"".join(b"%010d 00000 n \n" % o for o in offsets)
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, xref)
+    return bytes(out)
+
+
 @app.get("/api/documents/{doc_id}/preview/")
 def preview(doc_id: int) -> Response:
-    return thumb(doc_id)
+    doc = BY_ID.get(doc_id)
+    if not doc:
+        return Response(status_code=404)
+    return Response(_pdf(doc), media_type="application/pdf")
 
 
 @app.post("/api/tags/")

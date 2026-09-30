@@ -1,27 +1,140 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
+{% block body_class %}page-review{% endblock %}
 {% block content %}
-<div class="page-head">
-  <h2>{{ _("Review-Queue") }} <small class="muted">({{ items|length }})</small></h2>
-  {% if items %}<form method="post" action="/review/recheck" class="inline" onsubmit="return confirm('{{ _('Alle Dokumente im Review mit der aktuellen Konfiguration neu von Jev prüfen lassen?') }}')">
-    <button type="submit" class="secondary outline recheck-btn">{{ icon("play") }} {{ _("Alle erneut prüfen") }}</button></form>
-  <small class="muted">{{ _("nach Änderungen an Regeln oder Beschreibungen – sichere Ergebnisse werden je nach Modus gesetzt, unsichere bleiben im Review") }}</small>{% endif %}
-</div>
-{% for item in items %}
-  {% set job = item.job %}{% set meta = item.meta %}{% set title_mode = item.title_mode %}{% set tag_options = item.tag_options %}{% set meta_error = item.meta_error %}{% set back = "/review" %}
-  <article>
-    <header>{{ icon("file") }} <strong>{{ job.doc_title or _("Dokument") }}</strong> · #{{ job.doc_id }} · {{ job.instance.name if job.instance else "?" }}
-      {% if job.instance %}· <a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">{{ _("in Paperless öffnen") }}</a>{% endif %}
-      · <a href="/jobs/{{ job.id }}">{{ _("Details") }}</a></header>
-    <div class="review-item">
-      <div class="doc-thumb">
-        <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}"><img src="/thumb/{{ job.instance_id }}/{{ job.doc_id }}" alt="{{ _('Vorschau') }}" loading="lazy"></a>
-        <a href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" role="button" class="secondary view-btn" data-viewer="{{ job.doc_title or '#' ~ job.doc_id }}">{{ icon("eye") }}{{ _("Dokument ansehen") }}</a>
-      </div>
-      <div>{% include "_review_form.html" with context %}</div>
-    </div>
-  </article>
+{% if not rv_job %}
+<div class="page-head"><h2>{{ _("Review-Queue") }}</h2></div>
+<article class="empty">{{ icon("party") }}<strong>{{ _("Nichts zu prüfen.") }}</strong>{{ _("Neue unsichere Fälle erscheinen hier automatisch.") }}</article>
 {% else %}
-  <article class="empty">{{ icon("party") }}<strong>{{ _("Nichts zu prüfen.") }}</strong>{{ _("Neue unsichere Fälle erscheinen hier automatisch.") }}</article>
-{% endfor %}
+{% set job = rv_job %}
+{% set res = job.result or {} %}
+{% set fields = res.get("fields", {}) %}
+{% set cur = res.get("current", {}) %}
+<div class="rv-head">
+  <a href="/" class="rv-close" aria-label="{{ _('Review verlassen') }}" title="{{ _('Review verlassen') }}">{{ icon("x") }}</a>
+  <div class="rv-headtext">
+    <strong>{{ _("Review") }}</strong>
+    <small>{{ (job.doc_title or _("Dokument"))[:60] }} · #{{ job.doc_id }}</small>
+  </div>
+  <div class="rv-nav">
+    {% if prev_id %}<a href="/review?job={{ prev_id }}" class="rv-navbtn" data-key="prev" title="{{ _('vorheriges (←)') }}" aria-label="{{ _('vorheriges') }}">‹</a>{% endif %}
+    <span class="rv-pos">{{ _("{pos} von {total}", pos=pos, total=total) }}</span>
+    {% if next_id %}<a href="/review?job={{ next_id }}" class="rv-navbtn" data-key="next" title="{{ _('nächstes (→)') }}" aria-label="{{ _('nächstes') }}">›</a>{% endif %}
+  </div>
+</div>
+<div class="rv-progress"><span style="width: {{ (pos / total * 100)|round|int }}%"></span></div>
+
+<div class="rv">
+  <section class="rv-doc" id="rv-doc" data-src="/doc/{{ job.instance_id }}/{{ job.doc_id }}?view={{ asset_v }}">
+    <div class="rv-pages" id="rv-pages"><div class="rv-loading">{{ _("Dokument wird geladen …") }}</div></div>
+    <div class="rv-docbar">
+      <span class="rv-pill" id="rv-pageinfo">{{ icon("file") }} <span>–</span></span>
+      <span class="rv-docbtns">
+        <button type="button" class="rv-pill" data-zoom="-1" aria-label="{{ _('verkleinern') }}">−</button>
+        <button type="button" class="rv-pill" data-zoom="1" aria-label="{{ _('vergrössern') }}">+</button>
+        <button type="button" class="rv-pill" id="rv-fs" aria-label="{{ _('Vollbild') }}">{{ icon("external") }} <span class="rv-fs-label">{{ _("Vollbild") }}</span></button>
+        <a class="rv-pill" href="/doc/{{ job.instance_id }}/{{ job.doc_id }}" target="_blank" rel="noopener" title="{{ _('In neuem Tab öffnen') }}">↗</a>
+      </span>
+    </div>
+  </section>
+
+  <section class="rv-data">
+    <div class="rv-meta">
+      {% if job.instance %}<a href="{{ job.instance.browse_url }}/documents/{{ job.doc_id }}/details" target="_blank">{{ _("in Paperless öffnen") }}</a> · {% endif %}
+      <a href="/jobs/{{ job.id }}">{{ _("Details") }}</a>
+      <form method="post" action="/review/recheck" class="inline" onsubmit="return confirm('{{ _('Alle Dokumente im Review mit der aktuellen Konfiguration neu von Jev prüfen lassen?') }}')">
+        · <button type="submit" class="rv-link">{{ _("Alle erneut prüfen") }}</button></form>
+    </div>
+    {% if not meta %}
+      <p class="bad">{{ _("Stammdaten nicht verfügbar") }}{% if meta_error %}: {{ meta_error }}{% endif %}</p>
+    {% else %}
+    <form method="post" action="/jobs/{{ job.id }}/apply" id="rv-form">
+      <input type="hidden" name="back" value="/review?after={{ job.id }}">
+      {% for name in ["document_type", "correspondent", "storage_path"] %}
+        {% set f = fields.get(name) %}{% set c = choices[name] %}
+        {% if f or cur.get(name) %}
+        {% set names = meta.names(name) %}
+        {% set conflict = f and f.value is not none and cur.get(name) and f.value != cur.get(name) %}
+        <input type="hidden" name="use_{{ name }}" value="on">
+        <input type="hidden" name="{{ name }}" id="in-{{ name }}" value="{{ c.value if c.value is not none else '' }}">
+        <button type="button" class="rv-row{% if f and f.level == 'suggest' or conflict %} warn{% endif %}" data-sheet="{{ name }}">
+          <span class="rv-k">{{ _(FIELD_LABELS[name]) }}</span>
+          <span class="rv-v"><span id="lbl-{{ name }}">{{ names.get(c.value, _("– leer –")) if c.value is not none else _("– leer –") }}</span>
+            {% if conflict %}<small>{{ _("bisher: {value}", value=names.get(cur.get(name), "#" ~ cur.get(name))) }}</small>{% endif %}</span>
+          {% if f %}<span class="rv-c {{ f.level if f.value is not none else 'low' }}">{{ "%.0f"|format(f.confidence * 100) }} %</span>{% endif %}
+          <span class="rv-chev">{{ icon("more") }}</span>
+        </button>
+        {% endif %}
+      {% endfor %}
+      {% set f = fields.get("created") %}
+      {% set dval = f.value if f and f.value else cur.get("created") or "" %}
+      <label class="rv-row{% if f and f.level == 'suggest' %} warn{% endif %}">
+        <span class="rv-k">{{ _(FIELD_LABELS["created"]) }}</span>
+        <span class="rv-v"><input type="date" name="created" value="{{ dval }}" class="rv-date">
+          {% if cur.get("created") and f and f.value and f.value != cur.get("created") %}<small>{{ _("bisher: {value}", value=cur.created) }}</small>{% endif %}</span>
+        {% if f %}<span class="rv-c {{ f.level }}">{{ "%.0f"|format(f.confidence * 100) }} %</span>{% endif %}
+        {% if dval %}<input type="hidden" name="use_created" value="on">{% endif %}
+      </label>
+
+      <div class="rv-lbl">{{ _("Titel") }}</div>
+      <div class="rv-title">
+        <input name="title" id="rv-title" enterkeyhint="done" placeholder="{{ _('leer = automatisch (Sprachmodell)') if title_mode == 'llm' else (_('leer = automatisch (Vorlage)') if title_mode == 'template' else _('leer = unverändert')) }}">
+        {% if title_mode != "off" %}<button type="button" class="rv-spark" id="rv-suggest" data-url="/jobs/{{ job.id }}/title?format=json" title="{{ _('Titel vorschlagen') }}" aria-label="{{ _('Titel vorschlagen') }}">{{ icon("zap") }}</button>{% endif %}
+      </div>
+      <small class="muted rv-titlenote" id="rv-titlenote">{{ _("aktuell: {value}", value=job.doc_title or "–") }}</small>
+
+      {% set checks = {} %}{% for ch in res.get("tag_checks", []) %}{% if checks.update({ch.id: ch}) %}{% endif %}{% endfor %}
+      {% set existing = cur.get("tags", [])|select("in", tag_options)|list %}
+      {% set suggested = res.get("tags", [])|rejectattr("level", "equalto", "low")|list %}
+      <div class="rv-lbl">{{ _("Tags") }} <span>{{ _("– antippen zum An-/Abwählen") }}</span></div>
+      <div class="rv-chips">
+        {% for tid in existing %}{% set ch = checks.get(tid) %}
+          <input type="hidden" name="shown_tags" value="{{ tid }}">
+          <label class="tchip existing{% if ch and ch.verdict == 'conflict' %} conflict{% elif ch and ch.verdict == 'unsure' %} unsure{% endif %}" title="{% if ch %}p = {{ '%.0f'|format(ch.p * 100) }} %{% endif %}">
+            <input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (ch and ch.verdict == "conflict") %} checked{% endif %}>
+            <span class="tchip-mark"></span>{{ tag_options[tid] }}
+            {% if ch and ch.verdict == "conflict" %}<small>{{ _("laut Jev falsch") }}</small>{% elif ch and ch.verdict == "unsure" %}<small>?</small>{% endif %}
+          </label>
+        {% endfor %}
+        {% for t in suggested if t.id in tag_options and t.id not in existing %}
+          <label class="tchip new {{ t.level }}"><input type="checkbox" name="tags" value="{{ t.id }}" checked><span class="tchip-mark"></span>{{ t.label }} <small>{{ "%.0f"|format(t.p * 100) }} %</small></label>
+        {% endfor %}
+        <button type="button" class="tchip more" id="rv-moretags">+ {{ _("weitere") }}</button>
+      </div>
+      <div class="rv-more" id="rv-moretags-list" hidden>
+        {% set shown = existing + suggested|map(attribute="id")|list %}
+        {% for tid, tname in tag_options|dictsort(by="value") if tid not in shown %}
+          <label class="tchip new"><input type="checkbox" name="tags" value="{{ tid }}"><span class="tchip-mark"></span>{{ tname }}</label>
+        {% endfor %}
+      </div>
+      <p class="hint rv-legend">{{ _("dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch (vorab abgewählt, wird entfernt)") }}</p>
+
+      <div class="rv-bar">
+        {% if next_id %}<a href="/review?job={{ next_id }}" class="rv-btn" title="{{ _('Überspringen (→)') }}" aria-label="{{ _('Überspringen') }}">{{ icon("play") }}</a>{% endif %}
+        <button type="submit" name="action" value="dismiss" class="rv-btn danger" title="{{ _('Verwerfen') }}" aria-label="{{ _('Verwerfen') }}">{{ icon("x") }}</button>
+        <button type="submit" name="action" value="apply" class="rv-btn primary" title="Ctrl/⌘ + Enter">{{ icon("check") }} {{ _("Übernehmen") }}</button>
+      </div>
+    </form>
+    {% endif %}
+  </section>
+</div>
+
+<dialog class="rv-sheet" id="rv-sheet">
+  <div class="rv-sheet-box">
+    <div class="rv-grab"></div>
+    <div class="rv-sheet-head"><strong id="rv-sheet-title"></strong><button type="button" class="rv-link" data-close-sheet>{{ _("Schliessen") }}</button></div>
+    <input type="search" id="rv-sheet-search" placeholder="{{ _('suchen …') }}" autocomplete="off">
+    <div class="rv-sheet-list" id="rv-sheet-list"></div>
+  </div>
+</dialog>
+
+<script type="application/json" id="rv-data">{{ {
+  "choices": choices, "labels": {"document_type": _(FIELD_LABELS["document_type"]), "correspondent": _(FIELD_LABELS["correspondent"]), "storage_path": _(FIELD_LABELS["storage_path"])},
+  "marks": fields.values()|selectattr("value")|map(attribute="label")|list,
+  "levels": fields.values()|selectattr("value")|map(attribute="level")|list,
+  "t": {"now": _("heute in Paperless"), "empty": _("– leer lassen –"), "all": _("alle"), "suggestions": _("Vorschläge von Jev"),
+        "page": _("Seite {n} / {total}"), "loading": _("Titel wird erzeugt …"), "failed": _("Dokument konnte nicht angezeigt werden."), "open": _("In neuem Tab öffnen"), "exitfs": _("Schliessen")}
+}|tojson }}</script>
+<script type="module" src="/static/review.js?v={{ asset_v }}"></script>
+{% endif %}
 {% endblock %}

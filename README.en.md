@@ -8,9 +8,9 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
 
 ![Overview](docs/screenshots/uebersicht-en.png)
 
-| Review | Log (phone) | Descriptions (phone) | Dark mode |
-|---|---|---|---|
-| ![Review](docs/screenshots/review-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
+| Review | Review (phone) | Log (phone) | Descriptions (phone) | Dark mode |
+|---|---|---|---|---|
+| ![Review](docs/screenshots/review-en.png) | ![Review phone](docs/screenshots/review-handy-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
 
 <sub>Screenshots with made-up demo data, see [`demo/`](demo/).</sub>
 
@@ -20,7 +20,7 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
   calibrated confidence for every answer. Confident values are applied, uncertain ones go to review.
 - **Three modes** – *dry run* (log only), *suggestions only* (everything to review) and
   *automatic* (apply confident values, the rest to review).
-- **Review queue** with thumbnail, document viewer, alternatives and one-click corrections.
+- **Review** one document at a time: the PDF right in the review with Jev's values highlighted, corrections with a tap, built for phones.
 - **Single test** – check one document by ID or Paperless link without writing anything.
 - **Evaluation** on the overview: hit rate per field compared with your current filing.
 - **Descriptions from keywords** – a local language model (Ollama or OpenAI-compatible, e.g. Qwen)
@@ -83,6 +83,7 @@ Everything else is configured in the web UI. The environment only covers:
 | `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optional basic auth for the web UI (`/hook/*` and `/health` stay open). |
 | `PJ_LOG_LEVEL` | `INFO` | Log level |
 | `PJ_DATA_DIR` | `/data` | Data directory (SQLite, key) |
+| `TZ` | `Europe/Zurich` | Time zone for display |
 
 **Back up `/data`** – `paperless-jev.db` and `secret.key` belong together, otherwise the stored tokens can no longer be read.
 
