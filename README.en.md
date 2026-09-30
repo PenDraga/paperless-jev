@@ -8,9 +8,13 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
 
 ![Overview](docs/screenshots/uebersicht-en.png)
 
-| Review | Review (phone) | Scan (phone) | Log (phone) | Descriptions (phone) | Dark mode |
-|---|---|---|---|---|---|
-| ![Review](docs/screenshots/review-en.png) | ![Review phone](docs/screenshots/review-handy-en.png) | ![Scan](docs/screenshots/scannen-handy.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
+| Review (desktop) | Dark mode |
+|---|---|
+| ![Review](docs/screenshots/review-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
+
+| Review (phone) | Scan (phone) | Log (phone) | Descriptions (phone) |
+|---|---|---|---|
+| ![Review phone](docs/screenshots/review-handy-en.png) | ![Scan](docs/screenshots/scan-1-kamera-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) |
 
 <sub>Screenshots with made-up demo data, see [`demo/`](demo/).</sub>
 
@@ -20,16 +24,42 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
   calibrated confidence for every answer. Confident values are applied, uncertain ones go to review.
 - **Three modes** – *dry run* (log only), *suggestions only* (everything to review) and
   *automatic* (apply confident values, the rest to review).
-- **Review** one document at a time: the PDF right in the review with Jev's values highlighted, corrections with a tap, built for phones.
+- **Review** one document at a time: the PDF right in the review with Jev's values highlighted, corrections with
+  a tap, built for phones. Re-check all after configuration changes, delete documents (trash).
+- **Double-check** – Jev also checks tags and values that are already set. Contradictions go to review or are
+  corrected directly above a configurable confidence.
 - **Single test** – check one document by ID or Paperless link without writing anything.
 - **Evaluation** on the overview: hit rate per field compared with your current filing.
 - **Descriptions from keywords** – a local language model (Ollama or OpenAI-compatible, e.g. Qwen)
   turns your keywords into a full description in the interface language.
-- **Scan documents** with your phone: edges detected and straightened automatically, several pages into one PDF, straight to Paperless.
-- **Titles** optionally by language model (in the style of documents already filed) or by template.
+- **Scan documents** with your phone: edges detected and straightened automatically, several pages into one PDF,
+  straight to Paperless (see below).
+- **Titles** optionally by language model (in the style of documents already filed, checked and shortened if
+  needed) or by template; "Suggest title" previews it.
 - **Filing conventions** – titles of documents already filed are sent to Jev as examples.
-- **Webhook and polling**, multiple Paperless instances, log with cleanup.
+- **Log** with filters by document type, correspondent and tag, open entries by default, cleanup.
+- **Webhook and polling**, multiple Paperless instances, Paperless-ngx 2.x and 3.x.
 - **Interface** in German and English, optimised for phones, automatic dark mode.
+
+## Scan documents with your phone
+
+Paperless has no phone scanner of its own – paperless-jev brings one. Under **Scan** you photograph documents
+right in the browser, multi-page ones included:
+
+| ① Photograph | ② Check edges | ③ Pages &amp; upload | ④ Status |
+|---|---|---|---|
+| ![Photograph](docs/screenshots/scan-1-kamera-en.png) | ![Check edges](docs/screenshots/scan-2-rand-en.png) | ![Pages](docs/screenshots/scan-3-seiten-en.png) | ![Status](docs/screenshots/scan-4-status-en.png) |
+
+1. **Photograph** – the document is detected live (green frame); take one page after another.
+2. **Check edges** – the page is straightened in perspective; move the corners if needed, rotate, choose the
+   filter *Original*, *Greyscale* or *Scan* (shadows evened out, high contrast for text recognition).
+3. **Upload** – reorder pages, pick the instance, optionally title and tags; all pages go to Paperless as **one PDF**.
+   Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded too.
+4. **Status** – text recognition in Paperless, then paperless-jev classifies right away; the result appears directly.
+
+Requirements: the page is served over **HTTPS** (camera in the browser), and a `Permissions-Policy` header from the
+reverse proxy does not block the camera (`camera=(self)`). Edge detection (OpenCV.js, ~10 MB) is loaded on the first
+camera start and cached afterwards.
 
 ## How it works
 
@@ -135,7 +165,7 @@ pytest
 PJ_DATA_DIR=./data paperless-jev
 ```
 
-Architecture, design decisions and measurements (German): [DOKUMENTATION.md](DOKUMENTATION.md).
+Architecture, design decisions and measurements: [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ## License
 

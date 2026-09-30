@@ -8,9 +8,13 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
 
 ![Übersicht](docs/screenshots/uebersicht.png)
 
-| Review | Review (Handy) | Scannen (Handy) | Protokoll (Handy) | Beschreibungen (Handy) | Dark Mode |
-|---|---|---|---|---|---|
-| ![Review](docs/screenshots/review.png) | ![Review Handy](docs/screenshots/review-handy.png) | ![Scannen](docs/screenshots/scannen-handy.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
+| Review (Desktop) | Dark Mode |
+|---|---|
+| ![Review](docs/screenshots/review.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
+
+| Review (Handy) | Scannen (Handy) | Protokoll (Handy) | Beschreibungen (Handy) |
+|---|---|---|---|
+| ![Review Handy](docs/screenshots/review-handy.png) | ![Scannen](docs/screenshots/scan-1-kamera.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) |
 
 <sub>Screenshots mit erfundenen Demodaten, siehe [`demo/`](demo/).</sub>
 
@@ -20,16 +24,42 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
   zu jeder Antwort eine kalibrierte Sicherheit. Sichere Werte werden gesetzt, unsichere landen im Review.
 - **Drei Modi** – *Probelauf* (nur protokollieren), *Nur Vorschläge* (alles ins Review) und
   *Automatisch* (sichere Werte setzen, Rest ins Review).
-- **Review** Dokument für Dokument: PDF direkt im Review mit markierten Jev-Werten, Korrektur per Antippen, fürs Handy gemacht.
+- **Review** Dokument für Dokument: PDF direkt im Review mit markierten Jev-Werten, Korrektur per Antippen,
+  fürs Handy gemacht. Alle erneut prüfen nach Änderungen an der Konfiguration, Dokument löschen (Papierkorb).
+- **Gegenprüfung** – Jev prüft auch schon gesetzte Tags und Werte. Widersprüche kommen ins Review oder werden
+  ab einer einstellbaren Sicherheit direkt korrigiert.
 - **Einzeltest** – ein Dokument per ID oder Paperless-Link prüfen, ohne etwas zu schreiben.
 - **Auswertung** auf der Übersicht: Trefferquote je Feld im Vergleich zur heutigen Ablage.
 - **Beschreibungen aus Stichworten** – ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel,
   z. B. Qwen) formuliert deine Stichworte in der Sprache der Oberfläche aus.
-- **Belege scannen** mit dem Handy: Rand wird automatisch erkannt und entzerrt, mehrere Seiten zu einem PDF, direkt nach Paperless.
-- **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten) oder per Vorlage.
+- **Belege scannen** mit dem Handy: Rand wird automatisch erkannt und entzerrt, mehrere Seiten zu einem PDF,
+  direkt nach Paperless (siehe unten).
+- **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten, geprüft und bei Bedarf gekürzt)
+  oder per Vorlage; «Titel vorschlagen» zeigt ihn vorab.
 - **Ablage-Konventionen** – Titel bereits abgelegter Dokumente gehen als Beispiele an Jev.
-- **Webhook und Polling**, mehrere Paperless-Instanzen, Protokoll mit Bereinigen.
+- **Protokoll** mit Filtern nach Dokumenttyp, Korrespondent und Tag, standardmässig nur Offenes, bereinigen.
+- **Webhook und Polling**, mehrere Paperless-Instanzen, Paperless-ngx 2.x und 3.x.
 - **Oberfläche** auf Deutsch und Englisch, fürs Handy optimiert, Dark Mode automatisch.
+
+## Belege mit dem Handy scannen
+
+Paperless hat keinen eigenen Handy-Scanner – paperless-jev bringt einen mit. Unter **Scannen** fotografierst du
+Belege direkt im Browser, auch mehrseitige:
+
+| ① Fotografieren | ② Rand prüfen | ③ Seiten &amp; hochladen | ④ Status |
+|---|---|---|---|
+| ![Fotografieren](docs/screenshots/scan-1-kamera.png) | ![Rand prüfen](docs/screenshots/scan-2-rand.png) | ![Seiten](docs/screenshots/scan-3-seiten.png) | ![Status](docs/screenshots/scan-4-status.png) |
+
+1. **Fotografieren** – der Beleg wird live erkannt (grüner Rahmen), Seite für Seite aufnehmen.
+2. **Rand prüfen** – die Seite wird perspektivisch gerade gerückt; Ecken bei Bedarf verschieben, drehen,
+   Filter *Original*, *Graustufen* oder *Scan* (Schatten ausgeglichen, kontrastreich für die Texterkennung).
+3. **Hochladen** – Seiten sortieren, Instanz, optional Titel und Tags; alle Seiten gehen als **ein PDF** an Paperless.
+   Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich ebenfalls hochladen.
+4. **Status** – Texterkennung in Paperless, danach klassifiziert paperless-jev sofort; das Ergebnis erscheint direkt.
+
+Voraussetzungen: Die Seite läuft über **HTTPS** (Kamera im Browser), und ein `Permissions-Policy`-Header des
+Reverse Proxys sperrt die Kamera nicht (`camera=(self)`). Die Randerkennung (OpenCV.js, ~10 MB) wird beim ersten
+Kamerastart geladen und danach aus dem Cache verwendet.
 
 ## So funktioniert es
 

@@ -48,7 +48,8 @@ def result(dt: int, dt_conf: float, corr: int, corr_conf: float, created: str, d
             "correspondent": field(CORRS, corr, corr_conf, list(alts[1])),
             "created": date_field(created, date_conf),
         },
-        "tags": [{"id": t, "label": TAGN[t], "p": p, "level": level(p, 0.9, 0.7)} for t, p in tags],
+        # wie im echten Betrieb: nur Tags vorschlagen, die das Dokument noch nicht hat
+        "tags": [{"id": t, "label": TAGN[t], "p": p, "level": level(p, 0.9, 0.7)} for t, p in tags if t not in current.get("tags", [])],
         "plan": {"updates": {}, "needs_review": False},
         "question_count": 14,
         "current": current,
@@ -113,7 +114,7 @@ def main() -> None:
         (106, "done", "poll", result(3, 0.93, 6, 0.99, "2026-07-10", 0.96, [], cur(106))),
         (104, "done", "webhook", result(2, 0.99, 4, 0.99, "2026-08-31", 0.98, [(7, 0.96)], cur(104))),
         (103, "done", "webhook", result(9, 0.99, 10, 0.97, "2026-01-31", 0.99, [(2, 0.98)], cur(103))),
-        (110, "dry_run", "test", result(10, 0.95, 11, 0.98, "2026-09-12", 0.94, [(4, 0.97)], cur(110, False))),
+        (110, "done", "webhook", result(10, 0.95, 11, 0.98, "2026-09-12", 0.94, [(4, 0.97)], cur(110, False))),
         (108, "review", "webhook", result(5, 0.83, 3, 0.96, "2026-09-05", 0.91, [(2, 0.88)], cur(108, False), ((8,), ()))),
         (105, "review", "webhook", result(6, 0.71, 5, 0.92, "2026-09-02", 0.89, [(6, 0.95), (5, 0.74)], cur(105, False), ((8, 4), ()))),
         (102, "review", "webhook", result(1, 0.97, 2, 0.62, "2026-09-15", 0.96, [(5, 0.93)], cur(102, False), ((), (1,)))),
