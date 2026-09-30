@@ -140,6 +140,8 @@ EN: dict[str, str] = {
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
     "Filtern": "Filter",
+    "Lampe": "Light",
+    "Foto mit der Kamera-App (mit Blitz)": "Photo with the camera app (with flash)",
     "gelöscht": "deleted",
     "Dokument in Paperless gelöscht (Papierkorb)": "Document deleted in Paperless (trash)",
     "Dieses Dokument in Paperless löschen? Es landet im Papierkorb von Paperless und lässt sich dort wiederherstellen.": "Delete this document in Paperless? It goes to the Paperless trash and can be restored there.",

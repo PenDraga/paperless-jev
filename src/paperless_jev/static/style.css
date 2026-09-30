@@ -493,7 +493,7 @@ label.rv-row { cursor: default; margin: 0; }
 .sc-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
 .sc-flash.on { animation: sc-flash .35s ease-out; }
 @keyframes sc-flash { from { opacity: .8; } to { opacity: 0; } }
-.sc-camfoot { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
+.sc-camfoot { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1.1rem .5rem; }
 .sc-thumbs { display: flex; gap: .4rem; min-width: 5rem; }
 .sc-thumbs div { width: 2.2rem; height: 3rem; border-radius: .25rem; border: 2px solid #fff; background: #fff center / cover; position: relative; }
 .sc-thumbs span { position: absolute; top: -.55rem; right: -.55rem; background: #16a34a; color: #fff; font-size: .68rem; font-weight: 700; width: 1.2rem; height: 1.2rem; border-radius: 50%; display: grid; place-items: center; }
@@ -502,7 +502,11 @@ label.rv-row { cursor: default; margin: 0; }
 .sc-shutter:active i { transform: scale(.9); }
 .sc-shutter:disabled { opacity: .3; }
 .sc-done { all: unset; cursor: pointer; background: #16a34a; color: #fff; font-weight: 700; border-radius: 1.2rem; padding: .55rem 1rem; min-width: 5rem; text-align: center; }
-.sc-nocam { display: block; text-align: center; padding: 0 1rem 1rem; color: #cbd5e1; cursor: pointer; }
+.sc-nocam { display: flex; gap: .4rem; align-items: center; justify-content: center; text-align: center; padding: 0 1rem calc(.9rem + env(safe-area-inset-bottom, 0px)); color: #94a3b8; font-size: .82rem; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; }
+.sc-nocam.prominent { color: #fff; font-size: 1rem; text-decoration: none; background: #16a34a; margin: 0 1rem 1rem; padding: .8rem; border-radius: .8rem; }
+.sc-torch { all: unset; cursor: pointer; position: absolute; right: .8rem; bottom: .8rem; display: flex; align-items: center; gap: .35rem; background: rgba(0, 0, 0, .55); color: #fff; font-size: .82rem; font-weight: 600; padding: .45rem .8rem; border-radius: 1.2rem; }
+.sc-torch[aria-pressed="true"] { background: #facc15; color: #1a1a1a; }
+.sc-torch[hidden] { display: none; }
 /* Bearbeiten */
 .sc-editarea { position: relative; height: 60vh; display: grid; place-items: center; background: #1a1d24; touch-action: none; }
 .sc-editarea canvas, .sc-editarea svg { grid-area: 1 / 1; }

@@ -206,11 +206,35 @@ async function startCamera() {
   }
   video.srcObject = stream;
   await video.play().catch(() => {});
+  setupTorch();
   hint.textContent = cvReady() ? T.search : T.loadingCv;
   loadCv().then(() => { if (stream) hint.textContent = T.search; });
   loopTimer = setInterval(liveDetect, 280);
 }
+// Lampe: nur wenn Browser und Gerät sie anbieten (z. B. Chrome auf Android)
+let torchOn = false;
+function setupTorch() {
+  const btn = $("sc-torch");
+  const track = stream?.getVideoTracks()[0];
+  const caps = track?.getCapabilities ? track.getCapabilities() : {};
+  btn.hidden = !caps.torch;
+  torchOn = false;
+  btn.setAttribute("aria-pressed", "false");
+}
+$("sc-torch").addEventListener("click", async () => {
+  const track = stream?.getVideoTracks()[0];
+  if (!track) return;
+  try {
+    await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
+    torchOn = !torchOn;
+    $("sc-torch").setAttribute("aria-pressed", String(torchOn));
+  } catch {
+    $("sc-torch").hidden = true;
+  }
+});
+
 function stopCamera() {
+  torchOn = false;
   clearInterval(loopTimer);
   stream?.getTracks().forEach((t) => t.stop());
   stream = null;
@@ -218,7 +242,7 @@ function stopCamera() {
 function noCamera() {
   loadCv(); // für Fotos aus der Kamera-App trotzdem Rand erkennen
   $("sc-hint").textContent = T.nocam;
-  $("sc-nocam").hidden = false;
+  $("sc-nocam").classList.add("prominent");
   $("sc-shutter").disabled = true;
 }
 

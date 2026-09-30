@@ -43,6 +43,7 @@
       <video id="sc-video" playsinline muted autoplay></video>
       <canvas id="sc-overlay"></canvas>
       <div class="sc-hint" id="sc-hint">{{ _("Kamera wird gestartet …") }}</div>
+      <button type="button" class="sc-torch" id="sc-torch" hidden aria-pressed="false" aria-label="{{ _('Lampe') }}">{{ icon("zap") }}<span>{{ _("Lampe") }}</span></button>
       <div class="sc-flash" id="sc-flash"></div>
     </div>
     <div class="sc-camfoot">
@@ -50,7 +51,7 @@
       <button type="button" class="sc-shutter" id="sc-shutter" aria-label="{{ _('Foto aufnehmen') }}"><i></i></button>
       <button type="button" class="sc-done" data-go="overview">{{ _("Fertig") }}</button>
     </div>
-    <label class="sc-nocam" id="sc-nocam" hidden>{{ icon("camera") }} {{ _("Foto mit der Kamera-App aufnehmen") }}<input type="file" id="sc-native" accept="image/*" capture="environment" hidden></label>
+    <label class="sc-nocam" id="sc-nocam">{{ icon("camera") }} <span id="sc-nocam-label">{{ _("Foto mit der Kamera-App (mit Blitz)") }}</span><input type="file" id="sc-native" accept="image/*" capture="environment" hidden></label>
   </section>
 
   <!-- Seite bearbeiten -->
