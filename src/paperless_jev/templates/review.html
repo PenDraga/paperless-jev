@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block body_class %}page-review{% endblock %}
+{% block body_class %}{% if rv_job %}page-review{% endif %}{% endblock %}
 {% block content %}
 {% if not rv_job %}
 <div class="page-head"><h2>{{ _("Review-Queue") }}</h2></div>
-<article class="empty">{{ icon("party") }}<strong>{{ _("Nichts zu prüfen.") }}</strong>{{ _("Neue unsichere Fälle erscheinen hier automatisch.") }}</article>
+<article class="empty">{{ icon("party") }}<strong>{{ _("Nichts zu prüfen.") }}</strong>{{ _("Neue unsichere Fälle erscheinen hier automatisch.") }}
+  <div class="empty-actions">
+    <a href="/" role="button">{{ icon("dashboard") }} {{ _("Zur Übersicht") }}</a>
+    <a href="/scan" role="button" class="secondary">{{ icon("camera") }} {{ _("Scannen") }}</a>
+    <a href="/log" role="button" class="secondary outline">{{ icon("list") }} {{ _("Protokoll") }}</a>
+  </div>
+</article>
 {% else %}
 {% set job = rv_job %}
 {% set res = job.result or {} %}

@@ -624,3 +624,8 @@ async def test_status_tag_created_once_even_in_parallel():
     proc2 = Processor.__new__(Processor)
     proc2._meta, proc2._examples, proc2._tag_locks = {}, {}, {}
     assert await proc2._tag(Inst(), PL(), Metadata(), "ai-review") == 777
+
+
+def test_empty_review_keeps_navigation(client):
+    page = client.get("/review").text
+    assert "Nichts zu prüfen" in page and 'class="page-review"' not in page and 'href="/scan" role="button"' in page

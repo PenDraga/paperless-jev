@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block body_class %}page-scan{% endblock %}
+{% block body_class %}{% if instances %}page-scan{% endif %}{% endblock %}
 {% block content %}
 {% if not instances %}
 <h2>{{ _("Scannen") }}</h2>

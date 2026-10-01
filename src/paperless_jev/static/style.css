@@ -195,6 +195,8 @@ table.striped.jobs tbody tr:nth-child(odd):hover td { background: var(--pj-row-h
 .hint .badge { font-size: .7rem; }
 .empty { text-align: center; padding: 2rem 1rem; color: var(--pj-muted); }
 .empty .i { width: 2.4rem; height: 2.4rem; stroke-width: 1.5; color: var(--pj-accent-text); opacity: .8; display: block; margin: 0 auto .6rem; }
+.empty-actions { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; margin-top: 1.2rem; }
+.empty-actions [role=button] { display: inline-flex; gap: .4rem; align-items: center; margin: 0; }
 .empty strong { display: block; color: var(--pico-color); margin-bottom: .2rem; }
 td.empty-cell { padding: 0; }
 td.empty-cell:hover { background: transparent !important; }
