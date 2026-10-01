@@ -758,3 +758,13 @@ def test_recheck_documents_with_tag(client):
     job = client.app.state.db.one("SELECT * FROM jobs ORDER BY id DESC")
     assert job["source"].startswith("tag+title") and job["result"]["title"] == "Swisscom Rechnung"
     assert "err=" in client.post("/run/tag", data={"target": ""}, follow_redirects=False).headers["location"]
+
+
+def test_review_unticks_deactivated_tag(client):
+    client.app.state.config.save_description(1, "tag", 103, "", False)
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT * FROM jobs")
+    assert job["status"] == "review"
+    page = client.get(f"/review?job={job['id']}").text
+    assert 'name="keep_tags" value="103">' in page and "deaktiviert" in page

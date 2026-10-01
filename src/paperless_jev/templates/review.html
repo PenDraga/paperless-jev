@@ -102,10 +102,10 @@
       <div class="rv-chips">
         {% for tid in existing %}{% set ch = checks.get(tid) %}
           <input type="hidden" name="shown_tags" value="{{ tid }}">
-          <label class="tchip existing{% if ch and ch.verdict == 'conflict' %} conflict{% elif ch and ch.verdict == 'unsure' %} unsure{% endif %}" title="{% if ch %}p = {{ '%.0f'|format(ch.p * 100) }} %{% endif %}">
-            <input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (ch and ch.verdict == "conflict") %} checked{% endif %}>
+          <label class="tchip existing{% if ch and ch.verdict in ('conflict', 'inactive') %} conflict{% elif ch and ch.verdict == 'unsure' %} unsure{% endif %}" title="{% if ch %}p = {{ '%.0f'|format(ch.p * 100) }} %{% endif %}">
+            <input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (ch and ch.verdict in ("conflict", "inactive")) %} checked{% endif %}>
             <span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tname(tag_options[tid]) }}
-            {% if ch and ch.verdict == "conflict" %}<small>{{ _("laut Jev falsch") }}</small>{% elif ch and ch.verdict == "unsure" %}<small>?</small>{% endif %}
+            {% if ch and ch.verdict == "inactive" %}<small>{{ _("deaktiviert") }}</small>{% elif ch and ch.verdict == "conflict" %}<small>{{ _("laut Jev falsch") }}</small>{% elif ch and ch.verdict == "unsure" %}<small>?</small>{% endif %}
           </label>
         {% endfor %}
         {% for t in suggested if t.id in tag_options and t.id not in existing %}
@@ -129,7 +129,7 @@
           <label class="tchip new"><input type="checkbox" name="tags" value="{{ tid }}"><span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tname(label) }}</label>
         {% endfor %}
       </div>
-      <p class="hint rv-legend">{{ _("dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch (vorab abgewählt, wird entfernt)") }}</p>
+      <p class="hint rv-legend">{{ _("dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch oder deaktiviert (vorab abgewählt, wird entfernt)") }}</p>
 
       <div class="rv-bar">
         {% if next_id %}<a href="/review?job={{ next_id }}" class="rv-btn" title="{{ _('Überspringen (→)') }}" aria-label="{{ _('Überspringen') }}">{{ icon("play") }}</a>{% endif %}

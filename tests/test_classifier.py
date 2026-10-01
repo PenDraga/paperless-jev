@@ -327,3 +327,16 @@ def test_tag_questions_use_path_and_parent_context():
     assert q["criteria"]["true"] == {"what": "Strom, Gas", "parent_tag": "Haus: Liegenschaft, Nebenkosten"}
     # Obertag ist durch den vorhandenen Untertag begründet: keine eigene Gegenprüfung
     assert 201 in req.checked_tags and 200 not in req.checked_tags and "tag:200" not in req.questions
+
+
+def test_deactivated_tag_on_document_is_flagged_for_removal():
+    meta = nested_meta()
+    doc = make_doc() | {"tags": [100, 101, 200, 201]}
+    # Steuern (101) und der Obertag Haus (200) sind deaktiviert
+    descriptions = {("tag", 101): {"text": "", "active": False}, ("tag", 200): {"text": "", "active": False}}
+    req = build_request(doc, meta, descriptions, cfg())
+    # Obertag ist durch den Untertag begründet und bleibt; Steuern soll weg, ohne Jev zu fragen
+    assert req.inactive_tags == {101} and "tag:101" not in req.questions
+    result = interpret({"answers": {}}, req, meta, cfg())
+    assert result["tag_checks"] == [{"id": 101, "label": "Steuern", "p": 0.0, "verdict": "inactive"}]
+    assert plan(result, doc, cfg(mode="auto"))["needs_review"]

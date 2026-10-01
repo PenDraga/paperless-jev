@@ -239,7 +239,6 @@ EN: dict[str, str] = {
     "Vollbild": "Full screen",
     "Vorschläge von Jev": "Jev's suggestions",
     "alle": "all",
-    "dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch (vorab abgewählt, wird entfernt)": "dark = will be set · light = unselected · red = wrong according to Jev (unselected in advance, will be removed)",
     "heute in Paperless": "currently in Paperless",
     "nächstes": "next",
     "nächstes (→)": "next (→)",
@@ -519,4 +518,8 @@ EN: dict[str, str] = {
     "Prüfen": "Check",
     "nur Probelauf – schreibt nichts nach Paperless": "dry run only – writes nothing to Paperless",
     "Titel neu erzeugen (sonst bleibt der bestehende Titel)": "Generate new titles (otherwise the existing title stays)",
+    "deaktiviert": "deactivated",
+    "schon gesetzt – unter Beschreibungen deaktiviert, wird zum Entfernen vorgeschlagen": "already set – deactivated under Descriptions, suggested for removal",
+    "dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch oder deaktiviert (vorab abgewählt, wird entfernt)":
+        "dark = will be set · light = deselected · red = wrong according to Jev or deactivated (deselected in advance, will be removed)",
 }

@@ -66,6 +66,8 @@ class JevRequest:
     options: dict[str, dict[str, Any]] = field(default_factory=dict)
     # Tags, die das Dokument schon hat und die Jev nur gegenprüft
     checked_tags: set[int] = field(default_factory=set)
+    # vorhandene, aber unter Beschreibungen deaktivierte Tags: sollen weg ("ausmisten")
+    inactive_tags: set[int] = field(default_factory=set)
 
 
 def prepare_text(content: str, max_chars: int) -> str:
@@ -228,6 +230,10 @@ def build_request(
         # Vorhandene Tags zuerst (Gegenprüfung), danach mögliche neue
         if cfg.get("verify_tags", True):
             req.checked_tags = {tid for tid in active if tid in present and tid not in implied}
+        req.inactive_tags = {
+            tid for tid in present
+            if tid in meta.tags and tid not in hidden and tid not in implied and tid not in active
+        }
         tags = {tid: n for tid, n in active.items() if tid in req.checked_tags}
         tags |= {tid: n for tid, n in active.items() if tid not in present}
         for tid in list(tags)[:MAX_TAG_QUESTIONS]:
@@ -305,6 +311,8 @@ def interpret(
             result["tag_checks"].append({"id": tid, "label": label, "p": round(p, 4), "verdict": tag_verdict(p, tag_spec)})
             continue
         result["tags"].append({"id": tid, "label": label, "p": round(p, 4), "level": _level(p, tag_spec)})
+    for tid in sorted(req.inactive_tags):
+        result["tag_checks"].append({"id": tid, "label": meta.tag_label(tid), "p": 0.0, "verdict": "inactive"})
     result["tags"].sort(key=lambda t: t["p"], reverse=True)
     result["tag_checks"].sort(key=lambda t: t["p"])
     return result
@@ -371,6 +379,9 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
             needs_review = True
         # Ein vorhandener Tag passt laut Jev sicher nicht: ein Mensch entscheidet, entfernt wird nichts
         if cfg.get("review_conflicts", True) and any(t["verdict"] == "conflict" for t in result.get("tag_checks", [])):
+            needs_review = True
+        # Deaktivierter Tag auf dem Dokument: im Review zum Entfernen vorgeschlagen
+        if any(t["verdict"] == "inactive" for t in result.get("tag_checks", [])):
             needs_review = True
     return {"updates": updates, "needs_review": needs_review}
 
