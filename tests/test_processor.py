@@ -591,3 +591,36 @@ def test_review_shows_fallback_hint(client):
         "tags": [], "current": {"tags": []}})
     page = client.get("/review").text
     assert "Sammel-Korrespondent" in page and "kein passender gefunden" in page
+
+
+async def test_status_tag_created_once_even_in_parallel():
+    import asyncio as aio
+    from paperless_jev.paperless import Metadata, PaperlessError
+    from paperless_jev.processor import Processor
+
+    created = []
+
+    class PL:
+        async def create_tag(self, name):
+            await aio.sleep(0.01)
+            if name in created:
+                raise PaperlessError("Object violates owner / name unique constraint")
+            created.append(name)
+            return 777
+
+        async def metadata(self):
+            return Metadata(tags={777: "ai-review"} if created else {})
+
+    class Inst:
+        id = 1
+
+    proc = Processor.__new__(Processor)
+    proc._meta, proc._examples, proc._tag_locks = {}, {}, {}
+    metas = [Metadata(), Metadata()]  # zwei Jobs mit je eigenem, veraltetem Stand
+    ids = await aio.gather(*(proc._tag(Inst(), PL(), m, "ai-review") for m in metas))
+    assert ids == [777, 777] and created == ["ai-review"]
+
+    # auch ohne Sperre (z. B. zwei Container) wird der vorhandene Tag verwendet statt abzubrechen
+    proc2 = Processor.__new__(Processor)
+    proc2._meta, proc2._examples, proc2._tag_locks = {}, {}, {}
+    assert await proc2._tag(Inst(), PL(), Metadata(), "ai-review") == 777

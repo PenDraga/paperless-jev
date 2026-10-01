@@ -33,6 +33,8 @@ class Processor:
         self._meta: dict[int, tuple[float, Metadata]] = {}
         self._examples: dict[int, tuple[float, dict]] = {}
         self._tasks: list[asyncio.Task] = []
+        # Status-Tags pro Instanz nur nacheinander anlegen (zwei Worker gleichzeitig -> "gibt es schon")
+        self._tag_locks: dict[int, asyncio.Lock] = {}
 
     # --- Lebenszyklus -----------------------------------------------------
 
@@ -245,11 +247,24 @@ class Processor:
 
     async def _tag(self, inst: Instance, pl: PaperlessClient, meta: Metadata, name: str) -> int:
         tid = meta.tag_id(name)
-        if tid is None:
-            tid = await pl.create_tag(name)
+        if tid is not None:
+            return tid
+        async with self._tag_locks.setdefault(inst.id, asyncio.Lock()):
+            # inzwischen von einem anderen Job angelegt?
+            cached = self._meta.get(inst.id)
+            tid = meta.tag_id(name) or (cached[1].tag_id(name) if cached else None)
+            if tid is None:
+                try:
+                    tid = await pl.create_tag(name)
+                except PaperlessError:
+                    # existiert schon (z. B. parallel angelegt): frisch laden und verwenden
+                    tid = (await self.metadata(inst, pl, fresh=True)).tag_id(name)
+                    if tid is None:
+                        raise
             meta.tags[tid] = name
-            self._meta.pop(inst.id, None)
-        return tid
+            if cached:
+                cached[1].tags[tid] = name
+            return tid
 
     async def apply(
         self,
