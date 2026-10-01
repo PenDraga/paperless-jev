@@ -15,7 +15,7 @@
 {% set n_review, n_done, n_dry, n_err = counts.get("review", 0), counts.get("done", 0), counts.get("dry_run", 0), counts.get("error", 0) %}
 <div class="stats">
   <a href="/review" class="stat {{ 'warn' if n_review else 'zero' }}"><span class="ic">{{ icon("inbox") }}</span><span class="num">{{ n_review }}</span><span class="lbl">{{ _("in Review") }} →</span></a>
-  <div class="stat {{ 'ok' if n_done else 'zero' }}"><span class="ic">{{ icon("check") }}</span><span class="num">{{ n_done }}</span><span class="lbl">{{ _("erledigt") }}</span></div>
+  <a href="/log?status=done" class="stat {{ 'ok' if n_done else 'zero' }}"><span class="ic">{{ icon("check") }}</span><span class="num">{{ n_done }}</span><span class="lbl">{{ _("erledigt") }}</span></a>
   <a href="/log?status=dry_run" class="stat {{ 'info' if n_dry else 'zero' }}"><span class="ic">{{ icon("flask") }}</span><span class="num">{{ n_dry }}</span><span class="lbl">{{ _("Probeläufe") }}</span></a>
   <a href="/log?status=error" class="stat {{ 'bad' if n_err else 'zero' }}"><span class="ic">{{ icon("alert") }}</span><span class="num">{{ n_err }}</span><span class="lbl">{{ _("Fehler") }}</span></a>
   <div class="stat acc"><span class="ic">{{ icon("zap") }}</span><span class="num">{{ "{:,}".format(tokens).replace(",", "'") }}</span><span class="lbl">{{ _("Tokens (≈ ${cost})", cost="%.4f"|format(cost)) }}</span></div>
