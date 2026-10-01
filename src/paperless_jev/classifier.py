@@ -315,6 +315,10 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
                 if found["level"] == "auto":
                     updates[name] = found["value"]
                 needs_review = needs_review or cfg.get("fallback_review", True) or found["level"] != "auto"
+            elif current == found["value"] and cfg.get("fallback_review", True):
+                # Paperless hat selbst schon den Sammel-Korrespondenten gesetzt (z. B. gelernte Zuordnung)
+                # und Jev findet keinen passenden: trotzdem prüfen lassen
+                needs_review = True
             continue
         if name == "created":
             # Paperless setzt immer ein Datum; nur korrigieren, wenn Jev sicher ist.

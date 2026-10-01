@@ -274,6 +274,11 @@ def test_fallback_correspondent_goes_to_review_and_never_replaces():
     p = plan(result, empty, cfg(fallback_review=False))
     assert p["updates"]["correspondent"] == 9 and not p["needs_review"]        # abschaltbar
 
+    already = empty | {"correspondent": 9}                                      # Paperless setzte schon "Diverses"
+    p = plan(result, already, cfg())
+    assert "correspondent" not in p["updates"] and p["needs_review"]
+    assert not plan(result, already, cfg(fallback_review=False))["needs_review"]
+
     filled = empty | {"correspondent": 2}                                       # schon "Stadtwerke"
     for c in (cfg(overwrite_above=0.9), cfg(overwrite=True), cfg()):
         p = plan(result, filled, c)
