@@ -375,7 +375,7 @@ class Processor:
             if name in choice and suggested.get(name, {}).get("value") != choice.get(name)
         }
         self.db.update_job(
-            job_id, status="done", source=f"{job['source']}+review",
+            job_id, status="done", source=f"{job['source']}+review", error=None,
             applied={**applied, "corrections": corrections},
         )
         return applied
