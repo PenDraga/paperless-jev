@@ -68,6 +68,21 @@ class FakePaperless:
     async def delete_document(self, doc_id):
         self.deleted.append(doc_id)
 
+    objects: list[tuple] = []
+
+    async def create_object(self, kind, name, color=None):
+        oid = 500 + len(self.objects)
+        self.objects.append(("create", kind, name, color))
+        self.meta.names(kind)[oid] = name
+        return oid
+
+    async def delete_object(self, kind, object_id):
+        self.objects.append(("delete", kind, object_id))
+        self.meta.names(kind).pop(object_id, None)
+
+    async def update_object(self, kind, object_id, data):
+        self.objects.append(("update", kind, object_id, data))
+
 
 class FakeJev:
     response: dict = {}
@@ -509,3 +524,60 @@ def test_delete_document_from_review(client):
     assert db.job(job)["status"] == "deleted" and db.job(old)["status"] == "deleted"
     assert db.job(done)["status"] == "done"  # anderes Dokument bleibt
     assert "Nichts zu prüfen" in client.get("/review").text
+
+
+def test_create_delete_and_color_metadata(client):
+    FakePaperless.objects.clear()
+    cfg = client.app.state.config
+    page = client.get("/descriptions?instance_id=1&kind=tag").text
+    assert 'action="/meta/create"' in page and 'type="color"' in page and 'formaction="/meta/delete"' in page
+
+    r = client.post("/meta/create", data={"instance_id": "1", "kind": "tag", "name": " Garten ", "color": "#33a02c", "keywords": "Garten, Pflanzen"}, follow_redirects=False)
+    assert "msg=" in r.headers["location"]
+    assert FakePaperless.objects[-1] == ("create", "tag", "Garten", "#33a02c")
+    oid = max(FakePaperless.meta.tags)
+    assert cfg.descriptions(1)[("tag", oid)]["source"] == "Garten, Pflanzen"
+    # gleicher Name nochmals -> Fehler, nichts angelegt
+    r = client.post("/meta/create", data={"instance_id": "1", "kind": "tag", "name": "garten"}, follow_redirects=False)
+    assert "err=" in r.headers["location"] and len(FakePaperless.objects) == 1
+    # Speicherpfade lassen sich hier nicht anlegen
+    r = client.post("/meta/create", data={"instance_id": "1", "kind": "storage_path", "name": "x"}, follow_redirects=False)
+    assert "err=" in r.headers["location"]
+
+    r = client.post("/meta/color", data={"instance_id": "1", "tag_id": str(oid), "color": "#FF0000"}, follow_redirects=False)
+    assert FakePaperless.objects[-1] == ("update", "tag", oid, {"color": "#ff0000"})
+    assert "err=" in client.post("/meta/color", data={"instance_id": "1", "tag_id": str(oid), "color": "red"}, follow_redirects=False).headers["location"]
+
+    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "tag", "delete_id": str(oid)}, follow_redirects=False)
+    assert FakePaperless.objects[-1] == ("delete", "tag", oid) and ("tag", oid) not in cfg.descriptions(1)
+    # Posteingang (100) ist geschützt
+    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "tag", "delete_id": "100"}, follow_redirects=False)
+    assert "err=" in r.headers["location"] and FakePaperless.objects[-1][0] == "delete" and FakePaperless.objects[-1][2] == oid
+
+
+def test_create_metadata_as_json_and_from_job_page(client):
+    FakePaperless.objects.clear()
+    r = client.post("/meta/create", data={"instance_id": "1", "kind": "correspondent", "name": "Neuer Absender", "format": "json"})
+    assert r.status_code == 200 and r.json()["name"] == "Neuer Absender" and r.json()["kind"] == "correspondent"
+    assert client.post("/meta/create", data={"instance_id": "1", "kind": "correspondent", "name": "neuer absender", "format": "json"}).status_code == 400
+    r = client.post("/meta/create", data={"instance_id": "1", "kind": "document_type", "name": "Offerte", "back": "/jobs/7"}, follow_redirects=False)
+    assert r.headers["location"].startswith("/jobs/7?msg=")
+
+
+def test_new_entry_description_expanded_in_background(client, monkeypatch):
+    import time
+
+    async def fake_describe(llm, kind, name, notes, examples, lang="de"):
+        return f"Ausformuliert: {notes}"
+
+    monkeypatch.setattr(app_module, "describe_category", fake_describe)
+    cfg = client.app.state.config
+    cfg.update({"llm_provider": "ollama", "llm_url": "http://ollama:11434", "llm_model": "qwen3:8b"})
+    r = client.post("/meta/create", data={"instance_id": "1", "kind": "document_type", "name": "Mahnung", "keywords": "Mahnung, Zahlungserinnerung", "format": "json"})
+    oid = r.json()["id"]
+    for _ in range(50):
+        if cfg.descriptions(1)[("document_type", oid)]["text"].startswith("Ausformuliert"):
+            break
+        time.sleep(0.05)
+    d = cfg.descriptions(1)[("document_type", oid)]
+    assert d == {"text": "Ausformuliert: Mahnung, Zahlungserinnerung", "source": "Mahnung, Zahlungserinnerung", "active": True}

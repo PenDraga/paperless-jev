@@ -30,12 +30,12 @@
       <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type, 'document_type') }}</div></td>
       <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent, 'correspondent') }}</div></td>
       <td class="col-date" data-label="{{ _('Datum') }}"><div>{{ cell(j.view.created, 'created') }}</div></td>
-      <td data-label="{{ _('Tags') }}"><div class="tag-chips">{% for t in j.tags_view %}<a class="conf {{ t.level }}" href="/log?tag={{ t.label|urlencode }}" title="p = {{ '%.0f'|format(t.p * 100) }} %"><b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></a>{% endfor %}
+      <td data-label="{{ _('Tags') }}"><div class="tag-chips">{% for t in j.tags_view %}<a class="conf {{ t.level }}" href="/log?tag={{ t.label|urlencode }}" title="p = {{ '%.0f'|format(t.p * 100) }} %">{% if t.color %}<i class="tdot" style="--c: {{ t.color }}"></i>{% endif %}<b>{{ t.label }}</b><span class="m"><span style="width: {{ (t.p * 100)|round|int }}%"></span></span></a>{% endfor %}
         {%- for ct in j.current_tags %}{% set c = ct.check %}
-          {%- if not c %}<span class="conf existing" title="{{ _('schon in Paperless gesetzt') }}"><b>{{ ct.label }}</b></span>
-          {%- elif c.verdict == "conflict" %}<span class="conf existing conflict" title="{{ _('schon gesetzt – laut Jev falsch (p = {p} %)', p='%.0f'|format(c.p * 100)) }}"><b>{{ ct.label }}</b><span class="cross">✗</span></span>
-          {%- elif c.verdict == "unsure" %}<span class="conf existing unsure" title="{{ _('schon gesetzt – Jev ist unsicher (p = {p} %)', p='%.0f'|format(c.p * 100)) }}"><b>{{ ct.label }}</b><span>?</span></span>
-          {%- else %}<span class="conf existing" title="{{ _('schon gesetzt – von Jev bestätigt (p = {p} %)', p='%.0f'|format(c.p * 100)) }}"><b>{{ ct.label }}</b><span class="tick">✓</span></span>{% endif %}
+          {%- if not c %}<span class="conf existing" title="{{ _('schon in Paperless gesetzt') }}">{% if ct.color %}<i class="tdot" style="--c: {{ ct.color }}"></i>{% endif %}<b>{{ ct.label }}</b></span>
+          {%- elif c.verdict == "conflict" %}<span class="conf existing conflict" title="{{ _('schon gesetzt – laut Jev falsch (p = {p} %)', p='%.0f'|format(c.p * 100)) }}">{% if ct.color %}<i class="tdot" style="--c: {{ ct.color }}"></i>{% endif %}<b>{{ ct.label }}</b><span class="cross">✗</span></span>
+          {%- elif c.verdict == "unsure" %}<span class="conf existing unsure" title="{{ _('schon gesetzt – Jev ist unsicher (p = {p} %)', p='%.0f'|format(c.p * 100)) }}">{% if ct.color %}<i class="tdot" style="--c: {{ ct.color }}"></i>{% endif %}<b>{{ ct.label }}</b><span>?</span></span>
+          {%- else %}<span class="conf existing" title="{{ _('schon gesetzt – von Jev bestätigt (p = {p} %)', p='%.0f'|format(c.p * 100)) }}">{% if ct.color %}<i class="tdot" style="--c: {{ ct.color }}"></i>{% endif %}<b>{{ ct.label }}</b><span class="tick">✓</span></span>{% endif %}
         {%- endfor %}
         {%- if not j.tags_view and not j.current_tags %}<span class="muted">–</span>{% endif %}</div></td>
     </tr>

@@ -41,6 +41,8 @@ TAGS = _items(
     {"Auto": ("Garage Alpenblick", 1)},
 )
 TAGS[0]["is_inbox_tag"] = True
+for _t, _c in zip(TAGS, ["#a6cee3", "#e31a1c", "#33a02c", "#1f78b4", "#ff7f00", "#fb9a99", "#6a3d9a", "#fdbf6f", "#b2df8a", "#cab2d6"]):
+    _t["color"] = _c
 
 # (Titel, Typ, Korrespondent, Datum, Tags, im Posteingang, Farbe)
 _DOCS = [
@@ -206,6 +208,25 @@ def tasks(task_id: str) -> list[dict[str, Any]]:
     return [{"task_id": task_id, "status": "SUCCESS" if done else "STARTED", "related_document": "110" if done else None}]
 
 
-@app.post("/api/tags/")
-def create_tag() -> dict[str, Any]:
-    return {"id": 999}
+@app.post("/api/{kind}/")
+async def create_object(kind: str, request: Request) -> dict[str, Any]:
+    data = await request.json()
+    items = {"tags": TAGS, "document_types": DOCUMENT_TYPES, "correspondents": CORRESPONDENTS}[kind]
+    item = {"id": max(i["id"] for i in items) + 1, "match": "", "matching_algorithm": 0, "is_insensitive": True, **data}
+    items.append(item)
+    return item
+
+
+@app.patch("/api/{kind}/{oid}/")
+async def update_object(kind: str, oid: int, request: Request) -> dict[str, Any]:
+    items = {"tags": TAGS, "document_types": DOCUMENT_TYPES, "correspondents": CORRESPONDENTS}[kind]
+    item = next(i for i in items if i["id"] == oid)
+    item.update(await request.json())
+    return item
+
+
+@app.delete("/api/{kind}/{oid}/")
+def delete_object(kind: str, oid: int) -> Response:
+    items = {"tags": TAGS, "document_types": DOCUMENT_TYPES, "correspondents": CORRESPONDENTS}[kind]
+    items[:] = [i for i in items if i["id"] != oid]
+    return Response(status_code=204)

@@ -178,6 +178,46 @@ function fillSheet() {
   for (const [id, name] of c.options) {
     if (!q || norm(name).includes(q)) list.append(option(id, name, id === c.current ? T.now : ""));
   }
+  // Neu anlegen, wenn es den gesuchten Namen noch nicht gibt (nicht für Speicherpfade)
+  const typed = search.value.trim();
+  if (typed && sheetField !== "storage_path" && !c.options.some(([, n]) => norm(n) === q)) list.prepend(createBox(typed));
+}
+
+async function createObject(kind, name, keywords, color) {
+  const fd = new FormData();
+  fd.append("instance_id", data.instance_id);
+  fd.append("kind", kind);
+  fd.append("name", name);
+  fd.append("format", "json");
+  if (keywords) fd.append("keywords", keywords);
+  if (color) fd.append("color", color);
+  const r = await fetch("/meta/create", { method: "POST", body: fd });
+  const j = await r.json().catch(() => ({ error: r.statusText }));
+  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function createBox(name) {
+  const box = document.createElement("div");
+  box.className = "rv-create";
+  box.innerHTML = `<div class="rv-create-title"></div><div class="rv-create-row"><input placeholder="${T.keywords}"><button type="button">${T.createBtn}</button></div><small class="bad"></small>`;
+  box.querySelector(".rv-create-title").textContent = T.create.replace("{name}", name);
+  const btn = box.querySelector("button");
+  btn.addEventListener("click", async () => {
+    btn.setAttribute("aria-busy", "true");
+    try {
+      const obj = await createObject(sheetField, name, box.querySelector("input").value.trim());
+      const c = data.choices[sheetField];
+      c.options.push([obj.id, obj.name]);
+      document.getElementById(`in-${sheetField}`).value = obj.id;
+      document.getElementById(`lbl-${sheetField}`).textContent = obj.name;
+      sheet.close();
+    } catch (err) {
+      box.querySelector("small").textContent = err.message;
+    }
+    btn.removeAttribute("aria-busy");
+  });
+  return box;
 }
 
 document.querySelectorAll("[data-sheet]").forEach((row) => row.addEventListener("click", () => {
@@ -191,6 +231,27 @@ search.addEventListener("input", fillSheet);
 sheet.addEventListener("click", (e) => { if (e.target === sheet || e.target.closest("[data-close-sheet]")) sheet.close(); });
 
 // --- weitere Tags, Titelvorschlag -------------------------------------------------------
+document.getElementById("rv-newtag-btn")?.addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  const nameEl = document.getElementById("rv-newtag-name");
+  const name = nameEl.value.trim();
+  if (!name) return nameEl.focus();
+  btn.setAttribute("aria-busy", "true");
+  try {
+    const obj = await createObject("tag", name, document.getElementById("rv-newtag-kw").value.trim(), document.getElementById("rv-newtag-color").value);
+    const chip = document.createElement("label");
+    chip.className = "tchip new";
+    chip.innerHTML = `<input type="checkbox" name="tags" value="${obj.id}" checked><span class="tchip-mark"></span>` +
+      (obj.color ? `<i class="tdot" style="--c: ${obj.color}"></i>` : "");
+    chip.append(obj.name);
+    document.querySelector(".rv-chips").insertBefore(chip, document.getElementById("rv-moretags"));
+    nameEl.value = "";
+    document.getElementById("rv-newtag-kw").value = "";
+  } catch (err) {
+    alert(err.message);
+  }
+  btn.removeAttribute("aria-busy");
+});
 document.getElementById("rv-moretags")?.addEventListener("click", (e) => {
   const more = document.getElementById("rv-moretags-list");
   more.hidden = !more.hidden;

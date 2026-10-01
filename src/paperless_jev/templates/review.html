@@ -95,19 +95,25 @@
           <input type="hidden" name="shown_tags" value="{{ tid }}">
           <label class="tchip existing{% if ch and ch.verdict == 'conflict' %} conflict{% elif ch and ch.verdict == 'unsure' %} unsure{% endif %}" title="{% if ch %}p = {{ '%.0f'|format(ch.p * 100) }} %{% endif %}">
             <input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (ch and ch.verdict == "conflict") %} checked{% endif %}>
-            <span class="tchip-mark"></span>{{ tag_options[tid] }}
+            <span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tag_options[tid] }}
             {% if ch and ch.verdict == "conflict" %}<small>{{ _("laut Jev falsch") }}</small>{% elif ch and ch.verdict == "unsure" %}<small>?</small>{% endif %}
           </label>
         {% endfor %}
         {% for t in suggested if t.id in tag_options and t.id not in existing %}
-          <label class="tchip new {{ t.level }}"><input type="checkbox" name="tags" value="{{ t.id }}" checked><span class="tchip-mark"></span>{{ t.label }} <small>{{ "%.0f"|format(t.p * 100) }} %</small></label>
+          <label class="tchip new {{ t.level }}"><input type="checkbox" name="tags" value="{{ t.id }}" checked><span class="tchip-mark"></span>{% if tag_colors.get(t.id) %}<i class="tdot" style="--c: {{ tag_colors[t.id] }}"></i>{% endif %}{{ t.label }} <small>{{ "%.0f"|format(t.p * 100) }} %</small></label>
         {% endfor %}
         <button type="button" class="tchip more" id="rv-moretags">+ {{ _("weitere") }}</button>
       </div>
       <div class="rv-more" id="rv-moretags-list" hidden>
+        <div class="rv-newtag">
+          <input type="color" id="rv-newtag-color" value="{{ ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#fdbf6f', '#ff7f00', '#cab2d6']|random }}" aria-label="{{ _('Farbe') }}">
+          <input id="rv-newtag-name" placeholder="{{ _('Neuer Tag') }}" maxlength="128">
+          <input id="rv-newtag-kw" placeholder="{{ _('Stichworte für Jev, optional') }}">
+          <button type="button" id="rv-newtag-btn" class="secondary">{{ icon("plus") }} {{ _("Anlegen") }}</button>
+        </div>
         {% set shown = existing + suggested|map(attribute="id")|list %}
         {% for tid, tname in tag_options|dictsort(by="value") if tid not in shown %}
-          <label class="tchip new"><input type="checkbox" name="tags" value="{{ tid }}"><span class="tchip-mark"></span>{{ tname }}</label>
+          <label class="tchip new"><input type="checkbox" name="tags" value="{{ tid }}"><span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tname }}</label>
         {% endfor %}
       </div>
       <p class="hint rv-legend">{{ _("dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch (vorab abgewählt, wird entfernt)") }}</p>
@@ -132,11 +138,12 @@
 </dialog>
 
 <script type="application/json" id="rv-data">{{ {
-  "choices": choices, "labels": {"document_type": _(FIELD_LABELS["document_type"]), "correspondent": _(FIELD_LABELS["correspondent"]), "storage_path": _(FIELD_LABELS["storage_path"])},
+  "choices": choices, "instance_id": job.instance_id, "labels": {"document_type": _(FIELD_LABELS["document_type"]), "correspondent": _(FIELD_LABELS["correspondent"]), "storage_path": _(FIELD_LABELS["storage_path"])},
   "marks": fields.values()|selectattr("value")|map(attribute="label")|list,
   "levels": fields.values()|selectattr("value")|map(attribute="level")|list,
   "t": {"now": _("heute in Paperless"), "empty": _("– leer lassen –"), "all": _("alle"), "suggestions": _("Vorschläge von Jev"),
-        "page": _("Seite {n} / {total}"), "loading": _("Titel wird erzeugt …"), "failed": _("Dokument konnte nicht angezeigt werden."), "open": _("In neuem Tab öffnen"), "exitfs": _("Schliessen")}
+        "page": _("Seite {n} / {total}"), "create": _("«{name}» neu in Paperless anlegen"), "keywords": _("Stichworte für Jev, optional"),
+        "createBtn": _("Anlegen"), "created": _("«{name}» in Paperless angelegt"), "loading": _("Titel wird erzeugt …"), "failed": _("Dokument konnte nicht angezeigt werden."), "open": _("In neuem Tab öffnen"), "exitfs": _("Schliessen")}
 }|tojson }}</script>
 <script type="module" src="/static/review.js?v={{ asset_v }}"></script>
 {% endif %}

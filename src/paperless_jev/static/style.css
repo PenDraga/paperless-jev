@@ -395,6 +395,27 @@ label.rv-row { cursor: default; margin: 0; }
 .rv-titlenote { display: block; margin-top: .25rem; font-size: .75rem; }
 .rv-chips, .rv-more { display: flex; flex-wrap: wrap; gap: .45rem; }
 .rv-more { margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed var(--pj-line); }
+.tdot { display: inline-block; width: .62rem; height: .62rem; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85), 0 0 0 2.5px rgba(0, 0, 0, .12); flex: none; margin-right: .1rem; }
+.meta-new { margin-bottom: 1rem; }
+.meta-inline { margin-top: 1rem; }
+.meta-inline summary { font-size: .9rem; }
+.meta-inline select { flex: 1 1 9rem; margin: 0; }
+.meta-new-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.meta-new-row input[name=name] { flex: 2 1 14rem; margin: 0; }
+.meta-new-row input[name=keywords] { flex: 3 1 14rem; margin: 0; }
+.meta-new-row button { flex: 0 0 auto; width: auto; margin: 0; display: inline-flex; gap: .4rem; align-items: center; }
+.meta-new-row input[type=color], .meta-color { width: 2.6rem; height: 2.6rem; padding: .15rem; margin: 0; flex: none; border-radius: .5rem; cursor: pointer; }
+input[type=color].meta-color { width: 1.5rem !important; height: 1.5rem !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 50% !important; background: none !important; box-shadow: 0 0 0 2px var(--pj-card), 0 0 0 3px var(--pj-line) !important; cursor: pointer; flex: none; -webkit-appearance: none; appearance: none; }
+input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type=color]::-webkit-color-swatch { border: 0; border-radius: inherit; }
+input[type=color]::-moz-color-swatch { border: 0; border-radius: inherit; }
+.meta-new-row input[type=color], .rv-newtag input[type=color], .meta-inline input[type=color] { width: 2.6rem !important; flex: none; padding: .2rem !important; }
+.meta-name { flex-wrap: nowrap; }
+.meta-name { display: inline-flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.meta-count { font-weight: 500; font-size: .72rem; color: var(--pj-muted); background: var(--pj-gray-soft); border-radius: 1rem; padding: 0 .45rem; }
+.meta-name .meta-del { width: auto !important; margin: 0 !important; }
+.meta-del { all: unset; cursor: pointer; color: var(--pj-muted); display: inline-flex; padding: .15rem; border-radius: .3rem; opacity: .6; }
+.meta-del:hover { color: var(--pj-bad); opacity: 1; }
 .tchip { display: inline-flex; align-items: center; gap: .35rem; margin: 0; border-radius: 1.2rem; padding: .35rem .75rem; font-size: .85rem; font-weight: 600; border: 1.5px solid var(--pj-line); color: var(--pj-muted); background: var(--pj-card); cursor: pointer; user-select: none; }
 .tchip input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
 .tchip small { font-weight: 500; opacity: .8; font-size: .72rem; }
@@ -413,6 +434,13 @@ label.rv-row { cursor: default; margin: 0; }
 .rv-bar .rv-btn, .rv-bar [type=submit].rv-btn { width: 3.2rem; flex: none; }
 .rv-bar [type=submit].rv-btn.primary { flex: 1; width: auto; }
 .rv-btn.primary { flex: 1; width: auto; display: flex; gap: .45rem; justify-content: center; font-weight: 700; background: var(--pj-accent); border-color: var(--pj-accent); color: #fff; }
+.rv-create { background: var(--pj-accent-soft); border-radius: .6rem; padding: .6rem .7rem; margin-bottom: .5rem; }
+.rv-create-title { font-weight: 700; color: var(--pj-accent-text); margin-bottom: .4rem; }
+.rv-create-row, .rv-newtag { display: flex; gap: .4rem; flex-wrap: wrap; }
+.rv-create-row input, .rv-newtag input:not([type=color]) { flex: 1 1 10rem; margin: 0; }
+.rv-create-row button, .rv-newtag button { width: auto; margin: 0; flex: none; display: inline-flex; gap: .3rem; align-items: center; }
+.rv-newtag { width: 100%; margin-bottom: .5rem; }
+.rv-newtag input[type=color] { width: 2.6rem; height: auto; padding: .15rem; margin: 0; flex: none; }
 .rv-sheet-box { background: var(--pj-card); border-radius: 1rem; width: min(34rem, 94vw); max-height: 80vh; display: flex; flex-direction: column; padding: .6rem 1rem 1rem; }
 .rv-grab { width: 2.4rem; height: 4px; border-radius: 3px; background: var(--pj-line); margin: .1rem auto .5rem; }
 .rv-sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }

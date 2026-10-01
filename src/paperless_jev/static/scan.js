@@ -367,10 +367,11 @@ function renderTags() {
   const box = $("sc-tags");
   const tags = data.tags[$("sc-instance").value] || [];
   box.innerHTML = "";
-  tags.forEach(([id, name], i) => {
+  tags.forEach(([id, name, color], i) => {
     const l = document.createElement("label");
     l.className = "tchip new" + (i >= 8 ? " sc-hidden" : "");
-    l.innerHTML = `<input type="checkbox" value="${id}"><span class="tchip-mark"></span>`;
+    l.innerHTML = `<input type="checkbox" value="${id}"><span class="tchip-mark"></span>` +
+      (/^#[0-9a-f]{6}$/i.test(color || "") ? `<i class="tdot" style="--c: ${color}"></i>` : "");
     l.append(name);
     box.append(l);
   });

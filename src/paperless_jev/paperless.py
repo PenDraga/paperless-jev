@@ -19,6 +19,7 @@ class PaperlessError(Exception):
 # Paperless matching_algorithm: 1 beliebiges Wort, 2 alle Wörter, 3 exakt, 4 Regex, 5 ungefähr
 # (0 = keine, 6 = automatisch/gelernt - dort gibt es keinen Suchbegriff)
 RULE_ALGORITHMS = (1, 2, 3, 4, 5)
+OBJECT_PATHS = {"document_type": "document_types", "correspondent": "correspondents", "tag": "tags", "storage_path": "storage_paths"}
 
 
 @dataclass
@@ -32,6 +33,10 @@ class Metadata:
     inbox_tags: set[int] = field(default_factory=set)
     # Paperless-Zuweisungsregeln mit Suchbegriff: (Art, ID) -> {"match", "algorithm", "insensitive"}
     rules: dict[tuple[str, int], dict[str, Any]] = field(default_factory=dict)
+    # Anzahl Dokumente je Eintrag: (Art, ID) -> n
+    counts: dict[tuple[str, int], int] = field(default_factory=dict)
+    # Tag-Farben aus Paperless: ID -> "#rrggbb"
+    tag_colors: dict[int, str] = field(default_factory=dict)
 
     def tag_id(self, name: str) -> int | None:
         wanted = name.strip().lower()
@@ -119,6 +124,8 @@ class PaperlessClient:
         meta = Metadata()
 
         def rule(kind: str, item: dict[str, Any]) -> None:
+            if item.get("document_count") is not None:
+                meta.counts[(kind, item["id"])] = int(item["document_count"])
             match = (item.get("match") or "").strip()
             if match and item.get("matching_algorithm") in RULE_ALGORITHMS:
                 meta.rules[(kind, item["id"])] = {
@@ -138,6 +145,8 @@ class PaperlessClient:
             rule("storage_path", s)
         for t in await self._all("/api/tags/"):
             meta.tags[t["id"]] = t["name"]
+            if t.get("color"):
+                meta.tag_colors[t["id"]] = t["color"]
             if t.get("is_inbox_tag"):
                 meta.inbox_tags.add(t["id"])
             rule("tag", t)
@@ -159,6 +168,21 @@ class PaperlessClient:
             if len(titles) >= limit:
                 break
         return titles
+
+    async def create_object(self, kind: str, name: str, color: str | None = None) -> int:
+        """Neuer Dokumenttyp, Korrespondent oder Tag - ohne automatische Zuordnung durch Paperless."""
+        data: dict[str, Any] = {"name": name, "matching_algorithm": 0}
+        if kind == "tag" and color:
+            data["color"] = color
+        resp = await self._request("POST", f"/api/{OBJECT_PATHS[kind]}/", json=data)
+        return int(resp.json()["id"])
+
+    async def update_object(self, kind: str, object_id: int, data: dict[str, Any]) -> None:
+        await self._request("PATCH", f"/api/{OBJECT_PATHS[kind]}/{object_id}/", json=data)
+
+    async def delete_object(self, kind: str, object_id: int) -> None:
+        """Löscht einen Eintrag; Paperless entfernt ihn dabei von allen Dokumenten."""
+        await self._request("DELETE", f"/api/{OBJECT_PATHS[kind]}/{object_id}/")
 
     async def create_tag(self, name: str) -> int:
         # matching_algorithm 0 = keine automatische Zuordnung durch Paperless

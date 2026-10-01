@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import html
 import re
@@ -281,12 +282,13 @@ def _view(row: dict[str, Any], meta: Metadata | None, hidden: set[int] | None = 
             "filter": f["label"] if f["value"] is not None and name != "created" else None,
         }
     row["view"] = view
-    row["tags_view"] = [t for t in result.get("tags", []) if t["level"] != "low"]
+    colors = meta.tag_colors if meta else {}
+    row["tags_view"] = [t | {"color": colors.get(t["id"])} for t in result.get("tags", []) if t["level"] != "low"]
     # Tags, die das Dokument beim Lauf schon hatte (ohne Posteingang und eigene Status-Tags)
     hidden = hidden if hidden is not None else (set(meta.inbox_tags) if meta else set())
     checks = {c["id"]: c for c in result.get("tag_checks", [])}
     row["current_tags"] = [
-        {"label": meta.tags.get(t, f"#{t}") if meta else f"#{t}", "check": checks.get(t)}
+        {"label": meta.tags.get(t, f"#{t}") if meta else f"#{t}", "check": checks.get(t), "color": colors.get(t)}
         for t in current.get("tags", []) if t not in hidden
     ]
 
@@ -527,6 +529,7 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
     return {
         "meta": meta,
         "tag_options": {k: v for k, v in meta.tags.items() if k not in hidden},
+        "tag_colors": meta.tag_colors,
         "title_mode": _cfg(request).all()["title_mode"],
     }
 
@@ -603,7 +606,7 @@ async def scan_page(request: Request):
             async with _proc(request).client(inst) as pl:
                 meta = await _proc(request).metadata(inst, pl)
             hidden = excluded_tags(meta, _cfg(request).all())
-            tags[inst.id] = sorted(([t, n] for t, n in meta.tags.items() if t not in hidden), key=lambda x: x[1].lower())
+            tags[inst.id] = sorted(([t, n, meta.tag_colors.get(t)] for t, n in meta.tags.items() if t not in hidden), key=lambda x: x[1].lower())
         except PaperlessError:
             tags[inst.id] = []
     return _render(request, "scan.html", instances=instances, scan_tags=tags)
@@ -934,14 +937,114 @@ async def descriptions_page(request: Request, instance_id: int = 0, kind: str = 
                 if oid in hidden:
                     continue
                 d = stored.get((kind, oid), {"text": "", "source": "", "active": True})
-                rows.append({"id": oid, "name": name, "rule": meta.rules.get((kind, oid)), **d})
+                rows.append({"id": oid, "name": name, "rule": meta.rules.get((kind, oid)),
+                             "count": meta.counts.get((kind, oid)), "color": meta.tag_colors.get(oid) if kind == "tag" else None, **d})
         except PaperlessError as e:
             error = str(e)
     return _render(
         request, "descriptions.html",
-        instances=instances, inst=inst, kind=kind, kinds=KINDS, rows=rows, meta_error=error,
+        instances=instances, inst=inst, kind=kind, kinds=KINDS, rows=rows, meta_error=error, creatable=kind in CREATABLE,
         can_translate=LLM.from_config(_cfg(request).all()) is not None,
     )
+
+
+CREATABLE = ("document_type", "correspondent", "tag")
+BACKGROUND: set[asyncio.Task] = set()  # Referenzen halten, sonst sammelt der GC laufende Tasks ein
+
+
+async def _expand_later(cfg: Config, llm: LLM, instance_id: int, kind: str, oid: int, name: str, keywords: str, lang: str) -> None:
+    try:
+        text = await describe_category(llm, kind, name, keywords, [], lang=lang)
+    except LLMError as e:
+        log.info("Beschreibung für %s nicht ausformuliert: %s", name, e)
+        return
+    current = cfg.descriptions(instance_id).get((kind, oid))
+    if current and current["source"] == keywords:  # inzwischen nicht von Hand geändert
+        cfg.save_description(instance_id, kind, oid, text, current["active"], source=keywords)  # Speicherpfade brauchen zusätzlich ein Pfad-Muster
+
+
+@app.post("/meta/create")
+async def create_meta(request: Request):
+    form = await request.form()
+    inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
+    kind = str(form.get("kind"))
+    name = " ".join(str(form.get("name") or "").split())[:128]
+    back = _local_path(str(form.get("back") or ""), f"/descriptions?instance_id={inst.id if inst else 0}&kind={kind}")
+    as_json = form.get("format") == "json"
+
+    def fail(message: str):
+        return JSONResponse({"error": message}, status_code=400) if as_json else _redirect(back, err=message)
+
+    if not inst or kind not in CREATABLE or not name:
+        return fail(_("Name fehlt"))
+    color = str(form.get("color") or "")
+    color = color.lower() if HEX_COLOR.fullmatch(color) else None
+    try:
+        async with _proc(request).client(inst) as pl:
+            meta = await _proc(request).metadata(inst, pl, fresh=True)
+            if name.lower() in (n.lower() for n in meta.names(kind).values()):
+                return fail(_("«{name}» gibt es schon", name=name))
+            oid = await pl.create_object(kind, name, color)
+    except PaperlessError as e:
+        return fail(str(e))
+    keywords = str(form.get("keywords") or "").strip()
+    if keywords:
+        # Stichworte sofort speichern, ausformulieren im Hintergrund (Sprachmodell kann langsam sein)
+        _cfg(request).save_description(inst.id, kind, oid, keywords, True, source=keywords)
+        llm = LLM.from_config(_cfg(request).all())
+        if llm:
+            task = asyncio.create_task(_expand_later(_cfg(request), llm, inst.id, kind, oid, name, keywords, i18n.current.get()))
+            BACKGROUND.add(task)
+            task.add_done_callback(BACKGROUND.discard)
+    _proc(request).forget_metadata(inst.id)
+    if as_json:
+        return JSONResponse({"id": oid, "name": name, "kind": kind, "color": color,
+                             "message": _("«{name}» in Paperless angelegt", name=name)})
+    return _redirect(back, msg=_("«{name}» in Paperless angelegt", name=name))
+
+
+HEX_COLOR = re.compile(r"#[0-9a-fA-F]{6}")
+
+
+@app.post("/meta/color")
+async def tag_color(request: Request):
+    form = await request.form()
+    inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
+    oid = int(str(form.get("tag_id") or 0))
+    color = str(form.get("color") or "")
+    back = f"/descriptions?instance_id={inst.id if inst else 0}&kind=tag"
+    if not inst or not oid or not HEX_COLOR.fullmatch(color):
+        return _redirect(back, err=_("Ungültige Farbe"))
+    try:
+        async with _proc(request).client(inst) as pl:
+            await pl.update_object("tag", oid, {"color": color.lower()})
+    except PaperlessError as e:
+        return _redirect(back, err=str(e))
+    _proc(request).forget_metadata(inst.id)
+    return _redirect(back, msg=_("Farbe gespeichert"))
+
+
+@app.post("/meta/delete")
+async def delete_meta(request: Request):
+    form = await request.form()
+    inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
+    kind = str(form.get("kind"))
+    oid = int(str(form.get("delete_id") or 0))
+    back = f"/descriptions?instance_id={inst.id if inst else 0}&kind={kind}"
+    if not inst or kind not in KINDS or not oid:
+        return _redirect(back, err=_("Eintrag fehlt"))
+    try:
+        async with _proc(request).client(inst) as pl:
+            meta = await _proc(request).metadata(inst, pl, fresh=True)
+            name = meta.names(kind).get(oid, f"#{oid}")
+            if kind == "tag" and oid in excluded_tags(meta, _cfg(request).all()):
+                return _redirect(back, err=_("Posteingangs- und Status-Tags lassen sich hier nicht löschen"))
+            await pl.delete_object(kind, oid)
+    except PaperlessError as e:
+        return _redirect(back, err=str(e))
+    _cfg(request).db.execute("DELETE FROM descriptions WHERE instance_id = ? AND kind = ? AND object_id = ?", (inst.id, kind, oid))
+    _proc(request).forget_metadata(inst.id)
+    return _redirect(back, msg=_("«{name}» in Paperless gelöscht", name=name))
 
 
 @app.post("/descriptions")

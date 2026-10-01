@@ -26,6 +26,23 @@
     <h4>{{ _("Vorschlag bearbeiten und übernehmen") }}</h4>
     {% set back = back_url %}
     {% include "_review_form.html" with context %}
+    {% if meta %}<details class="meta-inline">
+      <summary>{{ icon("plus") }} {{ _("Neuen Eintrag in Paperless anlegen") }}</summary>
+      <form method="post" action="/meta/create" class="meta-new-row">
+        <input type="hidden" name="instance_id" value="{{ job.instance_id }}">
+        <input type="hidden" name="back" value="/jobs/{{ job.id }}">
+        <select name="kind" aria-label="{{ _('Art') }}">
+          <option value="document_type">{{ _(FIELD_LABELS["document_type"]) }}</option>
+          <option value="correspondent">{{ _(FIELD_LABELS["correspondent"]) }}</option>
+          <option value="tag">{{ _("Tag") }}</option>
+        </select>
+        <input type="color" name="color" value="#a6cee3" title="{{ _('Farbe (nur Tags)') }}" aria-label="{{ _('Farbe (nur Tags)') }}">
+        <input name="name" required maxlength="128" placeholder="{{ _('Name') }}">
+        <input name="keywords" placeholder="{{ _('Stichworte für Jev, optional') }}">
+        <button type="submit" onclick="this.setAttribute('aria-busy','true')">{{ _("Anlegen") }}</button>
+      </form>
+      <small class="muted">{{ _("Danach steht der neue Eintrag oben im Formular zur Auswahl.") }}</small>
+    </details>{% endif %}
   </div>
 </div>
 {% endif %}
