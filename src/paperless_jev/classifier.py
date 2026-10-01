@@ -225,15 +225,14 @@ def build_request(
         hidden = excluded_tags(meta, cfg)
         present = set(doc.get("tags", []))
         active = {tid: n for tid, n in _active("tag", meta.tags, descriptions).items() if tid not in hidden}
-        # Obertags vorhandener Untertags sind dadurch begründet - nicht einzeln gegenprüfen
-        implied = {a for tid in present for a in meta.tag_ancestors(tid)}
+        # Deaktivierte Tags auf dem Dokument sollen weg - sie begründen auch keinen Obertag
+        unwanted = {tid for tid in present if tid in meta.tags and tid not in hidden and tid not in active}
+        # Obertags verbleibender Untertags sind dadurch begründet - nicht einzeln gegenprüfen
+        implied = {a for tid in present - unwanted for a in meta.tag_ancestors(tid)}
         # Vorhandene Tags zuerst (Gegenprüfung), danach mögliche neue
         if cfg.get("verify_tags", True):
             req.checked_tags = {tid for tid in active if tid in present and tid not in implied}
-        req.inactive_tags = {
-            tid for tid in present
-            if tid in meta.tags and tid not in hidden and tid not in implied and tid not in active
-        }
+        req.inactive_tags = unwanted - implied
         tags = {tid: n for tid, n in active.items() if tid in req.checked_tags}
         tags |= {tid: n for tid, n in active.items() if tid not in present}
         for tid in list(tags)[:MAX_TAG_QUESTIONS]:

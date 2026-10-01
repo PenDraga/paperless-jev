@@ -340,3 +340,16 @@ def test_deactivated_tag_on_document_is_flagged_for_removal():
     result = interpret({"answers": {}}, req, meta, cfg())
     assert result["tag_checks"] == [{"id": 101, "label": "Steuern", "p": 0.0, "verdict": "inactive"}]
     assert plan(result, doc, cfg(mode="auto"))["needs_review"]
+
+
+
+def test_deactivated_parent_goes_when_its_only_child_goes():
+    # wie Job 2294: Haldenweg 10 (deaktiviert) > xAllgemein (deaktiviert), sonst kein Untertag
+    meta = nested_meta()
+    doc = make_doc() | {"tags": [100, 200, 201]}
+    descriptions = {("tag", 200): {"text": "", "active": False}, ("tag", 201): {"text": "", "active": False}}
+    req = build_request(doc, meta, descriptions, cfg())
+    assert req.inactive_tags == {200, 201}
+    # bleibt ein aktiver Untertag (Energie), bleibt auch der Obertag
+    doc["tags"] = [100, 200, 201, 202]
+    assert build_request(doc, meta, descriptions, cfg()).inactive_tags == {201}
