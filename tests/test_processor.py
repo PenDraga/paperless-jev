@@ -581,3 +581,13 @@ def test_new_entry_description_expanded_in_background(client, monkeypatch):
         time.sleep(0.05)
     d = cfg.descriptions(1)[("document_type", oid)]
     assert d == {"text": "Ausformuliert: Mahnung, Zahlungserinnerung", "source": "Mahnung, Zahlungserinnerung", "active": True}
+
+
+def test_review_shows_fallback_hint(client):
+    db = client.app.state.db
+    j = db.create_job(1, 42, "poll")
+    db.update_job(j, status="review", doc_title="Ohne Absender", result={
+        "fields": {"correspondent": {"value": 1, "label": "Swisscom", "confidence": 0.97, "level": "auto", "fallback": True, "top": []}},
+        "tags": [], "current": {"tags": []}})
+    page = client.get("/review").text
+    assert "Sammel-Korrespondent" in page and "kein passender gefunden" in page

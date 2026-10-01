@@ -873,6 +873,7 @@ async def save_rules(request: Request):
             "examples": max(int(num("examples", 5)), 0),
             "tags_force_review": "tags_force_review" in form,
             "correspondent_fallback": str(form.get("correspondent_fallback") or "").strip(),
+            "fallback_review": "fallback_review" in form,
             "overwrite": "overwrite" in form,
             "review_conflicts": "review_conflicts" in form,
             "paperless_rules": "paperless_rules" in form,

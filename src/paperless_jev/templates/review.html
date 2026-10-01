@@ -60,11 +60,13 @@
         {% set conflict = f and f.value is not none and cur.get(name) and f.value != cur.get(name) %}
         <input type="hidden" name="use_{{ name }}" value="on">
         <input type="hidden" name="{{ name }}" id="in-{{ name }}" value="{{ c.value if c.value is not none else '' }}">
-        <button type="button" class="rv-row{% if f and f.level == 'suggest' or conflict %} warn{% endif %}" data-sheet="{{ name }}">
+        <button type="button" class="rv-row{% if f and (f.level == 'suggest' or f.fallback or f.value is none) or conflict %} warn{% endif %}" data-sheet="{{ name }}">
           <span class="rv-k">{{ _(FIELD_LABELS[name]) }}</span>
           <span class="rv-v"><span id="lbl-{{ name }}">{{ names.get(c.value, _("– leer –")) if c.value is not none else _("– leer –") }}</span>
-            {% if conflict %}<small>{{ _("bisher: {value}", value=names.get(cur.get(name), "#" ~ cur.get(name))) }}</small>{% endif %}</span>
-          {% if f %}<span class="rv-c {{ f.level if f.value is not none else 'low' }}">{{ "%.0f"|format(f.confidence * 100) }} %</span>{% endif %}
+            {% if conflict and not (f and f.fallback) %}<small>{{ _("bisher: {value}", value=names.get(cur.get(name), "#" ~ cur.get(name))) }}</small>{% endif %}
+            {% if f and f.fallback %}<small>{{ _("kein passender gefunden – Sammel-Korrespondent; antippen, um einen anderen zu wählen oder neu anzulegen") }}</small>
+            {% elif f and f.value is none and name == "correspondent" %}<small>{{ _("kein passender gefunden – antippen, um einen zu wählen oder neu anzulegen") }}</small>{% endif %}</span>
+          {% if f and not f.fallback %}<span class="rv-c {{ f.level if f.value is not none else 'low' }}">{{ "%.0f"|format(f.confidence * 100) }} %</span>{% elif f %}<span class="rv-c suggest">{{ _("Sammel") }}</span>{% endif %}
           <span class="rv-chev">{{ icon("more") }}</span>
         </button>
         {% endif %}

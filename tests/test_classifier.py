@@ -255,3 +255,26 @@ def test_localtime_filter():
     assert localtime("2026-09-30T14:05:00+00:00") == "30.09. 16:05"  # Sommerzeit Zürich
     assert localtime("2026-12-01T14:05:00+00:00") == "01.12. 15:05"
     assert localtime(None) == "" and localtime("kaputt") == "kaputt"
+
+
+def test_fallback_correspondent_goes_to_review_and_never_replaces():
+    from paperless_jev.classifier import plan
+
+    meta = make_meta()
+    meta.correspondents[9] = "Diverses"
+    req = build_request(make_doc(), meta, {}, cfg())
+    response = {"answers": {"correspondent": {"choice": NONE, "confidence": 0.97}}}
+    result = interpret(response, req, meta, cfg(correspondent_fallback="Diverses"))
+    f = result["fields"]["correspondent"]
+    assert f["value"] == 9 and f["fallback"] is True and f["level"] == "auto"
+
+    empty = make_doc() | {"document_type": 10}
+    p = plan(result, empty, cfg())
+    assert p["updates"]["correspondent"] == 9 and p["needs_review"]            # gesetzt, aber Review
+    p = plan(result, empty, cfg(fallback_review=False))
+    assert p["updates"]["correspondent"] == 9 and not p["needs_review"]        # abschaltbar
+
+    filled = empty | {"correspondent": 2}                                       # schon "Stadtwerke"
+    for c in (cfg(overwrite_above=0.9), cfg(overwrite=True), cfg()):
+        p = plan(result, filled, c)
+        assert "correspondent" not in p["updates"] and not p["needs_review"]   # nie ersetzen, kein Widerspruch

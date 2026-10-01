@@ -31,6 +31,7 @@
   </div>
   <label><input type="checkbox" name="overwrite" {% if cfg.overwrite %}checked{% endif %}> {{ _("bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)") }}</label>
   <label>{{ _("Sammel-Korrespondent, wenn keiner passt") }} <input name="correspondent_fallback" value="{{ cfg.correspondent_fallback }}" placeholder="{{ _('z. B. Diverses – leer = Feld bleibt leer') }}"></label>
+  <label><input type="checkbox" name="fallback_review" {% if cfg.fallback_review %}checked{% endif %}> {{ _("Sammel-Korrespondent setzen, das Dokument aber ins Review schicken (so lässt sich ein passender Korrespondent zuweisen oder neu anlegen)") }}</label>
   <label><input type="checkbox" name="tags_force_review" {% if cfg.tags_force_review %}checked{% endif %}> {{ _("unsichere Tag-Vorschläge allein schicken ein Dokument ins Review") }}</label>
   <label><input type="checkbox" name="verify_tags" {% if cfg.verify_tags %}checked{% endif %}> {{ _("vorhandene Tags von Jev gegenprüfen (ein Widerspruch schickt das Dokument ins Review, entfernt wird nichts automatisch)") }}</label>
   <label><input type="checkbox" name="paperless_rules" {% if cfg.paperless_rules %}checked{% endif %}> {{ _("Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben") }}</label>

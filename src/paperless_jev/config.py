@@ -47,6 +47,7 @@ DEFAULTS: dict[str, Any] = {
     "paperless_rules": False,
     "verify_tags": True,
     "overwrite_above": 0.0,
+    "fallback_review": True,
     "remove_inbox": True,
     "tag_done": "ai-klassifiziert",
     "tag_review": "ai-review",

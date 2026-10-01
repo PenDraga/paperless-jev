@@ -274,6 +274,9 @@ def interpret(
             "level": "none" if value is None else _level(confidence, cfg["fields"][name]),
             "top": [[lbl, round(p, 4)] for lbl, p in probs[:5]],
         }
+        if fallback is not None:
+            # Jev hat "keiner passt" gesagt - der Wert ist nur der Sammel-Korrespondent
+            result["fields"][name]["fallback"] = True
     tag_spec = cfg["fields"]["tags"]
     for key, answer in answers.items():
         if not key.startswith("tag:"):
@@ -306,6 +309,13 @@ def plan(result: dict[str, Any], doc: dict[str, Any], cfg: dict[str, Any]) -> di
             continue
         found = result["fields"].get(name)
         current = doc.get(name)
+        if found and found.get("fallback"):
+            # Sammel-Korrespondent: nur für leere Felder, nie als Widerspruch zu einem vorhandenen Wert
+            if not current:
+                if found["level"] == "auto":
+                    updates[name] = found["value"]
+                needs_review = needs_review or cfg.get("fallback_review", True) or found["level"] != "auto"
+            continue
         if name == "created":
             # Paperless setzt immer ein Datum; nur korrigieren, wenn Jev sicher ist.
             if found and found["value"] and found["value"] != current:
