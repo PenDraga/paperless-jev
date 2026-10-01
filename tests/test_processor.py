@@ -92,6 +92,9 @@ class FakePaperless:
         if "name" in data:
             self.meta.names(kind)[object_id] = data["name"]
 
+    async def document_ids_with_tag(self, tag_id):
+        return [d["id"] for d in self.docs.values() if tag_id in d["tags"]]
+
     async def documents_with(self, kind, object_id, limit=5):
         docs = [d for d in self.docs.values() if (object_id in d["tags"] if kind == "tag" else d.get(kind) == object_id)]
         return len(docs), [{"id": d["id"], "title": d["title"]} for d in docs[:limit]]
@@ -736,3 +739,22 @@ def test_title_generated_with_analysis(client):
     # Titelvorschlag mit im Review korrigiertem Korrespondenten
     r = client.post(f"/jobs/{job['id']}/title?format=json", data={"correspondent": "2", "document_type": "10"})
     assert r.json()["title"].startswith("Stadtwerke Rechnung")
+
+
+def test_recheck_documents_with_tag(client):
+    cfg = client.app.state.config
+    cfg.update({"title_mode": "template", "title_template": "{correspondent} {document_type}"})
+    assert 'action="/run/tag"' in client.get("/").text
+    # Probelauf: schreibt nichts
+    r = client.post("/run/tag", data={"target": "1:103", "dry_run": "true"}, follow_redirects=False)
+    assert "msg=" in r.headers["location"]
+    _wait(client)
+    job = client.app.state.db.one("SELECT * FROM jobs ORDER BY id DESC")
+    assert job["source"] == "tag-test" and job["status"] == "dry_run" and not FakePaperless.patches
+    assert "title" not in job["result"]  # bestehender Titel bleibt
+    # echter Lauf mit neuen Titeln
+    client.post("/run/tag", data={"target": "1:103", "titles": "true"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT * FROM jobs ORDER BY id DESC")
+    assert job["source"].startswith("tag+title") and job["result"]["title"] == "Swisscom Rechnung"
+    assert "err=" in client.post("/run/tag", data={"target": ""}, follow_redirects=False).headers["location"]

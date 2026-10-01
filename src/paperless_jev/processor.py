@@ -19,6 +19,19 @@ log = logging.getLogger("paperless_jev")
 
 ACTIVE = ("queued", "running")
 TEST = "test"  # Quelle für Einzeltests: schreibt nie, zählt nicht fürs Polling
+# Neuprüfung aller Dokumente mit einem Tag: "tag" bzw. "tag-test" (Probelauf), "+title" = Titel neu erzeugen
+TAG_RUN, TAG_TEST, WITH_TITLE = "tag", "tag-test", "+title"
+
+
+def is_test(source: str) -> bool:
+    return source == TEST or source.startswith(TAG_TEST)
+
+
+def job_config(job: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
+    """Neuprüfung per Tag lässt bestehende Titel stehen, ausser "+title" wurde gewählt."""
+    if job["source"].startswith(TAG_RUN) and WITH_TITLE not in job["source"]:
+        return {**cfg, "title_mode": "off"}
+    return cfg
 META_TTL = 300
 EXAMPLES_TTL = 3600
 MAX_ERRORS = 3
@@ -92,9 +105,9 @@ class Processor:
     async def enqueue(self, instance_id: int, doc_id: int, source: str, force: bool = False) -> int | None:
         # Einzeltests zählen nicht: sonst würde das Polling ein getestetes Dokument überspringen
         last = self.db.one(
-            "SELECT id, status FROM jobs WHERE instance_id = ? AND doc_id = ? AND source != ?"
+            "SELECT id, status FROM jobs WHERE instance_id = ? AND doc_id = ? AND source != ? AND source NOT LIKE ?"
             " ORDER BY id DESC LIMIT 1",
-            (instance_id, doc_id, TEST),
+            (instance_id, doc_id, TEST, f"{TAG_TEST}%"),
         )
         if last and last["status"] in ACTIVE:
             return None
@@ -134,6 +147,20 @@ class Processor:
             log.exception("Test von Dokument %s fehlgeschlagen", doc_id)
             self.db.update_job(job_id, status="error", error=str(e))
         return job_id
+
+    async def enqueue_tag(self, instance_id: int, tag_id: int, dry_run: bool, titles: bool) -> int:
+        """Alle Dokumente mit diesem Tag neu prüfen - auch bereits abgelegte."""
+        inst = self.config.instance(instance_id)
+        if not inst:
+            raise PaperlessError("Instanz nicht gefunden")
+        async with self.client(inst) as pl:
+            doc_ids = await pl.document_ids_with_tag(tag_id)
+        source = (TAG_TEST if dry_run else TAG_RUN) + (WITH_TITLE if titles else "")
+        count = 0
+        for doc_id in doc_ids:
+            if await self.enqueue(instance_id, doc_id, source, force=True):
+                count += 1
+        return count
 
     async def poll_once(self, instance_id: int | None = None, force: bool = False) -> int:
         count = 0
@@ -184,7 +211,7 @@ class Processor:
         if not inst:
             self.db.update_job(job_id, status="error", error="Instanz existiert nicht mehr")
             return
-        cfg = self.config.all()
+        cfg = job_config(job, self.config.all())
         if not cfg["typesafe_api_key"]:
             self.db.update_job(job_id, status="error", error="Kein TypeSafe-API-Key konfiguriert")
             return
@@ -223,7 +250,7 @@ class Processor:
                 result["current"] = {
                     k: doc.get(k) for k in ("correspondent", "document_type", "storage_path", "created", "tags")
                 }
-                mode = "dry_run" if job["source"] == TEST else cfg["mode"]
+                mode = "dry_run" if is_test(job["source"]) else cfg["mode"]
                 finished = mode == "auto" and not decision["needs_review"]
                 if cfg["title_mode"] != "off":
                     # Titel gleich mit der Analyse: im Review prüfbar, im Protokoll sichtbar
@@ -378,7 +405,7 @@ class Processor:
         inst = self.config.instance(job["instance_id"]) if job else None
         if not job or not inst:
             raise PaperlessError("Job oder Instanz nicht gefunden")
-        cfg = self.config.all()
+        cfg = job_config(job, self.config.all())
         async with self.client(inst) as pl:
             doc = await pl.document(job["doc_id"])
             meta = await self.metadata(inst, pl)

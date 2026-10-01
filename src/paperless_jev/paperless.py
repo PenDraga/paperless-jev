@@ -179,6 +179,10 @@ class PaperlessClient:
         )
         return [d["id"] for d in docs]
 
+    async def document_ids_with_tag(self, tag_id: int) -> list[int]:
+        docs = await self._all("/api/documents/", {"tags__id__all": tag_id, "fields": "id", "ordering": "-created"})
+        return [d["id"] for d in docs]
+
     async def similar_documents(self, doc_id: int, limit: int) -> list[dict[str, Any]]:
         data = await self._get(
             "/api/documents/",

@@ -508,4 +508,15 @@ EN: dict[str, str] = {
     "Ungültiges Ziel": "Invalid target",
     "«{name}» gelöscht, {n} Dokument(e) auf «{target}» übertragen": "«{name}» deleted, {n} document(s) moved to «{target}»",
     "Titelvorschlag": "Suggested title",
+    # Neuprüfung per Tag
+    "Bitte einen Tag wählen": "Please choose a tag",
+    "{n} Dokument(e) zur Prüfung eingereiht": "{n} document(s) queued for checking",
+    "Probelauf, schreibt nichts": "dry run, writes nothing",
+    "Dokumente mit Tag prüfen": "Check documents with a tag",
+    "Auch bereits abgelegte Dokumente: Jev prüft alle Dokumente mit diesem Tag neu. Vorhandene Werte bleiben gemäss Regeln erhalten, Widersprüche kommen ins Review.":
+        "Including documents already filed: Jev re-checks every document with this tag. Existing values are kept according to the rules, contradictions go to review.",
+    "Tag wählen …": "Choose tag …",
+    "Prüfen": "Check",
+    "nur Probelauf – schreibt nichts nach Paperless": "dry run only – writes nothing to Paperless",
+    "Titel neu erzeugen (sonst bleibt der bestehende Titel)": "Generate new titles (otherwise the existing title stays)",
 }

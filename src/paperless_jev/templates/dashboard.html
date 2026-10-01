@@ -80,6 +80,20 @@
     </div>
     <label class="run-opts"><input type="checkbox" name="force" value="true"> {{ _("auch bereits bewertete Dokumente neu klassifizieren") }}</label>
   </form>
+  {% if recheck_tags %}<hr>
+  <h3 class="card-h">{{ icon("tag") }}{{ _("Dokumente mit Tag prüfen") }}</h3>
+  <p class="hint">{{ _("Auch bereits abgelegte Dokumente: Jev prüft alle Dokumente mit diesem Tag neu. Vorhandene Werte bleiben gemäss Regeln erhalten, Widersprüche kommen ins Review.") }}</p>
+  <form method="post" action="/run/tag">
+    <div class="test-row">
+      <select name="target" required aria-label="{{ _('Tag') }}">
+        <option value="">{{ _("Tag wählen …") }}</option>
+        {% for value, label in recheck_tags %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="soft" onclick="this.setAttribute('aria-busy','true')">{{ icon("play") }}{{ _("Prüfen") }}</button>
+    </div>
+    <label class="run-opts"><input type="checkbox" name="dry_run" value="true" checked> {{ _("nur Probelauf – schreibt nichts nach Paperless") }}</label>
+    <label class="run-opts"><input type="checkbox" name="titles" value="true"> {{ _("Titel neu erzeugen (sonst bleibt der bestehende Titel)") }}</label>
+  </form>{% endif %}
 </article>
 </div>
 

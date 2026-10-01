@@ -29,7 +29,7 @@ from . import i18n
 from .i18n import gettext as _
 from .jev import USD_PER_MTOK, JevClient, JevError
 from .paperless import TAG_SEP, Metadata, PaperlessClient, PaperlessError
-from .processor import TEST, Processor
+from .processor import TAG_TEST, TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
 from .titles import describe_category
 from .vault import Vault
@@ -241,7 +241,24 @@ async def dashboard(request: Request):
         queue_size=_proc(request).queue.qsize(),
         recent=await _jobs(request, "open", limit=10),
         evaluation=await _evaluation(request),
+        recheck_tags=await _recheck_tags(request),
     )
+
+
+async def _recheck_tags(request: Request) -> list[tuple[str, str]]:
+    """Auswahl für "Dokumente mit Tag prüfen": (instanz:tag, Anzeige)."""
+    instances = _cfg(request).instances()
+    out: list[tuple[str, str]] = []
+    for inst_id, meta in (await _metas(request)).items():
+        if not meta:
+            continue
+        hidden = excluded_tags(meta, _cfg(request).all()) - {meta.tag_id(_cfg(request).all()["tag_done"])}
+        prefix = next((f"{i.name} › " for i in instances if i.id == inst_id), "") if len(instances) > 1 else ""
+        for tid, _depth in meta.tag_tree(set(meta.tags) - hidden):
+            count = meta.counts.get(("tag", tid))
+            label = f"{prefix}{meta.tag_label(tid)}" + (f" ({count})" if count is not None else "")
+            out.append((f"{inst_id}:{tid}", label))
+    return out
 
 
 async def _metas(request: Request) -> dict[int, Metadata | None]:
@@ -404,6 +421,19 @@ async def run_now(request: Request, instance_id: int = Form(0), force: bool = Fo
     return _redirect("/", msg=_("{n} Dokument(e) eingereiht", n=count))
 
 
+@app.post("/run/tag")
+async def run_tag(request: Request, target: str = Form(""), dry_run: bool = Form(False), titles: bool = Form(False)):
+    inst_id, _sep, tag_id = target.partition(":")
+    if not inst_id.isdigit() or not tag_id.isdigit():
+        return _redirect("/", err=_("Bitte einen Tag wählen"))
+    try:
+        count = await _proc(request).enqueue_tag(int(inst_id), int(tag_id), dry_run, titles)
+    except PaperlessError as e:
+        return _redirect("/", err=str(e))
+    msg = _("{n} Dokument(e) zur Prüfung eingereiht", n=count) + (" – " + _("Probelauf, schreibt nichts") if dry_run else "")
+    return _redirect("/log?status=all", msg=msg)
+
+
 def _parse_doc_id(raw: str) -> int | None:
     """Dokument-ID aus Zahl oder Paperless-Link (…/documents/2474/details)."""
     raw = raw.strip()
@@ -489,10 +519,10 @@ async def delete_job(request: Request, job_id: int):
 # Was sich im Protokoll bereinigen lässt: Schlüssel -> (Bedingung, Parameter)
 CLEANUP = {
     "error": ("status = 'error'", ()),
-    "test": ("source = ?", (TEST,)),
+    "test": ("(source = ? OR source LIKE ?)", (TEST, f"{TAG_TEST}%")),
     "dismissed": ("status = 'dismissed'", ()),
     "skipped": ("status = 'skipped'", ()),
-    "dry_run": ("status = 'dry_run' AND source != ?", (TEST,)),
+    "dry_run": ("status = 'dry_run' AND source != ? AND source NOT LIKE ?", (TEST, f"{TAG_TEST}%")),
 }
 
 
