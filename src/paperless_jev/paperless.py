@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -19,6 +20,8 @@ class PaperlessError(Exception):
 # Paperless matching_algorithm: 1 beliebiges Wort, 2 alle Wörter, 3 exakt, 4 Regex, 5 ungefähr
 # (0 = keine, 6 = automatisch/gelernt - dort gibt es keinen Suchbegriff)
 RULE_ALGORITHMS = (1, 2, 3, 4, 5)
+TAG_SEP = " › "
+NEST_PATTERN = re.compile(r"^(?P<parent>[^()]+?)\s*\((?P<child>[^()]+)\)\s*$")
 OBJECT_PATHS = {"document_type": "document_types", "correspondent": "correspondents", "tag": "tags", "storage_path": "storage_paths"}
 
 
@@ -37,6 +40,69 @@ class Metadata:
     counts: dict[tuple[str, int], int] = field(default_factory=dict)
     # Tag-Farben aus Paperless: ID -> "#rrggbb"
     tag_colors: dict[int, str] = field(default_factory=dict)
+    # Ober-/Untertags (Paperless >= 2.19): Tag-ID -> ID des Obertags
+    tag_parents: dict[int, int] = field(default_factory=dict)
+
+    def tag_ancestors(self, tid: int) -> list[int]:
+        """Obertags von unten nach oben (zyklensicher)."""
+        out: list[int] = []
+        start = tid
+        while (tid := self.tag_parents.get(tid)) is not None and tid != start and tid not in out and tid in self.tags:
+            out.append(tid)
+        return out
+
+    def tag_label(self, tid: int) -> str:
+        """Name mit Pfad, z. B. "Haldenweg 12 › URE"."""
+        if tid not in self.tags:
+            return f"#{tid}"
+        return TAG_SEP.join([self.tags[a] for a in reversed(self.tag_ancestors(tid))] + [self.tags[tid]])
+
+    def tag_tree(self, ids: set[int] | None = None) -> list[tuple[int, int]]:
+        """(Tag-ID, Tiefe) in Baum-Reihenfolge, je Ebene alphabetisch."""
+        ids = set(self.tags) if ids is None else ids
+        children: dict[int | None, list[int]] = {}
+        for tid in ids:
+            parent = next((a for a in self.tag_ancestors(tid) if a in ids), None)
+            children.setdefault(parent, []).append(tid)
+        out: list[tuple[int, int]] = []
+
+        def walk(parent: int | None, depth: int) -> None:
+            for tid in sorted(children.get(parent, []), key=lambda t: self.tags[t].lower()):
+                out.append((tid, depth))
+                walk(tid, depth + 1)
+
+        walk(None, 0)
+        return out
+
+    def tag_descendants(self, tid: int) -> set[int]:
+        return {t for t in self.tags if tid in self.tag_ancestors(t)}
+
+    def nesting_suggestions(self, ids: set[int] | None = None) -> list[dict[str, Any]]:
+        """Tags wie "Haus (Unterhalt)" als Untertags von "Haus" vorschlagen.
+
+        Auch bereits eingehängte Untertags, deren Name den Obertag wiederholt
+        ("Haldenweg 12 (URE)" unter "Haldenweg 12"), damit sie kürzer heissen können.
+        """
+        ids = set(self.tags) if ids is None else ids
+        taken = {self.tags[t].lower() for t in self.tags}
+        groups: dict[str, dict[str, Any]] = {}
+        for tid in sorted(ids, key=lambda t: self.tags[t].lower()):
+            m = NEST_PATTERN.match(self.tags[tid])
+            if not m:
+                continue
+            parent_name, child = m["parent"].strip(), " ".join(m["child"].split())
+            parent_id = self.tag_id(parent_name)
+            current = self.tag_parents.get(tid)
+            if current is not None and current != parent_id:
+                continue  # schon anders eingeordnet
+            can_rename = child.lower() not in taken
+            nested = parent_id is not None and current == parent_id
+            if nested and not can_rename:
+                continue  # nichts zu tun
+            group = groups.setdefault(parent_name.lower(), {"parent": parent_name, "parent_id": parent_id, "items": []})
+            group["items"].append({"id": tid, "name": self.tags[tid], "child": child,
+                                   "can_rename": can_rename, "nested": nested})
+        return [g for g in groups.values() if g["parent_id"] is not None or len(g["items"]) >= 2]
 
     def tag_id(self, name: str) -> int | None:
         wanted = name.strip().lower()
@@ -147,6 +213,8 @@ class PaperlessClient:
             meta.tags[t["id"]] = t["name"]
             if t.get("color"):
                 meta.tag_colors[t["id"]] = t["color"]
+            if t.get("parent"):
+                meta.tag_parents[t["id"]] = int(t["parent"])
             if t.get("is_inbox_tag"):
                 meta.inbox_tags.add(t["id"])
             rule("tag", t)
@@ -169,16 +237,29 @@ class PaperlessClient:
                 break
         return titles
 
-    async def create_object(self, kind: str, name: str, color: str | None = None) -> int:
+    async def create_object(self, kind: str, name: str, color: str | None = None, parent: int | None = None) -> int:
         """Neuer Dokumenttyp, Korrespondent oder Tag - ohne automatische Zuordnung durch Paperless."""
         data: dict[str, Any] = {"name": name, "matching_algorithm": 0}
         if kind == "tag" and color:
             data["color"] = color
+        if kind == "tag" and parent:
+            data["parent"] = parent
         resp = await self._request("POST", f"/api/{OBJECT_PATHS[kind]}/", json=data)
         return int(resp.json()["id"])
 
     async def update_object(self, kind: str, object_id: int, data: dict[str, Any]) -> None:
         await self._request("PATCH", f"/api/{OBJECT_PATHS[kind]}/{object_id}/", json=data)
+
+    async def add_tag_to_tagged(self, tag_id: int, tagged_with: list[int]) -> int:
+        """Setzt tag_id auf alle Dokumente mit einem der Tags tagged_with (z. B. Obertag nachtragen)."""
+        docs = await self._all("/api/documents/", {"tags__id__in": ",".join(map(str, tagged_with)), "fields": "id,tags"})
+        ids = [d["id"] for d in docs if tag_id not in d.get("tags", [])]
+        if ids:
+            await self._request(
+                "POST", "/api/documents/bulk_edit/",
+                json={"documents": ids, "method": "add_tag", "parameters": {"tag": tag_id}},
+            )
+        return len(ids)
 
     async def delete_object(self, kind: str, object_id: int) -> None:
         """Löscht einen Eintrag; Paperless entfernt ihn dabei von allen Dokumenten."""

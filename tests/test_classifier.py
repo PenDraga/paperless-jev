@@ -283,3 +283,47 @@ def test_fallback_correspondent_goes_to_review_and_never_replaces():
     for c in (cfg(overwrite_above=0.9), cfg(overwrite=True), cfg()):
         p = plan(result, filled, c)
         assert "correspondent" not in p["updates"] and not p["needs_review"]   # nie ersetzen, kein Widerspruch
+
+
+def nested_meta() -> Metadata:
+    meta = make_meta()
+    meta.tags |= {200: "Haus", 201: "Unterhalt", 202: "Energie", 210: "Velo (Service)", 211: "Velo (Reifen)"}
+    meta.tag_parents = {201: 200, 202: 200}
+    return meta
+
+
+def test_tag_hierarchy_labels_and_tree():
+    meta = nested_meta()
+    assert meta.tag_label(201) == "Haus › Unterhalt" and meta.tag_label(200) == "Haus"
+    assert meta.tag_ancestors(201) == [200] and meta.tag_descendants(200) == {201, 202}
+    tree = meta.tag_tree({200, 201, 202, 101})
+    assert tree == [(200, 0), (202, 1), (201, 1), (101, 0)]
+    # Zyklus in den Daten führt nicht zur Endlosschleife
+    meta.tag_parents[200] = 201
+    assert meta.tag_label(201) == "Haus › Unterhalt"
+
+
+def test_nesting_suggestions():
+    meta = nested_meta()
+    meta.tags |= {220: "Haldenweg 12", 221: "Haldenweg 12 (URE)", 230: "Boot (Motor)"}
+    meta.tag_parents[221] = 220
+    groups = {g["parent"]: g for g in meta.nesting_suggestions()}
+    # "Velo" gibt es nicht als Tag, aber zwei passende Tags -> Gruppe mit neuem Obertag
+    assert groups["Velo"]["parent_id"] is None and [i["child"] for i in groups["Velo"]["items"]] == ["Reifen", "Service"]
+    # schon eingehängt: nur noch kürzer benennen
+    assert groups["Haldenweg 12"]["items"] == [{"id": 221, "name": "Haldenweg 12 (URE)", "child": "URE", "can_rename": True, "nested": True}]
+    # einzelner Tag ohne bestehenden Obertag: kein Vorschlag
+    assert "Boot" not in groups
+
+
+def test_tag_questions_use_path_and_parent_context():
+    meta = nested_meta()
+    doc = make_doc() | {"tags": [100, 200, 201]}
+    descriptions = {("tag", 200): {"text": "Liegenschaft, Nebenkosten", "active": True},
+                    ("tag", 202): {"text": "Strom, Gas", "active": True}}
+    req = build_request(doc, meta, descriptions, cfg())
+    q = req.questions["tag:202"]
+    assert '"Haus › Energie"' in q["instructions"]
+    assert q["criteria"]["true"] == {"what": "Strom, Gas", "parent_tag": "Haus: Liegenschaft, Nebenkosten"}
+    # Obertag ist durch den vorhandenen Untertag begründet: keine eigene Gegenprüfung
+    assert 201 in req.checked_tags and 200 not in req.checked_tags and "tag:200" not in req.questions

@@ -24,10 +24,36 @@
     {% if kind == "tag" %}<input type="color" name="color" value="{{ ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']|random }}" title="{{ _('Farbe') }}" aria-label="{{ _('Farbe') }}">{% endif %}
     <input name="name" required maxlength="128" placeholder="{{ _('Neuer Eintrag in Paperless, z. B. «Arztrechnung»') }}">
     <input name="keywords" placeholder="{{ _('Stichworte für Jev, optional') }}">
+    {% if kind == "tag" %}<select name="parent" aria-label="{{ _('Obertag') }}" title="{{ _('Obertag') }}"><option value="">{{ _("kein Obertag") }}</option>{% for tid, label in parents %}<option value="{{ tid }}">{{ label }}</option>{% endfor %}</select>{% endif %}
     <button type="submit" onclick="this.setAttribute('aria-busy','true')">{{ icon("plus") }} {{ _("Anlegen") }}</button>
   </div>
   <small class="muted">{{ _("Wird direkt in Paperless angelegt, ohne automatische Zuordnung durch Paperless – die Zuordnung übernimmt Jev.") }}</small>
 </form>
+{% if kind == "tag" and nesting %}
+<details class="nest">
+  <summary>{{ icon("more") }} {{ _("Umbau-Hilfe: {n} mögliche Obertag-Gruppe(n) gefunden", n=nesting|length) }}</summary>
+  <p class="hint">{{ _("Tags wie «Haus (Unterhalt)» lassen sich als Untertag «Unterhalt» unter den Obertag «Haus» hängen. Die Dokumente behalten ihre Tags und bekommen den Obertag dazu. Es ändert sich nur, was du hier bestätigst.") }}</p>
+  {% for g in nesting %}
+  <form method="post" action="/meta/nest" class="nest-group">
+    <input type="hidden" name="instance_id" value="{{ inst.id }}">
+    <input type="hidden" name="parent_name" value="{{ g.parent }}">
+    <div class="nest-head"><strong>{{ g.parent }}</strong>
+      <small class="muted">{{ _("bestehender Tag") if g.parent_id else _("wird neu angelegt") }}</small></div>
+    <table class="nest-table">
+      {% for i in g["items"] %}<tr>
+        <td><input type="checkbox" name="ids" value="{{ i.id }}" checked aria-label="{{ i.name }}"></td>
+        <td>{{ i.name }}</td><td class="muted">→</td>
+        <td><span class="tpar">{{ g.parent }}</span>{{ i.child if i.can_rename else i.name }}{% if i.nested %} <small class="muted">({{ _("hängt schon darunter") }})</small>{% elif not i.can_rename %} <small class="muted">({{ _("Name bleibt, «{name}» gibt es schon", name=i.child) }})</small>{% endif %}</td>
+      </tr>{% endfor %}
+    </table>
+    <div class="nest-foot">
+      <label><input type="checkbox" name="rename" checked> {{ _("Untertags kürzer benennen (Obertag aus dem Namen entfernen)") }}</label>
+      <button type="submit" onclick="this.setAttribute('aria-busy','true')">{{ _("Übernehmen") }}</button>
+    </div>
+  </form>
+  {% endfor %}
+</details>
+{% endif %}
 {% elif kind == "storage_path" %}<p class="hint">{{ _("Speicherpfade brauchen ein Pfad-Muster und werden darum in Paperless angelegt; löschen geht hier.") }}</p>{% endif %}
 <form method="post" action="/descriptions">
   <input type="hidden" name="instance_id" value="{{ inst.id }}">
@@ -39,12 +65,14 @@
     {% for r in rows %}
       <tr>
         <td class="desc-active"><input type="hidden" name="ids" value="{{ r.id }}"><label><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}><span class="show-mobile-inline"> {{ _("aktiv") }}</span></label></td>
-        <td class="card-title"><span class="meta-name">
+        <td class="card-title"{% if r.depth %} style="--depth: {{ r.depth }}"{% endif %}><span class="meta-name{% if r.depth %} child{% endif %}">
           {% if kind == "tag" %}<input type="color" class="meta-color" value="{{ r.color or '#a6cee3' }}" form="color-{{ r.id }}" name="color" onchange="this.form.requestSubmit()" title="{{ _('Farbe ändern') }}" aria-label="{{ _('Farbe ändern') }}">{% endif %}
           {{ r.name }}{% if r.count is not none %} <small class="meta-count" title="{{ _('Dokumente in Paperless') }}">{{ _("{n} Dok.", n=r.count) }}</small>{% endif %}
           <button type="submit" class="meta-del" formaction="/meta/delete" formnovalidate name="delete_id" value="{{ r.id }}" title="{{ _('In Paperless löschen') }}" aria-label="{{ _('In Paperless löschen') }}"
             onclick="return confirm({{ _('«{name}» in Paperless löschen? Er wird von {n} Dokument(en) entfernt. Das lässt sich nicht rückgängig machen.', name=r.name, n=r.count or 0)|tojson|forceescape }})">{{ icon("trash") }}</button></span>
           <input type="hidden" name="name_{{ r.id }}" value="{{ r.name }}">
+          {% if kind == "tag" %}<select class="meta-parent" form="parent-{{ r.id }}" name="parent" onchange="this.form.requestSubmit()" aria-label="{{ _('Obertag') }}" title="{{ _('Obertag') }}">
+            <option value="">{{ _("Obertag: –") }}</option>{% for tid, label in parents if tid not in r.no_parent %}<option value="{{ tid }}"{% if tid == r.parent %} selected{% endif %}>{{ _("unter: {name}", name=label) }}</option>{% endfor %}</select>{% endif %}
           {% if r.rule %}<small class="muted rule" title="{{ _('Zuweisungsregel aus Paperless – geht als Hinweis an Jev') }}">Paperless: {{ _(RULE_LABELS[r.rule.algorithm]) }} <code>{{ r.rule.match }}</code></small>{% endif %}</td>
         <td class="desc-text"><textarea name="text_{{ r.id }}" rows="2" data-autosize placeholder="{{ _('Stichworte, optional') if can_translate else _('optional') }}">{{ r.source }}</textarea>
           {% if r.text and r.text != r.source %}<small class="muted translation" title="{{ _('An Jev gesendet') }}">→ {{ r.text }}</small>{% endif %}</td>
@@ -59,6 +87,7 @@
     {% if can_translate %}<label class="translate-toggle"><input type="checkbox" name="expand" checked> {{ _("geänderte Einträge mit dem Sprachmodell ausformulieren") }}</label>{% endif %}
     <button type="submit" aria-busy="false" onclick="this.setAttribute('aria-busy','true')">{{ _("Speichern") }}</button></div>{% endif %}
 </form>
-{% if kind == "tag" %}{% for r in rows %}<form method="post" action="/meta/color" id="color-{{ r.id }}" hidden><input type="hidden" name="instance_id" value="{{ inst.id }}"><input type="hidden" name="tag_id" value="{{ r.id }}"></form>{% endfor %}{% endif %}
+{% if kind == "tag" %}{% for r in rows %}<form method="post" action="/meta/color" id="color-{{ r.id }}" hidden><input type="hidden" name="instance_id" value="{{ inst.id }}"><input type="hidden" name="tag_id" value="{{ r.id }}"></form>
+<form method="post" action="/meta/parent" id="parent-{{ r.id }}" hidden><input type="hidden" name="instance_id" value="{{ inst.id }}"><input type="hidden" name="tag_id" value="{{ r.id }}"></form>{% endfor %}{% endif %}
 {% endif %}
 {% endblock %}

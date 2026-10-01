@@ -183,7 +183,7 @@ function fillSheet() {
   if (typed && sheetField !== "storage_path" && !c.options.some(([, n]) => norm(n) === q)) list.prepend(createBox(typed));
 }
 
-async function createObject(kind, name, keywords, color) {
+async function createObject(kind, name, keywords, color, parent) {
   const fd = new FormData();
   fd.append("instance_id", data.instance_id);
   fd.append("kind", kind);
@@ -191,6 +191,7 @@ async function createObject(kind, name, keywords, color) {
   fd.append("format", "json");
   if (keywords) fd.append("keywords", keywords);
   if (color) fd.append("color", color);
+  if (parent) fd.append("parent", parent);
   const r = await fetch("/meta/create", { method: "POST", body: fd });
   const j = await r.json().catch(() => ({ error: r.statusText }));
   if (!r.ok || j.error) throw new Error(j.error || r.statusText);
@@ -238,12 +239,20 @@ document.getElementById("rv-newtag-btn")?.addEventListener("click", async (e) =>
   if (!name) return nameEl.focus();
   btn.setAttribute("aria-busy", "true");
   try {
-    const obj = await createObject("tag", name, document.getElementById("rv-newtag-kw").value.trim(), document.getElementById("rv-newtag-color").value);
+    const obj = await createObject("tag", name, document.getElementById("rv-newtag-kw").value.trim(), document.getElementById("rv-newtag-color").value,
+      document.getElementById("rv-newtag-parent")?.value);
     const chip = document.createElement("label");
     chip.className = "tchip new";
     chip.innerHTML = `<input type="checkbox" name="tags" value="${obj.id}" checked><span class="tchip-mark"></span>` +
       (obj.color ? `<i class="tdot" style="--c: ${obj.color}"></i>` : "");
-    chip.append(obj.name);
+    const parts = (obj.label || obj.name).split(" › ");
+    if (parts.length > 1) {
+      const par = document.createElement("span");
+      par.className = "tpar";
+      par.textContent = parts.slice(0, -1).join(" › ");
+      chip.append(par);
+    }
+    chip.append(parts[parts.length - 1]);
     document.querySelector(".rv-chips").insertBefore(chip, document.getElementById("rv-moretags"));
     nameEl.value = "";
     document.getElementById("rv-newtag-kw").value = "";

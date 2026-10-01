@@ -37,6 +37,8 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
 - **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten, geprüft und bei Bedarf gekürzt)
   oder per Vorlage; «Titel vorschlagen» zeigt ihn vorab.
 - **Ablage-Konventionen** – Titel bereits abgelegter Dokumente gehen als Beispiele an Jev.
+- **Ober-/Untertags** aus Paperless als Baum: Untertags mit Pfad («Haus › Unterhalt»), Jev bekommt den Obertag als
+  Kontext, der Obertag wird automatisch mitgesetzt. Umbau-Hilfe hängt Tags wie «Haus (Unterhalt)» auf Wunsch unter «Haus».
 - **Protokoll** mit Filtern nach Dokumenttyp, Korrespondent und Tag, standardmässig nur Offenes, bereinigen.
 - **Webhook und Polling**, mehrere Paperless-Instanzen, Paperless-ngx 2.x und 3.x.
 - **Oberfläche** auf Deutsch und Englisch, fürs Handy optimiert, Dark Mode automatisch.

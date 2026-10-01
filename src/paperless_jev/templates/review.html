@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
+{% from "_tags.html" import tname %}
 {% block body_class %}{% if rv_job %}page-review{% endif %}{% endblock %}
 {% block content %}
 {% if not rv_job %}
@@ -103,13 +104,16 @@
           <input type="hidden" name="shown_tags" value="{{ tid }}">
           <label class="tchip existing{% if ch and ch.verdict == 'conflict' %} conflict{% elif ch and ch.verdict == 'unsure' %} unsure{% endif %}" title="{% if ch %}p = {{ '%.0f'|format(ch.p * 100) }} %{% endif %}">
             <input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (ch and ch.verdict == "conflict") %} checked{% endif %}>
-            <span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tag_options[tid] }}
+            <span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tname(tag_options[tid]) }}
             {% if ch and ch.verdict == "conflict" %}<small>{{ _("laut Jev falsch") }}</small>{% elif ch and ch.verdict == "unsure" %}<small>?</small>{% endif %}
           </label>
         {% endfor %}
         {% for t in suggested if t.id in tag_options and t.id not in existing %}
-          <label class="tchip new {{ t.level }}"><input type="checkbox" name="tags" value="{{ t.id }}" checked><span class="tchip-mark"></span>{% if tag_colors.get(t.id) %}<i class="tdot" style="--c: {{ tag_colors[t.id] }}"></i>{% endif %}{{ t.label }} <small>{{ "%.0f"|format(t.p * 100) }} %</small></label>
+          <label class="tchip new {{ t.level }}"><input type="checkbox" name="tags" value="{{ t.id }}" checked><span class="tchip-mark"></span>{% if tag_colors.get(t.id) %}<i class="tdot" style="--c: {{ tag_colors[t.id] }}"></i>{% endif %}{{ tname(tag_options.get(t.id, t.label)) }} <small>{{ "%.0f"|format(t.p * 100) }} %</small></label>
         {% endfor %}
+        {# Obertags vorgeschlagener Untertags kommen automatisch mit #}
+        {% set auto_parents = [] %}{% for t in suggested if t.id in tag_options and t.id not in existing %}{% for a in tag_ancestors.get(t.id, []) if a not in existing and a not in auto_parents and a in tag_options %}{% if auto_parents.append(a) %}{% endif %}{% endfor %}{% endfor %}
+        {% for a in auto_parents %}<span class="tchip auto" title="{{ _('wird mit dem Untertag gesetzt') }}">{% if tag_colors.get(a) %}<i class="tdot" style="--c: {{ tag_colors[a] }}"></i>{% endif %}{{ tname(tag_options[a]) }} <small>· {{ _("automatisch") }}</small></span>{% endfor %}
         <button type="button" class="tchip more" id="rv-moretags">+ {{ _("weitere") }}</button>
       </div>
       <div class="rv-more" id="rv-moretags-list" hidden>
@@ -117,11 +121,12 @@
           <input type="color" id="rv-newtag-color" value="{{ ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#fdbf6f', '#ff7f00', '#cab2d6']|random }}" aria-label="{{ _('Farbe') }}">
           <input id="rv-newtag-name" placeholder="{{ _('Neuer Tag') }}" maxlength="128">
           <input id="rv-newtag-kw" placeholder="{{ _('Stichworte für Jev, optional') }}">
+          <select id="rv-newtag-parent" aria-label="{{ _('Obertag') }}"><option value="">{{ _("kein Obertag") }}</option>{% for tid, label in tag_options.items() %}<option value="{{ tid }}">{{ label }}</option>{% endfor %}</select>
           <button type="button" id="rv-newtag-btn" class="secondary">{{ icon("plus") }} {{ _("Anlegen") }}</button>
         </div>
         {% set shown = existing + suggested|map(attribute="id")|list %}
-        {% for tid, tname in tag_options|dictsort(by="value") if tid not in shown %}
-          <label class="tchip new"><input type="checkbox" name="tags" value="{{ tid }}"><span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tname }}</label>
+        {% for tid, label in tag_options.items() if tid not in shown %}
+          <label class="tchip new"><input type="checkbox" name="tags" value="{{ tid }}"><span class="tchip-mark"></span>{% if tag_colors.get(tid) %}<i class="tdot" style="--c: {{ tag_colors[tid] }}"></i>{% endif %}{{ tname(label) }}</label>
         {% endfor %}
       </div>
       <p class="hint rv-legend">{{ _("dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch (vorab abgewählt, wird entfernt)") }}</p>

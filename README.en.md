@@ -37,6 +37,8 @@ issue date and tags. Runs as a Docker container and is configured entirely throu
 - **Titles** optionally by language model (in the style of documents already filed, checked and shortened if
   needed) or by template; "Suggest title" previews it.
 - **Filing conventions** – titles of documents already filed are sent to Jev as examples.
+- **Parent/child tags** from Paperless as a tree: child tags with their path ("House › Maintenance"), Jev gets the
+  parent as context, the parent is set along automatically. A restructuring helper can move tags like "House (Maintenance)" under "House".
 - **Log** with filters by document type, correspondent and tag, open entries by default, cleanup.
 - **Webhook and polling**, multiple Paperless instances, Paperless-ngx 2.x and 3.x.
 - **Interface** in German and English, optimised for phones, automatic dark mode.

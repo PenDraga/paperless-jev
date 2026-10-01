@@ -43,6 +43,7 @@ CONVENTION_HINT = (
 )
 EXAMPLES_KEY = "titles_of_documents_already_filed_here"
 RULE_KEY = "owner_matching_rule"
+PARENT_KEY = "parent_tag"
 RULE_HINT = (
     " Some options include the owner's text matching rule from Paperless: treat a match "
     "as a strong hint, but the document content decides."
@@ -134,6 +135,15 @@ def _criterion(
     return criterion
 
 
+def _parent_context(tid: int, meta: Metadata, descriptions: dict) -> str | None:
+    """Beschreibung des nächsten beschriebenen Obertags als Kontext für einen Untertag."""
+    for parent in meta.tag_ancestors(tid):
+        text = descriptions.get(("tag", parent), {}).get("text", "")
+        if text:
+            return f"{meta.tag_label(parent)}: {text}"
+    return None
+
+
 def excluded_tags(meta: Metadata, cfg: dict[str, Any]) -> set[int]:
     """Tags, die Jev nie vorschlagen soll: Posteingang und die eigenen Status-Tags."""
     ids = set(meta.inbox_tags)
@@ -213,17 +223,24 @@ def build_request(
         hidden = excluded_tags(meta, cfg)
         present = set(doc.get("tags", []))
         active = {tid: n for tid, n in _active("tag", meta.tags, descriptions).items() if tid not in hidden}
+        # Obertags vorhandener Untertags sind dadurch begründet - nicht einzeln gegenprüfen
+        implied = {a for tid in present for a in meta.tag_ancestors(tid)}
         # Vorhandene Tags zuerst (Gegenprüfung), danach mögliche neue
         if cfg.get("verify_tags", True):
-            req.checked_tags = {tid for tid in active if tid in present}
+            req.checked_tags = {tid for tid in active if tid in present and tid not in implied}
         tags = {tid: n for tid, n in active.items() if tid in req.checked_tags}
         tags |= {tid: n for tid, n in active.items() if tid not in present}
-        for tid, tag_name in list(tags.items())[:MAX_TAG_QUESTIONS]:
+        for tid in list(tags)[:MAX_TAG_QUESTIONS]:
+            # Untertags mit Pfad, damit z. B. "Unterhalt" unter "Haus" und "Auto" eindeutig ist
+            tag_name = meta.tag_label(tid)
             question: dict[str, Any] = {
                 "type": "noul",
                 "instructions": TAG_INSTRUCTION.format(name=tag_name),
             }
-            if desc := _criterion("tag", tid, descriptions, examples, rules):
+            desc = _criterion("tag", tid, descriptions, examples, rules)
+            if parent := _parent_context(tid, meta, descriptions):
+                desc = {"what": desc, PARENT_KEY: parent} if isinstance(desc, str) else {**(desc or {}), PARENT_KEY: parent}
+            if desc:
                 question["criteria"] = {"true": desc, "false": f'The tag "{tag_name}" does not apply.'}
             req.questions[f"tag:{tid}"] = question
 
@@ -283,7 +300,7 @@ def interpret(
             continue
         tid = int(key[4:])
         p = float(answer.get("noul", 0.0))
-        label = meta.tags.get(tid, str(tid))
+        label = meta.tag_label(tid)
         if tid in req.checked_tags:
             result["tag_checks"].append({"id": tid, "label": label, "p": round(p, 4), "verdict": tag_verdict(p, tag_spec)})
             continue

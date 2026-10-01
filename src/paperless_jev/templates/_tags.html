@@ -1,0 +1,5 @@
+{# Tag-Name mit Pfad: Obertags gedämpft, z. B. "Haus › Unterhalt" #}
+{% macro tname(label) -%}
+  {%- set parts = label.split(" › ") -%}
+  {%- if parts|length > 1 %}<span class="tpar">{{ parts[:-1]|join(" › ") }}</span>{% endif %}{{ parts[-1] -}}
+{%- endmacro %}

@@ -1,3 +1,4 @@
+{% from "_tags.html" import tname %}
 {# Erwartet: job, meta, tag_options, back #}
 {% set res = job.result or {} %}
 {% set fields = res.get("fields", {}) %}
@@ -53,7 +54,7 @@
     <div class="tags">
     {% for tid in existing %}{% set c = checks.get(tid) %}
       <input type="hidden" name="shown_tags" value="{{ tid }}">
-      <label{% if c and c.verdict == "conflict" %} class="bad"{% endif %}><input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (c and c.verdict == "conflict") %} checked{% endif %}> {{ tag_options[tid] }}
+      <label{% if c and c.verdict == "conflict" %} class="bad"{% endif %}><input type="checkbox" name="keep_tags" value="{{ tid }}"{% if not (c and c.verdict == "conflict") %} checked{% endif %}> {{ tname(tag_options[tid]) }}
         {% if c %}<span class="badge {{ 'error' if c.verdict == 'conflict' else ('suggest' if c.verdict == 'unsure' else 'auto') }}" title="p = {{ '%.0f'|format(c.p * 100) }} %">{{ _({"conflict": "laut Jev falsch", "unsure": "unsicher", "ok": "bestätigt"}[c.verdict]) }}</span>{% endif %}</label>
     {% endfor %}
     </div>
@@ -64,14 +65,14 @@
     <div class="tags">
     {% set scored = res.get("tags", []) %}
     {% for t in scored if t.level != "low" %}
-      <label><input type="checkbox" name="tags" value="{{ t.id }}"{% if t.level in ("auto", "suggest") %} checked{% endif %}> {{ t.label }} <span class="badge {{ t.level }}">{{ "%.0f"|format(t.p * 100) }} %</span></label>
+      <label><input type="checkbox" name="tags" value="{{ t.id }}"{% if t.level in ("auto", "suggest") %} checked{% endif %}> {{ tname(tag_options.get(t.id, t.label)) }} <span class="badge {{ t.level }}">{{ "%.0f"|format(t.p * 100) }} %</span></label>
     {% endfor %}
     </div>
     <details><summary><small>{{ _("Weitere Tags") }}</small></summary>
       <div class="tags">
       {% set shown = scored|selectattr("level", "ne", "low")|map(attribute="id")|list %}
-      {% for tid, tname in tag_options|dictsort(by="value") if tid not in shown and tid not in current.get("tags", []) %}
-        <label><input type="checkbox" name="tags" value="{{ tid }}"> {{ tname }}</label>
+      {% for tid, label in tag_options.items() if tid not in shown and tid not in current.get("tags", []) %}
+        <label><input type="checkbox" name="tags" value="{{ tid }}"> {{ tname(label) }}</label>
       {% endfor %}
       </div>
     </details>

@@ -282,7 +282,10 @@ class Processor:
         Posteingangs-Tags entfernen. Sonst Review-Tag setzen.
         """
         data = {k: v for k, v in updates.items() if k not in ("tags_add", "tags_remove", "title")}
-        tags = (set(doc.get("tags", [])) | set(updates.get("tags_add", []))) - set(updates.get("tags_remove", []))
+        added = set(updates.get("tags_add", []))
+        # Untertag gesetzt -> Obertags auch (wie in Paperless)
+        added |= {a for tid in added for a in meta.tag_ancestors(tid)}
+        tags = (set(doc.get("tags", [])) | added) - set(updates.get("tags_remove", []))
         review_tag = await self._tag(inst, pl, meta, cfg["tag_review"])
         if finished:
             tags.discard(review_tag)

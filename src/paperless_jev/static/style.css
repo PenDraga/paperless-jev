@@ -584,3 +584,28 @@ input[type=color]::-moz-color-swatch { border: 0; border-radius: inherit; }
 .meta-name { display: flex !important; align-items: center; gap: .5rem; flex-wrap: nowrap !important; width: 100%; }
 .meta-name .meta-count { display: inline-block !important; width: auto !important; margin: 0 !important; flex: none; line-height: 1.5; }
 .meta-name .meta-del { margin-left: auto !important; flex: none; }
+
+/* --- Ober-/Untertags ---------------------------------------------------- */
+.tpar { font-weight: 400; opacity: .7; }
+.tpar::after { content: "\00a0›\00a0"; opacity: .7; }
+.tchip.auto { cursor: default; border-style: dashed; font-weight: 500; opacity: .8; }
+.meta-new-row select, .rv-newtag select, .meta-inline select[name=parent] { flex: 1 1 10rem; width: auto; margin: 0; }
+td.card-title[style*="--depth"] { padding-left: calc(var(--pico-spacing) + var(--depth) * 1.5rem); position: relative; }
+td.card-title[style*="--depth"]::before { content: ""; position: absolute; left: calc(var(--pico-spacing) + var(--depth) * 1.5rem - 1rem); top: .2rem; height: 1.3rem; width: .65rem;
+  border-left: 1.5px solid var(--pj-line); border-bottom: 1.5px solid var(--pj-line); border-bottom-left-radius: .35rem; }
+.meta-name:not(.child) { font-weight: 600; }
+select.meta-parent { width: auto !important; max-width: 100%; margin: .35rem 0 0 !important; padding: .15rem 2rem .15rem .55rem !important; height: auto !important;
+  font-size: .78rem !important; background-position: right .5rem center !important; color: var(--pj-muted); }
+details.nest { border: 1px solid var(--pj-line); border-radius: .75rem; padding: .6rem .9rem; margin: 0 0 1rem; background: var(--pj-card); }
+details.nest summary { font-weight: 600; display: flex; gap: .45rem; align-items: center; }
+.nest-group { border-top: 1px solid var(--pj-line); padding-top: .75rem; margin: .75rem 0 0; }
+.nest-head { display: flex; gap: .6rem; align-items: baseline; margin-bottom: .3rem; }
+.nest-table { width: 100%; margin: 0 0 .5rem; font-size: .9rem; }
+.nest-table td { padding: .3rem .4rem; border-bottom: 1px solid var(--pj-line); background: none; }
+.nest-table td:first-child { width: 2rem; }
+.nest-table input { margin: 0; }
+.nest-foot { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.nest-foot label { margin: 0; font-size: .88rem; }
+.nest-foot button { width: auto !important; margin: 0; }
+.nest-table td:nth-child(2) { width: 45%; }
+.nest-table td:nth-child(3) { width: 2rem; text-align: center; }

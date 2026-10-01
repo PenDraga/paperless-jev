@@ -467,4 +467,26 @@ EN: dict[str, str] = {
     ", {n} vom Sprachmodell ausformuliert": ", {n} written out by the language model",
     "Sprachmodell fehlgeschlagen für: {names} – Eingabe wurde unverändert übernommen":
         "Language model failed for: {names} – input was saved unchanged",
+    # Ober-/Untertags
+    "Ein Tag kann nicht unter sich selbst oder einen eigenen Untertag gehängt werden":
+        "A tag cannot be placed under itself or one of its own child tags",
+    "Name bleibt, «{name}» gibt es schon": "name stays, «{name}» already exists",
+    "Obertag": "Parent tag",
+    "Obertag (nur Tags)": "Parent tag (tags only)",
+    "Obertag: –": "Parent tag: –",
+    "Tags wie «Haus (Unterhalt)» lassen sich als Untertag «Unterhalt» unter den Obertag «Haus» hängen. Die Dokumente behalten ihre Tags und bekommen den Obertag dazu. Es ändert sich nur, was du hier bestätigst.":
+        "Tags like «House (Maintenance)» can become the child tag «Maintenance» under the parent tag «House». Documents keep their tags and get the parent tag as well. Only what you confirm here is changed.",
+    "Umbau-Hilfe: {n} mögliche Obertag-Gruppe(n) gefunden": "Restructuring help: {n} possible parent tag group(s) found",
+    "Untertags kürzer benennen (Obertag aus dem Namen entfernen)": "Shorten child tag names (remove the parent from the name)",
+    "automatisch": "automatic",
+    "bestehender Tag": "existing tag",
+    "hängt schon darunter": "already below it",
+    "kein Obertag": "no parent tag",
+    "unter: {name}": "under: {name}",
+    "wird mit dem Untertag gesetzt": "set together with the child tag",
+    "wird neu angelegt": "will be created",
+    "{moved} Tag(s) unter «{parent}» gehängt, {renamed} umbenannt": "{moved} tag(s) placed under «{parent}», {renamed} renamed",
+    "«{name}» hat Untertags – zuerst umhängen oder löschen": "«{name}» has child tags – move or delete them first",
+    "«{name}» hängt jetzt unter «{parent}»": "«{name}» is now under «{parent}»",
+    "«{name}» ist jetzt ein Haupt-Tag": "«{name}» is now a top-level tag",
 }

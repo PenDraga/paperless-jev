@@ -28,7 +28,7 @@ from .db import Database
 from . import i18n
 from .i18n import gettext as _
 from .jev import USD_PER_MTOK, JevClient, JevError
-from .paperless import Metadata, PaperlessClient, PaperlessError
+from .paperless import TAG_SEP, Metadata, PaperlessClient, PaperlessError
 from .processor import TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
 from .titles import describe_category
@@ -283,12 +283,15 @@ def _view(row: dict[str, Any], meta: Metadata | None, hidden: set[int] | None = 
         }
     row["view"] = view
     colors = meta.tag_colors if meta else {}
-    row["tags_view"] = [t | {"color": colors.get(t["id"])} for t in result.get("tags", []) if t["level"] != "low"]
+    row["tags_view"] = [
+        t | {"color": colors.get(t["id"]), "label": meta.tag_label(t["id"]) if meta and t["id"] in meta.tags else t["label"]}
+        for t in result.get("tags", []) if t["level"] != "low"
+    ]
     # Tags, die das Dokument beim Lauf schon hatte (ohne Posteingang und eigene Status-Tags)
     hidden = hidden if hidden is not None else (set(meta.inbox_tags) if meta else set())
     checks = {c["id"]: c for c in result.get("tag_checks", [])}
     row["current_tags"] = [
-        {"label": meta.tags.get(t, f"#{t}") if meta else f"#{t}", "check": checks.get(t), "color": colors.get(t)}
+        {"label": meta.tag_label(t) if meta else f"#{t}", "check": checks.get(t), "color": colors.get(t)}
         for t in current.get("tags", []) if t not in hidden
     ]
 
@@ -317,13 +320,16 @@ async def _jobs(
         if not value:
             continue
         if name == "tag":
+            # Obertag findet auch seine Untertags ("Haus" -> "Haus › Unterhalt"); ältere Einträge ohne Pfad
             where.append(
                 "EXISTS (SELECT 1 FROM json_each(jobs.result, '$.tags') t"
-                " WHERE json_extract(t.value, '$.label') = ? AND json_extract(t.value, '$.level') != 'low')"
+                " WHERE json_extract(t.value, '$.level') != 'low' AND (json_extract(t.value, '$.label') IN (?, ?)"
+                " OR substr(json_extract(t.value, '$.label'), 1, ?) = ?))"
             )
+            params += [value, value.rsplit(TAG_SEP, 1)[-1], len(value + TAG_SEP), value + TAG_SEP]
         else:
             where.append(f"json_extract(result, '$.fields.{name}.label') = ?")
-        params.append(value)
+            params.append(value)
     if where:
         sql += " WHERE " + " AND ".join(where)
     rows = db.query(sql + " ORDER BY id DESC LIMIT ?", [*params, limit])
@@ -384,7 +390,7 @@ async def job_log(
         if meta:
             options["document_type"] |= set(meta.document_types.values())
             options["correspondent"] |= set(meta.correspondents.values())
-            options["tag"] |= {n for tid, n in meta.tags.items() if tid not in meta.inbox_tags}
+            options["tag"] |= {meta.tag_label(tid) for tid in meta.tags if tid not in meta.inbox_tags}
     return _render(
         request, "log.html", jobs=jobs, status=status, q=q or "", limit=limit, instances=_cfg(request).instances(),
         cleanup=_cleanup_counts(request.app.state.db), filters=filters,
@@ -528,8 +534,10 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
     hidden = excluded_tags(meta, _cfg(request).all())
     return {
         "meta": meta,
-        "tag_options": {k: v for k, v in meta.tags.items() if k not in hidden},
+        # Pfad-Labels in Baum-Reihenfolge ("Haus", "Haus › Unterhalt", …)
+        "tag_options": {tid: meta.tag_label(tid) for tid, _depth in meta.tag_tree(set(meta.tags) - hidden)},
         "tag_colors": meta.tag_colors,
+        "tag_ancestors": {tid: meta.tag_ancestors(tid) for tid in meta.tag_parents},
         "title_mode": _cfg(request).all()["title_mode"],
     }
 
@@ -606,7 +614,7 @@ async def scan_page(request: Request):
             async with _proc(request).client(inst) as pl:
                 meta = await _proc(request).metadata(inst, pl)
             hidden = excluded_tags(meta, _cfg(request).all())
-            tags[inst.id] = sorted(([t, n, meta.tag_colors.get(t)] for t, n in meta.tags.items() if t not in hidden), key=lambda x: x[1].lower())
+            tags[inst.id] = [[t, meta.tag_label(t), meta.tag_colors.get(t)] for t, _depth in meta.tag_tree(set(meta.tags) - hidden)]
         except PaperlessError:
             tags[inst.id] = []
     return _render(request, "scan.html", instances=instances, scan_tags=tags)
@@ -927,24 +935,36 @@ async def descriptions_page(request: Request, instance_id: int = 0, kind: str = 
     instances = _cfg(request).instances()
     inst = next((i for i in instances if i.id == instance_id), instances[0] if instances else None)
     kind = kind if kind in KINDS else "document_type"
-    rows, error = [], None
+    rows, error, parents, nesting = [], None, [], []
     if inst:
         try:
             async with _proc(request).client(inst) as pl:
                 meta = await _proc(request).metadata(inst, pl, fresh=True)
             stored = _cfg(request).descriptions(inst.id)
             hidden = excluded_tags(meta, _cfg(request).all()) if kind == "tag" else set()
-            for oid, name in sorted(meta.names(kind).items(), key=lambda kv: kv[1].lower()):
+            if kind == "tag":
+                # Baum: Untertags eingerückt unter ihrem Obertag
+                order = meta.tag_tree(set(meta.tags) - hidden)
+                parents = [[tid, meta.tag_label(tid)] for tid, _depth in order]
+                nesting = meta.nesting_suggestions(set(meta.tags) - hidden)
+            else:
+                order = [(oid, 0) for oid, _n in sorted(meta.names(kind).items(), key=lambda kv: kv[1].lower())]
+            for oid, depth in order:
                 if oid in hidden:
                     continue
                 d = stored.get((kind, oid), {"text": "", "source": "", "active": True})
-                rows.append({"id": oid, "name": name, "rule": meta.rules.get((kind, oid)),
-                             "count": meta.counts.get((kind, oid)), "color": meta.tag_colors.get(oid) if kind == "tag" else None, **d})
+                rows.append({"id": oid, "name": meta.names(kind)[oid], "rule": meta.rules.get((kind, oid)),
+                             "count": meta.counts.get((kind, oid)), "depth": depth,
+                             "color": meta.tag_colors.get(oid) if kind == "tag" else None,
+                             "parent": meta.tag_parents.get(oid) if kind == "tag" else None,
+                             # mögliche Obertags: nicht sich selbst und keine eigenen Untertags (Zyklus)
+                             "no_parent": ({oid} | meta.tag_descendants(oid)) if kind == "tag" else set(), **d})
         except PaperlessError as e:
             error = str(e)
     return _render(
         request, "descriptions.html",
         instances=instances, inst=inst, kind=kind, kinds=KINDS, rows=rows, meta_error=error, creatable=kind in CREATABLE,
+        parents=parents, nesting=nesting,
         can_translate=LLM.from_config(_cfg(request).all()) is not None,
     )
 
@@ -980,12 +1000,14 @@ async def create_meta(request: Request):
         return fail(_("Name fehlt"))
     color = str(form.get("color") or "")
     color = color.lower() if HEX_COLOR.fullmatch(color) else None
+    parent = int(str(form.get("parent") or 0)) or None
     try:
         async with _proc(request).client(inst) as pl:
             meta = await _proc(request).metadata(inst, pl, fresh=True)
             if name.lower() in (n.lower() for n in meta.names(kind).values()):
                 return fail(_("«{name}» gibt es schon", name=name))
-            oid = await pl.create_object(kind, name, color)
+            parent = parent if kind == "tag" and parent in meta.tags else None
+            oid = await pl.create_object(kind, name, color, parent)
     except PaperlessError as e:
         return fail(str(e))
     keywords = str(form.get("keywords") or "").strip()
@@ -999,7 +1021,8 @@ async def create_meta(request: Request):
             task.add_done_callback(BACKGROUND.discard)
     _proc(request).forget_metadata(inst.id)
     if as_json:
-        return JSONResponse({"id": oid, "name": name, "kind": kind, "color": color,
+        label = f"{meta.tag_label(parent)}{TAG_SEP}{name}" if parent else name
+        return JSONResponse({"id": oid, "name": name, "label": label, "kind": kind, "color": color,
                              "message": _("«{name}» in Paperless angelegt", name=name)})
     return _redirect(back, msg=_("«{name}» in Paperless angelegt", name=name))
 
@@ -1025,6 +1048,77 @@ async def tag_color(request: Request):
     return _redirect(back, msg=_("Farbe gespeichert"))
 
 
+@app.post("/meta/parent")
+async def tag_parent(request: Request):
+    """Tag unter einen Obertag hängen (oder lösen); Dokumente bekommen den Obertag dazu."""
+    form = await request.form()
+    inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
+    oid = int(str(form.get("tag_id") or 0))
+    parent = int(str(form.get("parent") or 0)) or None
+    back = f"/descriptions?instance_id={inst.id if inst else 0}&kind=tag"
+    if not inst or not oid:
+        return _redirect(back, err=_("Eintrag fehlt"))
+    try:
+        async with _proc(request).client(inst) as pl:
+            meta = await _proc(request).metadata(inst, pl, fresh=True)
+            if parent is not None and (parent not in meta.tags or parent == oid or parent in meta.tag_descendants(oid)):
+                return _redirect(back, err=_("Ein Tag kann nicht unter sich selbst oder einen eigenen Untertag gehängt werden"))
+            await pl.update_object("tag", oid, {"parent": parent})
+            if parent is not None:
+                await pl.add_tag_to_tagged(parent, [oid])
+    except PaperlessError as e:
+        return _redirect(back, err=str(e))
+    _proc(request).forget_metadata(inst.id)
+    name = meta.tags.get(oid, f"#{oid}")
+    if parent is None:
+        return _redirect(back, msg=_("«{name}» ist jetzt ein Haupt-Tag", name=name))
+    return _redirect(back, msg=_("«{name}» hängt jetzt unter «{parent}»", name=name, parent=meta.tag_label(parent)))
+
+
+@app.post("/meta/nest")
+async def nest_tags(request: Request):
+    """Umbau-Hilfe: ausgewählte Tags unter einen (bei Bedarf neuen) Obertag hängen, optional kürzer benennen."""
+    form = await request.form()
+    inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
+    back = f"/descriptions?instance_id={inst.id if inst else 0}&kind=tag"
+    parent_name = " ".join(str(form.get("parent_name") or "").split())[:128]
+    ids = [int(x) for x in form.getlist("ids") if str(x).isdigit()]
+    rename = "rename" in form
+    if not inst or not parent_name or not ids:
+        return _redirect(back, err=_("Nichts ausgewählt"))
+    moved, renamed, failed = 0, 0, []
+    try:
+        async with _proc(request).client(inst) as pl:
+            meta = await _proc(request).metadata(inst, pl, fresh=True)
+            group = next((g for g in meta.nesting_suggestions() if g["parent"].lower() == parent_name.lower()), None)
+            items = {i["id"]: i for i in (group or {}).get("items", []) if i["id"] in ids}
+            if not items:
+                return _redirect(back, err=_("Nichts ausgewählt"))
+            parent = meta.tag_id(parent_name)
+            if parent is None:
+                first = next(iter(items))
+                parent = await pl.create_object("tag", parent_name, meta.tag_colors.get(first))
+            for tid, item in items.items():
+                data: dict[str, Any] = {} if item["nested"] else {"parent": parent}
+                if rename and item["can_rename"]:
+                    data["name"] = item["child"]
+                if not data:
+                    continue
+                try:
+                    await pl.update_object("tag", tid, data)
+                except PaperlessError as e:
+                    failed.append(f"{item['name']}: {e}")
+                    continue
+                moved += "parent" in data
+                renamed += "name" in data
+            await pl.add_tag_to_tagged(parent, list(items))
+    except PaperlessError as e:
+        return _redirect(back, err=str(e))
+    _proc(request).forget_metadata(inst.id)
+    msg = _("{moved} Tag(s) unter «{parent}» gehängt, {renamed} umbenannt", moved=moved, parent=parent_name, renamed=renamed)
+    return _redirect(back, msg=msg, err="; ".join(failed)[:500] or None)
+
+
 @app.post("/meta/delete")
 async def delete_meta(request: Request):
     form = await request.form()
@@ -1040,6 +1134,8 @@ async def delete_meta(request: Request):
             name = meta.names(kind).get(oid, f"#{oid}")
             if kind == "tag" and oid in excluded_tags(meta, _cfg(request).all()):
                 return _redirect(back, err=_("Posteingangs- und Status-Tags lassen sich hier nicht löschen"))
+            if kind == "tag" and meta.tag_descendants(oid):
+                return _redirect(back, err=_("«{name}» hat Untertags – zuerst umhängen oder löschen", name=name))
             await pl.delete_object(kind, oid)
     except PaperlessError as e:
         return _redirect(back, err=str(e))

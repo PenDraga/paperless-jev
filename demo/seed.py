@@ -118,7 +118,7 @@ def main() -> None:
         (108, "review", "webhook", result(5, 0.83, 3, 0.96, "2026-09-05", 0.91, [(2, 0.88)], cur(108, False), ((8,), ()))),
         (105, "review", "webhook", result(6, 0.71, 5, 0.92, "2026-09-02", 0.89, [(6, 0.95), (5, 0.74)], cur(105, False), ((8, 4), ()))),
         (102, "review", "webhook", result(1, 0.97, 2, 0.62, "2026-09-15", 0.96, [(5, 0.93)], cur(102, False), ((), (1,)))),
-        (101, "done", "webhook", result(1, 0.98, 1, 0.99, "2026-09-18", 0.97, [(3, 0.94)], cur(101, False))),
+        (101, "review", "webhook", result(1, 0.98, 1, 0.99, "2026-09-18", 0.97, [(11, 0.86)], cur(101, False))),
     ]
     now = datetime.now(UTC) - timedelta(hours=2)
     for n, (doc_id, status, source, res) in enumerate(curated):

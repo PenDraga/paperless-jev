@@ -70,10 +70,12 @@ class FakePaperless:
 
     objects: list[tuple] = []
 
-    async def create_object(self, kind, name, color=None):
+    async def create_object(self, kind, name, color=None, parent=None):
         oid = 500 + len(self.objects)
         self.objects.append(("create", kind, name, color))
         self.meta.names(kind)[oid] = name
+        if parent:
+            self.meta.tag_parents[oid] = parent
         return oid
 
     async def delete_object(self, kind, object_id):
@@ -82,6 +84,17 @@ class FakePaperless:
 
     async def update_object(self, kind, object_id, data):
         self.objects.append(("update", kind, object_id, data))
+        if kind == "tag" and "parent" in data:
+            if data["parent"]:
+                self.meta.tag_parents[object_id] = data["parent"]
+            else:
+                self.meta.tag_parents.pop(object_id, None)
+        if "name" in data:
+            self.meta.names(kind)[object_id] = data["name"]
+
+    async def add_tag_to_tagged(self, tag_id, tagged_with):
+        self.objects.append(("add_tag", tag_id, sorted(tagged_with)))
+        return 1
 
 
 class FakeJev:
@@ -629,3 +642,46 @@ async def test_status_tag_created_once_even_in_parallel():
 def test_empty_review_keeps_navigation(client):
     page = client.get("/review").text
     assert "Nichts zu prüfen" in page and 'class="page-review"' not in page and 'href="/scan" role="button"' in page
+
+
+def _nest(meta):
+    meta.tags |= {200: "Haus", 201: "Unterhalt", 210: "Velo (Service)", 211: "Velo (Reifen)"}
+    meta.tag_parents = {201: 200}
+
+
+def test_child_tag_brings_parent_along(client):
+    _nest(FakePaperless.meta)
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT id FROM jobs")
+    page = client.get(f"/review?job={job['id']}").text
+    assert '<span class="tpar">Haus</span>Unterhalt' in page
+    client.post(f"/jobs/{job['id']}/apply", data={"action": "apply", "tags": ["201"]})
+    _, data = FakePaperless.patches[-1]
+    assert {200, 201} <= set(data["tags"])
+
+
+def test_tag_parent_and_nesting_routes(client):
+    FakePaperless.objects.clear()
+    _nest(FakePaperless.meta)
+    page = client.get("/descriptions?instance_id=1&kind=tag").text
+    assert 'action="/meta/nest"' in page and 'style="--depth: 1"' in page
+    # Zyklus wird abgelehnt
+    r = client.post("/meta/parent", data={"instance_id": "1", "tag_id": "200", "parent": "201"}, follow_redirects=False)
+    assert "err=" in r.headers["location"] and not FakePaperless.objects
+    r = client.post("/meta/parent", data={"instance_id": "1", "tag_id": "101", "parent": "200"}, follow_redirects=False)
+    assert "msg=" in r.headers["location"]
+    assert FakePaperless.objects == [("update", "tag", 101, {"parent": 200}), ("add_tag", 200, [101])]
+    # Obertag mit Untertags lässt sich nicht löschen
+    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "tag", "delete_id": "200"}, follow_redirects=False)
+    assert "err=" in r.headers["location"]
+
+    FakePaperless.objects.clear()
+    r = client.post("/meta/nest", data={"instance_id": "1", "parent_name": "Velo", "ids": ["210", "211"], "rename": "on"}, follow_redirects=False)
+    assert "msg=" in r.headers["location"]
+    created = FakePaperless.objects[0]
+    assert created[:3] == ("create", "tag", "Velo")
+    parent = max(FakePaperless.meta.tags)
+    assert ("update", "tag", 210, {"parent": parent, "name": "Service"}) in FakePaperless.objects
+    assert FakePaperless.objects[-1] == ("add_tag", parent, [210, 211])
+    assert FakePaperless.meta.tag_label(211) == "Velo › Reifen"

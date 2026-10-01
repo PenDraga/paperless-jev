@@ -37,24 +37,29 @@ DOCUMENT_TYPES = _items(
 )
 TAGS = _items(
     ["Posteingang", "Steuerrelevant", "Haus", "Auto", "Versicherung", "Gesundheit", "Bank",
-     "ai-review", "ai-klassifiziert", "ai-ignorieren"],
+     "ai-review", "ai-klassifiziert", "ai-ignorieren", "Energie", "Unterhalt", "Auto (Service)", "Auto (Reifen)"],
     {"Auto": ("Garage Alpenblick", 1)},
 )
 TAGS[0]["is_inbox_tag"] = True
 for _t, _c in zip(TAGS, ["#a6cee3", "#e31a1c", "#33a02c", "#1f78b4", "#ff7f00", "#fb9a99", "#6a3d9a", "#fdbf6f", "#b2df8a", "#cab2d6"]):
     _t["color"] = _c
+# Ober-/Untertags: Energie und Unterhalt unter Haus; "Auto (…)" für die Umbau-Hilfe
+for _t, _c in zip(TAGS[10:], ["#33a02c", "#33a02c", "#1f78b4", "#1f78b4"]):
+    _t["color"] = _c
+for _t in TAGS:
+    _t["parent"] = 3 if _t["name"] in ("Energie", "Unterhalt") else None
 
 # (Titel, Typ, Korrespondent, Datum, Tags, im Posteingang, Farbe)
 _DOCS = [
-    ("Stromrechnung 3. Quartal", 1, 1, "2026-09-18", [3], True, "#f59e0b"),
+    ("Stromrechnung 3. Quartal", 1, 1, "2026-09-18", [], True, "#f59e0b"),
     ("Prämienrechnung 2027", 1, 2, "2026-09-15", [5], True, "#2563eb"),
     ("Lohnausweis 2025", 9, 10, "2026-01-31", [2], False, "#16a34a"),
     ("Kontoauszug August", 2, 4, "2026-08-31", [7], False, "#0f766e"),
     ("Arztbericht Knie", 6, 5, "2026-09-02", [6], True, "#dc2626"),
     ("Mobile-Abo Vertrag", 3, 6, "2026-07-10", [], False, "#7c3aed"),
-    ("Veloservice", 1, 7, "2026-08-22", [], False, "#ea580c"),
+    ("Veloservice", 1, 7, "2026-08-22", [4, 13], False, "#ea580c"),
     ("Steuerveranlagung 2025", 5, 3, "2026-09-05", [2], True, "#475569"),
-    ("Nebenkostenabrechnung", 1, 9, "2026-06-30", [3, 2], False, "#b45309"),
+    ("Nebenkostenabrechnung", 1, 9, "2026-06-30", [3, 11, 2], False, "#b45309"),
     ("Offerte Winterpneus", 10, 11, "2026-09-12", [4], True, "#0891b2"),
     ("Gutschrift Rückerstattung", 7, 2, "2026-08-14", [5, 6], False, "#15803d"),
     ("Informationsschreiben Abfall", 8, 8, "2026-05-20", [3], False, "#6b7280"),
@@ -104,11 +109,24 @@ def documents(request: Request) -> dict[str, Any]:
     for key in ("document_type", "correspondent"):
         if f"{key}__id" in q:
             docs = [d for d in docs if d[key] == int(q[f"{key}__id"])]
+    if "tags__id__in" in q:
+        wanted = {int(x) for x in q["tags__id__in"].split(",")}
+        docs = [d for d in docs if wanted & set(d["tags"])]
     if "tags__id__all" in q:
         docs = [d for d in docs if int(q["tags__id__all"]) in d["tags"]]
     if "more_like_id" in q:
         docs = [d for d in docs if d["id"] != int(q["more_like_id"])][:3]
     return _page(docs)
+
+
+@app.post("/api/documents/bulk_edit/")
+async def bulk_edit(request: Request) -> dict[str, Any]:
+    data = await request.json()
+    if data.get("method") == "add_tag":
+        for doc_id in data["documents"]:
+            if doc_id in BY_ID and data["parameters"]["tag"] not in BY_ID[doc_id]["tags"]:
+                BY_ID[doc_id]["tags"].append(data["parameters"]["tag"])
+    return {"result": "OK"}
 
 
 @app.get("/api/documents/{doc_id}/")

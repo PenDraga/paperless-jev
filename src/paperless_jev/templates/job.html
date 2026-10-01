@@ -38,6 +38,7 @@
         </select>
         <input type="color" name="color" value="#a6cee3" title="{{ _('Farbe (nur Tags)') }}" aria-label="{{ _('Farbe (nur Tags)') }}">
         <input name="name" required maxlength="128" placeholder="{{ _('Name') }}">
+        <select name="parent" aria-label="{{ _('Obertag (nur Tags)') }}" title="{{ _('Obertag (nur Tags)') }}"><option value="">{{ _("kein Obertag") }}</option>{% for tid, label in tag_options.items() %}<option value="{{ tid }}">{{ label }}</option>{% endfor %}</select>
         <input name="keywords" placeholder="{{ _('Stichworte für Jev, optional') }}">
         <button type="submit" onclick="this.setAttribute('aria-busy','true')">{{ _("Anlegen") }}</button>
       </form>
