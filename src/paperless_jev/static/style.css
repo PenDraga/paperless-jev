@@ -577,3 +577,8 @@ input[type=color]::-moz-color-swatch { border: 0; border-radius: inherit; }
   .sc-body { flex: 1; }
   .sc-cam, .sc-editarea { flex: 1; height: auto; min-height: 55vh; }
 }
+
+/* Zeile in Beschreibungen: Farbe · Name · Anzahl · Papierkorb (Pico macht <small> nach Eingabefeldern sonst zum Hilfetext-Block) */
+.meta-name { display: flex !important; align-items: center; gap: .5rem; flex-wrap: nowrap !important; width: 100%; }
+.meta-name .meta-count { display: inline-block !important; width: auto !important; margin: 0 !important; flex: none; line-height: 1.5; }
+.meta-name .meta-del { margin-left: auto !important; flex: none; }

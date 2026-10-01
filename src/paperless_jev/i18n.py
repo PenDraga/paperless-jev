@@ -140,6 +140,7 @@ EN: dict[str, str] = {
     "alle Status": "all statuses",
     "{n} Einträge": "{n} entries",
     "Filtern": "Filter",
+    "{n} Dok.": "{n} docs",
     "Neuen Eintrag in Paperless anlegen": "Create a new entry in Paperless",
     "Art": "Kind",
     "Tag": "Tag",

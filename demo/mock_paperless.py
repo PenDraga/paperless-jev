@@ -18,7 +18,7 @@ def _items(names: list[str], rules: dict[str, tuple[str, int]] | None = None) ->
     rules = rules or {}
     return [
         {"id": i, "name": n, "match": rules.get(n, ("", 0))[0], "matching_algorithm": rules.get(n, ("", 6))[1],
-         "is_insensitive": True}
+         "is_insensitive": True, "document_count": (i * 7) % 40 + 3}
         for i, n in enumerate(names, start=1)
     ]
 

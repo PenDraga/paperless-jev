@@ -41,7 +41,7 @@
         <td class="desc-active"><input type="hidden" name="ids" value="{{ r.id }}"><label><input type="checkbox" name="active_{{ r.id }}" {% if r.active %}checked{% endif %}><span class="show-mobile-inline"> {{ _("aktiv") }}</span></label></td>
         <td class="card-title"><span class="meta-name">
           {% if kind == "tag" %}<input type="color" class="meta-color" value="{{ r.color or '#a6cee3' }}" form="color-{{ r.id }}" name="color" onchange="this.form.requestSubmit()" title="{{ _('Farbe ändern') }}" aria-label="{{ _('Farbe ändern') }}">{% endif %}
-          {{ r.name }}{% if r.count is not none %} <small class="meta-count" title="{{ _('Dokumente in Paperless') }}">{{ r.count }}</small>{% endif %}
+          {{ r.name }}{% if r.count is not none %} <small class="meta-count" title="{{ _('Dokumente in Paperless') }}">{{ _("{n} Dok.", n=r.count) }}</small>{% endif %}
           <button type="submit" class="meta-del" formaction="/meta/delete" formnovalidate name="delete_id" value="{{ r.id }}" title="{{ _('In Paperless löschen') }}" aria-label="{{ _('In Paperless löschen') }}"
             onclick="return confirm({{ _('«{name}» in Paperless löschen? Er wird von {n} Dokument(en) entfernt. Das lässt sich nicht rückgängig machen.', name=r.name, n=r.count or 0)|tojson|forceescape }})">{{ icon("trash") }}</button></span>
           <input type="hidden" name="name_{{ r.id }}" value="{{ r.name }}">
