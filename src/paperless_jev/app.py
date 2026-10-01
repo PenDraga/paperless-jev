@@ -439,8 +439,15 @@ async def suggest_title(request: Request, job_id: int, format: str = "html"):
     if format == "json":
         if _cfg(request).all()["title_mode"] == "off":
             return JSONResponse({"error": _("Titel sind unter Regeln ausgeschaltet")})
+        # aktuelle Auswahl im Review (z. B. korrigierter Korrespondent) fliesst in den Titel ein
+        form = await request.form()
+        overrides: dict[str, Any] = {}
+        for name in SINGLE_FIELDS:
+            raw = str(form.get(name) or "")
+            if raw and (name == "created" or raw.isdigit()):
+                overrides[name] = raw if name == "created" else int(raw)
         try:
-            title = await _proc(request).suggest_title(job_id)
+            title = await _proc(request).suggest_title(job_id, overrides)
         except (LLMError, PaperlessError) as e:
             return JSONResponse({"error": str(e)})
         return JSONResponse({"title": title} if title else {"error": _("Kein Titel erzeugt – Sprachmodell unter Regeln prüfen")})

@@ -713,3 +713,26 @@ def test_delete_assistant_moves_documents_and_children(client):
     FakePaperless.objects.clear()
     r = client.post("/meta/delete", data={"instance_id": "1", "kind": "correspondent", "delete_id": "2", "target": "1"}, follow_redirects=False)
     assert FakePaperless.objects == [("reassign", "correspondent", 2, 1), ("delete", "correspondent", 2)]
+
+
+def test_log_shows_title_written_to_paperless(client):
+    db = client.app.state.db
+    job = db.create_job(1, 961, "poll")
+    db.update_job(job, doc_title="scan-202610011250", status="running")
+    db.update_job(job, status="done", applied={"title": "OBI Quittung Gartenmaterial", "tags": []})
+    assert db.job(job)["doc_title"] == "OBI Quittung Gartenmaterial"
+
+
+def test_title_generated_with_analysis(client):
+    cfg = client.app.state.config
+    cfg.update({"title_mode": "template", "title_template": "{correspondent} {document_type} {created:%Y-%m}"})
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.one("SELECT * FROM jobs")
+    # Vorschlag schon vor dem Übernehmen da und im Review vorausgefüllt
+    assert job["result"]["title"] == "Swisscom Rechnung 2026-03"
+    page = client.get(f"/review?job={job['id']}").text
+    assert 'value="Swisscom Rechnung 2026-03"' in page
+    # Titelvorschlag mit im Review korrigiertem Korrespondenten
+    r = client.post(f"/jobs/{job['id']}/title?format=json", data={"correspondent": "2", "document_type": "10"})
+    assert r.json()["title"].startswith("Stadtwerke Rechnung")

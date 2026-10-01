@@ -37,7 +37,7 @@
   <div class="field-row">
     <span></span>
     <strong>{{ _("Titel") }}</strong>
-    <input name="title" enterkeyhint="done" placeholder="{{ _('leer = automatisch (Sprachmodell)') if title_mode == 'llm' else (_('leer = automatisch (Vorlage)') if title_mode == 'template' else _('leer = unverändert')) }}">
+    <input name="title" enterkeyhint="done" value="{{ res.get('title') or '' }}" placeholder="{{ _('leer = automatisch (Sprachmodell)') if title_mode == 'llm' else (_('leer = automatisch (Vorlage)') if title_mode == 'template' else _('leer = unverändert')) }}">
     <small class="muted">{{ _("aktuell: {value}", value=job.doc_title or "–") }}</small>
   </div>
   {% if title_mode != "off" %}

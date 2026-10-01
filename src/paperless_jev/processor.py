@@ -8,7 +8,7 @@ import time
 from typing import Any
 
 from .classifier import build_request, excluded_tags, interpret, plan, render_title
-from .config import Config, Instance
+from .config import SINGLE_FIELDS, Config, Instance
 from .db import Database
 from .jev import JevClient, JevError
 from .paperless import Metadata, PaperlessClient, PaperlessError, collect_examples
@@ -223,6 +223,15 @@ class Processor:
                 result["current"] = {
                     k: doc.get(k) for k in ("correspondent", "document_type", "storage_path", "created", "tags")
                 }
+                mode = "dry_run" if job["source"] == TEST else cfg["mode"]
+                finished = mode == "auto" and not decision["needs_review"]
+                if cfg["title_mode"] != "off":
+                    # Titel gleich mit der Analyse: im Review prüfbar, im Protokoll sichtbar
+                    if finished:
+                        values = {**doc, **{k: v for k, v in decision["updates"].items() if k in SINGLE_FIELDS}}
+                    else:
+                        values = {**doc, **{k: f["value"] for k, f in result["fields"].items() if f.get("value") is not None}}
+                    result["title"] = await self.make_title(pl, meta, doc, values, cfg)
                 self.db.update_job(
                     job_id,
                     result=result,
@@ -230,7 +239,6 @@ class Processor:
                     input_tokens=result["usage"].get("input_tokens"),
                 )
 
-                mode = "dry_run" if job["source"] == TEST else cfg["mode"]
                 if mode == "dry_run":
                     self.db.update_job(job_id, status="dry_run")
                 elif mode == "review" or decision["needs_review"]:
@@ -239,7 +247,8 @@ class Processor:
                     self.db.update_job(job_id, status="review", applied=applied)
                     self._supersede(job)
                 else:
-                    applied = await self.apply(inst, pl, meta, doc, decision["updates"], cfg, finished=True)
+                    updates = {**decision["updates"], **({"title": result["title"]} if result.get("title") else {})}
+                    applied = await self.apply(inst, pl, meta, doc, updates, cfg, finished=True)
                     self.db.update_job(job_id, status="done", applied=applied)
                     self._supersede(job)
         except (PaperlessError, JevError) as e:
@@ -346,8 +355,11 @@ class Processor:
             log.warning("Titel für Dokument %s nicht erzeugt: %s", doc.get("id"), e)
             return None
 
-    async def suggest_title(self, job_id: int) -> str | None:
-        """Titel, den paperless-jev beim Übernehmen erzeugen würde - schreibt nichts."""
+    async def suggest_title(self, job_id: int, overrides: dict[str, Any] | None = None) -> str | None:
+        """Titel, den paperless-jev beim Übernehmen erzeugen würde - schreibt nichts.
+
+        overrides: im Review korrigierte Werte (Typ, Korrespondent, Datum).
+        """
         job = self.db.job(job_id)
         inst = self.config.instance(job["instance_id"]) if job else None
         if not job or not inst:
@@ -358,7 +370,7 @@ class Processor:
             doc = await pl.document(job["doc_id"])
             meta = await self.metadata(inst, pl)
             suggested = {k: f["value"] for k, f in fields.items() if f.get("value") is not None}
-            return await self.make_title(pl, meta, doc, {**doc, **suggested}, cfg, strict=True)
+            return await self.make_title(pl, meta, doc, {**doc, **suggested, **(overrides or {})}, cfg, strict=True)
 
     async def apply_review(self, job_id: int, choice: dict[str, Any]) -> dict[str, Any]:
         """Übernimmt die in der Review-Queue bestätigten oder korrigierten Werte."""

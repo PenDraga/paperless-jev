@@ -273,7 +273,7 @@ suggestBtn?.addEventListener("click", async () => {
   suggestBtn.setAttribute("aria-busy", "true");
   note.textContent = T.loading;
   try {
-    const r = await (await fetch(suggestBtn.dataset.url, { method: "POST" })).json();
+    const r = await (await fetch(suggestBtn.dataset.url, { method: "POST", body: new FormData(document.getElementById("rv-form")) })).json();
     if (r.title) { document.getElementById("rv-title").value = r.title; note.textContent = before; }
     else note.textContent = r.error || before;
   } catch { note.textContent = before; }

@@ -507,4 +507,5 @@ EN: dict[str, str] = {
     "Das Löschen in Paperless lässt sich nicht rückgängig machen.": "Deleting in Paperless cannot be undone.",
     "Ungültiges Ziel": "Invalid target",
     "«{name}» gelöscht, {n} Dokument(e) auf «{target}» übertragen": "«{name}» deleted, {n} document(s) moved to «{target}»",
+    "Titelvorschlag": "Suggested title",
 }

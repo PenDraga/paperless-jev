@@ -90,7 +90,7 @@
 
       <div class="rv-lbl">{{ _("Titel") }}</div>
       <div class="rv-title">
-        <input name="title" id="rv-title" enterkeyhint="done" placeholder="{{ _('leer = automatisch (Sprachmodell)') if title_mode == 'llm' else (_('leer = automatisch (Vorlage)') if title_mode == 'template' else _('leer = unverändert')) }}">
+        <input name="title" id="rv-title" enterkeyhint="done" value="{{ res.get('title') or '' }}" placeholder="{{ _('leer = automatisch (Sprachmodell)') if title_mode == 'llm' else (_('leer = automatisch (Vorlage)') if title_mode == 'template' else _('leer = unverändert')) }}">
         {% if title_mode != "off" %}<button type="button" class="rv-spark" id="rv-suggest" data-url="/jobs/{{ job.id }}/title?format=json" title="{{ _('Titel vorschlagen') }}" aria-label="{{ _('Titel vorschlagen') }}">{{ icon("zap") }}</button>{% endif %}
       </div>
       <small class="muted rv-titlenote" id="rv-titlenote">{{ _("aktuell: {value}", value=job.doc_title or "–") }}</small>

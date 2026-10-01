@@ -21,6 +21,7 @@
       <td class="card-title"><div class="doc">
         <img class="doc-mini" src="/thumb/{{ j.instance_id }}/{{ j.doc_id }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         <div class="doc-text"><b>{{ (j.doc_title or _("Dokument"))[:70] }}</b>
+          {%- set proposed = (j.result or {}).get("title") %}{% if proposed and proposed != j.doc_title and j.status in ("review", "dry_run") %}<small class="muted proposed" title="{{ _('Titelvorschlag') }}">→ {{ proposed[:70] }}</small>{% endif %}
           <small>{% if j.instance %}<a href="{{ j.instance.browse_url }}/documents/{{ j.doc_id }}/details" target="_blank" title="{{ _('in Paperless öffnen') }}">#{{ j.doc_id }}</a>{% else %}#{{ j.doc_id }}{% endif %}</small>
           <a href="/jobs/{{ j.id }}" class="show-mobile card-link"><small>{{ _("Details →") }}</small></a></div>
         <a href="/doc/{{ j.instance_id }}/{{ j.doc_id }}" target="_blank" class="eye" title="{{ _('Dokument ansehen') }}" aria-label="{{ _('Dokument ansehen') }}" data-viewer="{{ j.doc_title or '#' ~ j.doc_id }}">{{ icon("eye") }}</a>

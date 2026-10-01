@@ -71,6 +71,12 @@ class Database:
         if "source" not in cols:
             # Eingabe (z. B. deutsch); "text" ist die an Jev gesendete Fassung
             self._conn.execute("ALTER TABLE descriptions ADD COLUMN source TEXT NOT NULL DEFAULT ''")
+        # ältere Einträge: geschriebenen Titel nachtragen
+        self._conn.execute(
+            "UPDATE jobs SET doc_title = json_extract(applied, '$.title')"
+            " WHERE json_valid(applied) AND json_extract(applied, '$.title') IS NOT NULL"
+            " AND doc_title IS NOT json_extract(applied, '$.title')"
+        )
 
     def query(self, sql: str, params: tuple | list = ()) -> list[dict[str, Any]]:
         with self._lock:
@@ -104,6 +110,10 @@ class Database:
 
     def update_job(self, job_id: int, **fields: Any) -> None:
         fields["updated_at"] = now()
+        applied = fields.get("applied")
+        if isinstance(applied, dict) and applied.get("title"):
+            # Protokoll zeigt den Titel, der nach Paperless geschrieben wurde (nicht den Scan-Dateinamen)
+            fields.setdefault("doc_title", applied["title"])
         for col in JSON_COLUMNS:
             if col in fields and fields[col] is not None:
                 fields[col] = json.dumps(fields[col], ensure_ascii=False)
