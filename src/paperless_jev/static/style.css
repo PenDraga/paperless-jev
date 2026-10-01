@@ -624,3 +624,7 @@ details.nest summary { font-weight: 600; display: flex; gap: .45rem; align-items
 .del-bar > * { width: auto !important; margin: 0 !important; }
 .del-bar button.danger { background: var(--pj-bad); border-color: var(--pj-bad); color: #fff; display: inline-flex; gap: .4rem; align-items: center; }
 .del-wizard h3 { font-size: 1.25rem; }
+
+/* Kontrollkästchen eckig (mehrfach wählbar), Radiobuttons rund (eins aus mehreren):
+   der grosse --pico-border-radius machte Kästchen fast kreisrund */
+input[type=checkbox]:not([role=switch]) { border-radius: .28rem !important; }
