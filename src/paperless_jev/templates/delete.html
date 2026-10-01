@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_tags.html" import tname %}
+{% set what = _("Tag") if kind == "tag" else _(FIELD_LABELS[kind]) %}
+{% block content %}
+<article class="del-wizard">
+  <header><h3>{{ icon("trash") }} {{ _("«{name}» löschen", name=obj_name) }}</h3></header>
+  {% if count %}
+  <p>{{ _("Hängt an <strong>{n} Dokument(en)</strong> in Paperless, z. B.:", n=count)|safe }}</p>
+  <ul class="del-sample">
+    {% for d in sample %}<li><a href="{{ inst.browse_url }}/documents/{{ d.id }}/details" target="_blank">{{ d.title or "#" ~ d.id }}</a> <small class="muted">#{{ d.id }}</small></li>{% endfor %}
+    {% if count > sample|length %}<li class="muted">{{ _("… und {n} weitere", n=count - sample|length) }}</li>{% endif %}
+  </ul>
+  {% else %}<p>{{ _("Hängt an keinem Dokument.") }}</p>{% endif %}
+  {% if children %}<p class="hint">{{ _("Untertags: {names}", names=children|join(", ")) }} –
+    {% if new_parent %}{{ _("rücken eine Ebene hoch unter «{name}».", name=new_parent) }}{% else %}{{ _("werden zu Haupt-Tags.") }}{% endif %}</p>{% endif %}
+
+  <form method="post" action="/meta/delete" id="del-form">
+    <input type="hidden" name="instance_id" value="{{ inst.id }}">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <input type="hidden" name="delete_id" value="{{ oid }}">
+    {% if count %}
+    <fieldset class="del-choice">
+      <label><input type="radio" name="mode" value="move" checked>
+        {{ _("Dokumente auf einen anderen Eintrag übertragen") }}</label>
+      <select name="target" id="del-target" required aria-label="{{ _('Ziel') }}">
+        <option value="">{{ _("– {what} wählen –", what=what) }}</option>
+        {% for tid, label in targets %}<option value="{{ tid }}">{{ label }}</option>{% endfor %}
+      </select>
+      <small class="muted">{{ _("Die Dokumente bekommen diesen Tag zusätzlich.") if kind == "tag" else _("Der Eintrag wird bei diesen Dokumenten ersetzt.") }}</small>
+      <label><input type="radio" name="mode" value="remove">
+        {{ _("Nur löschen – der Tag wird von den Dokumenten entfernt") if kind == "tag" else _("Nur löschen – das Feld bleibt bei diesen Dokumenten leer") }}</label>
+    </fieldset>
+    {% endif %}
+    <div class="del-bar">
+      <a href="{{ back }}" role="button" class="secondary outline">{{ _("Abbrechen") }}</a>
+      <button type="submit" class="danger" onclick="this.setAttribute('aria-busy','true')">{{ icon("trash") }} {{ _("Löschen") }}</button>
+    </div>
+    <small class="muted">{{ _("Das Löschen in Paperless lässt sich nicht rückgängig machen.") }}</small>
+  </form>
+</article>
+<script>
+  (() => {
+    const target = document.getElementById("del-target");
+    if (!target) return;
+    document.querySelectorAll("input[name=mode]").forEach((r) => r.addEventListener("change", () => {
+      const move = document.querySelector("input[name=mode]:checked").value === "move";
+      target.disabled = !move;
+      target.required = move;
+    }));
+  })();
+</script>
+{% endblock %}

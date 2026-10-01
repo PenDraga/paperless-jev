@@ -261,6 +261,25 @@ class PaperlessClient:
             )
         return len(ids)
 
+    async def documents_with(self, kind: str, object_id: int, limit: int = 5) -> tuple[int, list[dict[str, Any]]]:
+        """Anzahl und die ersten Dokumente mit diesem Eintrag."""
+        param = "tags__id__all" if kind == "tag" else f"{kind}__id"
+        data = await self._get("/api/documents/", {param: object_id, "fields": "id,title", "ordering": "-created", "page_size": limit})
+        return int(data["count"]), data["results"][:limit]
+
+    async def reassign(self, kind: str, object_id: int, target: int) -> int:
+        """Dokumente mit object_id bekommen target (Tag: zusätzlich; sonst: ersetzt)."""
+        if kind == "tag":
+            return await self.add_tag_to_tagged(target, [object_id])
+        docs = await self._all("/api/documents/", {f"{kind}__id": object_id, "fields": "id"})
+        ids = [d["id"] for d in docs]
+        if ids:
+            await self._request(
+                "POST", "/api/documents/bulk_edit/",
+                json={"documents": ids, "method": f"set_{kind}", "parameters": {kind: target}},
+            )
+        return len(ids)
+
     async def delete_object(self, kind: str, object_id: int) -> None:
         """Löscht einen Eintrag; Paperless entfernt ihn dabei von allen Dokumenten."""
         await self._request("DELETE", f"/api/{OBJECT_PATHS[kind]}/{object_id}/")

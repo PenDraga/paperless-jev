@@ -92,6 +92,14 @@ class FakePaperless:
         if "name" in data:
             self.meta.names(kind)[object_id] = data["name"]
 
+    async def documents_with(self, kind, object_id, limit=5):
+        docs = [d for d in self.docs.values() if (object_id in d["tags"] if kind == "tag" else d.get(kind) == object_id)]
+        return len(docs), [{"id": d["id"], "title": d["title"]} for d in docs[:limit]]
+
+    async def reassign(self, kind, object_id, target):
+        self.objects.append(("reassign", kind, object_id, target))
+        return 1
+
     async def add_tag_to_tagged(self, tag_id, tagged_with):
         self.objects.append(("add_tag", tag_id, sorted(tagged_with)))
         return 1
@@ -543,7 +551,7 @@ def test_create_delete_and_color_metadata(client):
     FakePaperless.objects.clear()
     cfg = client.app.state.config
     page = client.get("/descriptions?instance_id=1&kind=tag").text
-    assert 'action="/meta/create"' in page and 'type="color"' in page and 'formaction="/meta/delete"' in page
+    assert 'action="/meta/create"' in page and 'type="color"' in page and '/meta/delete' in page
 
     r = client.post("/meta/create", data={"instance_id": "1", "kind": "tag", "name": " Garten ", "color": "#33a02c", "keywords": "Garten, Pflanzen"}, follow_redirects=False)
     assert "msg=" in r.headers["location"]
@@ -672,9 +680,6 @@ def test_tag_parent_and_nesting_routes(client):
     r = client.post("/meta/parent", data={"instance_id": "1", "tag_id": "101", "parent": "200"}, follow_redirects=False)
     assert "msg=" in r.headers["location"]
     assert FakePaperless.objects == [("update", "tag", 101, {"parent": 200}), ("add_tag", 200, [101])]
-    # Obertag mit Untertags lässt sich nicht löschen
-    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "tag", "delete_id": "200"}, follow_redirects=False)
-    assert "err=" in r.headers["location"]
 
     FakePaperless.objects.clear()
     r = client.post("/meta/nest", data={"instance_id": "1", "parent_name": "Velo", "ids": ["210", "211"], "rename": "on"}, follow_redirects=False)
@@ -685,3 +690,26 @@ def test_tag_parent_and_nesting_routes(client):
     assert ("update", "tag", 210, {"parent": parent, "name": "Service"}) in FakePaperless.objects
     assert FakePaperless.objects[-1] == ("add_tag", parent, [210, 211])
     assert FakePaperless.meta.tag_label(211) == "Velo › Reifen"
+
+
+def test_delete_assistant_moves_documents_and_children(client):
+    FakePaperless.objects.clear()
+    _nest(FakePaperless.meta)
+    FakePaperless.meta.tag_parents[200] = 101  # Steuerrelevant > Haus > Unterhalt
+    # Dokument 42 hat Tag 103 -> Papierkorb führt zum Assistenten
+    page = client.get("/descriptions?instance_id=1&kind=tag").text
+    assert 'href="/meta/delete?instance_id=1&amp;kind=tag&amp;id=103"' in page
+    page = client.get("/meta/delete?instance_id=1&kind=tag&id=103").text
+    assert "scan_0042" in page and 'name="target"' in page
+    page = client.get("/meta/delete?instance_id=1&kind=tag&id=200").text
+    assert "Unterhalt" in page and "Steuern" in page  # Untertag rückt unter den Obertag
+    # eigener Untertag als Ziel ist ungültig
+    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "tag", "delete_id": "200", "target": "201"}, follow_redirects=False)
+    assert "err=" in r.headers["location"] and not FakePaperless.objects
+    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "tag", "delete_id": "200", "target": "103"}, follow_redirects=False)
+    assert "msg=" in r.headers["location"]
+    assert FakePaperless.objects == [("reassign", "tag", 200, 103), ("update", "tag", 201, {"parent": 101}), ("delete", "tag", 200)]
+
+    FakePaperless.objects.clear()
+    r = client.post("/meta/delete", data={"instance_id": "1", "kind": "correspondent", "delete_id": "2", "target": "1"}, follow_redirects=False)
+    assert FakePaperless.objects == [("reassign", "correspondent", 2, 1), ("delete", "correspondent", 2)]

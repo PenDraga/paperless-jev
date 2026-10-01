@@ -126,6 +126,11 @@ async def bulk_edit(request: Request) -> dict[str, Any]:
         for doc_id in data["documents"]:
             if doc_id in BY_ID and data["parameters"]["tag"] not in BY_ID[doc_id]["tags"]:
                 BY_ID[doc_id]["tags"].append(data["parameters"]["tag"])
+    elif data.get("method", "").startswith("set_"):
+        field = data["method"][4:]
+        for doc_id in data["documents"]:
+            if doc_id in BY_ID:
+                BY_ID[doc_id][field] = data["parameters"][field]
     return {"result": "OK"}
 
 

@@ -609,3 +609,18 @@ details.nest summary { font-weight: 600; display: flex; gap: .45rem; align-items
 .nest-foot button { width: auto !important; margin: 0; }
 .nest-table td:nth-child(2) { width: 45%; }
 .nest-table td:nth-child(3) { width: 2rem; text-align: center; }
+
+/* --- Lösch-Assistent ---------------------------------------------------- */
+.del-wizard { max-width: 40rem; margin: 1rem auto; }
+.del-wizard h3 { display: flex; gap: .5rem; align-items: center; margin: 0; }
+.del-sample { margin: 0 0 1rem; padding-left: 1.2rem; font-size: .92rem; }
+.del-sample li { list-style: disc; margin: .15rem 0; }
+.del-choice { border: 1px solid var(--pj-line); border-radius: .75rem; padding: .8rem 1rem; display: grid; gap: .45rem; }
+.del-choice label { margin: 0; font-weight: 500; }
+.del-choice select { margin: 0 0 0 1.8rem; width: calc(100% - 1.8rem); }
+.del-choice select:disabled { opacity: .45; }
+.del-choice small { margin: -.2rem 0 .4rem 1.8rem; }
+.del-bar { display: flex; gap: .6rem; justify-content: flex-end; margin: 1rem 0 .4rem; }
+.del-bar > * { width: auto !important; margin: 0 !important; }
+.del-bar button.danger { background: var(--pj-bad); border-color: var(--pj-bad); color: #fff; display: inline-flex; gap: .4rem; align-items: center; }
+.del-wizard h3 { font-size: 1.25rem; }

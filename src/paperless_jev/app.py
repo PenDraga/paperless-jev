@@ -957,6 +957,7 @@ async def descriptions_page(request: Request, instance_id: int = 0, kind: str = 
                              "count": meta.counts.get((kind, oid)), "depth": depth,
                              "color": meta.tag_colors.get(oid) if kind == "tag" else None,
                              "parent": meta.tag_parents.get(oid) if kind == "tag" else None,
+                             "has_children": kind == "tag" and bool(meta.tag_descendants(oid)),
                              # mögliche Obertags: nicht sich selbst und keine eigenen Untertags (Zyklus)
                              "no_parent": ({oid} | meta.tag_descendants(oid)) if kind == "tag" else set(), **d})
         except PaperlessError as e:
@@ -1119,28 +1120,78 @@ async def nest_tags(request: Request):
     return _redirect(back, msg=msg, err="; ".join(failed)[:500] or None)
 
 
+@app.get("/meta/delete", response_class=HTMLResponse)
+async def delete_assistant(request: Request, instance_id: int, kind: str, id: int):
+    """Löschen mit Rückfrage: Dokumente auf einen anderen Eintrag übertragen, Untertags umhängen."""
+    inst = _cfg(request).instance(instance_id)
+    back = f"/descriptions?instance_id={instance_id}&kind={kind}"
+    if not inst or kind not in KINDS:
+        return _redirect(back, err=_("Eintrag fehlt"))
+    try:
+        async with _proc(request).client(inst) as pl:
+            meta = await _proc(request).metadata(inst, pl, fresh=True)
+            if id not in meta.names(kind):
+                return _redirect(back, err=_("Eintrag fehlt"))
+            count, sample = await pl.documents_with(kind, id)
+    except PaperlessError as e:
+        return _redirect(back, err=str(e))
+    hidden = excluded_tags(meta, _cfg(request).all()) if kind == "tag" else set()
+    if kind == "tag":
+        if id in hidden:
+            return _redirect(back, err=_("Posteingangs- und Status-Tags lassen sich hier nicht löschen"))
+        gone = {id} | meta.tag_descendants(id)
+        targets = [[t, meta.tag_label(t)] for t, _depth in meta.tag_tree(set(meta.tags) - hidden - gone)]
+        children = [meta.tag_label(t) for t in sorted(meta.tag_descendants(id), key=meta.tag_label) if meta.tag_parents.get(t) == id]
+        parent = meta.tag_parents.get(id)
+        new_parent = meta.tag_label(parent) if parent else None
+    else:
+        targets = sorted(([o, n] for o, n in meta.names(kind).items() if o != id), key=lambda x: x[1].lower())
+        children, new_parent = [], None
+    return _render(
+        request, "delete.html", inst=inst, kind=kind, oid=id,
+        obj_name=meta.tag_label(id) if kind == "tag" else meta.names(kind)[id],
+        count=count, sample=sample, targets=targets, children=children, new_parent=new_parent, back=back,
+    )
+
+
 @app.post("/meta/delete")
 async def delete_meta(request: Request):
     form = await request.form()
     inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
     kind = str(form.get("kind"))
     oid = int(str(form.get("delete_id") or 0))
+    target = int(str(form.get("target") or 0)) or None
     back = f"/descriptions?instance_id={inst.id if inst else 0}&kind={kind}"
     if not inst or kind not in KINDS or not oid:
         return _redirect(back, err=_("Eintrag fehlt"))
+    moved = 0
     try:
         async with _proc(request).client(inst) as pl:
             meta = await _proc(request).metadata(inst, pl, fresh=True)
             name = meta.names(kind).get(oid, f"#{oid}")
             if kind == "tag" and oid in excluded_tags(meta, _cfg(request).all()):
                 return _redirect(back, err=_("Posteingangs- und Status-Tags lassen sich hier nicht löschen"))
-            if kind == "tag" and meta.tag_descendants(oid):
-                return _redirect(back, err=_("«{name}» hat Untertags – zuerst umhängen oder löschen", name=name))
+            if target is not None and (target == oid or target not in meta.names(kind)
+                                       or (kind == "tag" and target in meta.tag_descendants(oid))):
+                return _redirect(back, err=_("Ungültiges Ziel"))
+            if target is not None:
+                moved = await pl.reassign(kind, oid, target)
+                if kind == "tag":
+                    # Obertags des Ziels gehören auch dazu
+                    for ancestor in meta.tag_ancestors(target):
+                        await pl.add_tag_to_tagged(ancestor, [oid])
+            if kind == "tag":
+                # Direkte Untertags rücken eine Ebene nach oben, statt mit gelöscht zu werden
+                for child in [t for t, p in meta.tag_parents.items() if p == oid]:
+                    await pl.update_object("tag", child, {"parent": meta.tag_parents.get(oid)})
             await pl.delete_object(kind, oid)
     except PaperlessError as e:
         return _redirect(back, err=str(e))
     _cfg(request).db.execute("DELETE FROM descriptions WHERE instance_id = ? AND kind = ? AND object_id = ?", (inst.id, kind, oid))
     _proc(request).forget_metadata(inst.id)
+    if target is not None:
+        label = meta.tag_label(target) if kind == "tag" else meta.names(kind)[target]
+        return _redirect(back, msg=_("«{name}» gelöscht, {n} Dokument(e) auf «{target}» übertragen", name=name, n=moved, target=label))
     return _redirect(back, msg=_("«{name}» in Paperless gelöscht", name=name))
 
 
