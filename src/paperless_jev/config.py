@@ -31,6 +31,16 @@ DEFAULTS: dict[str, Any] = {
     "classifier": "typesafe",
     "classifier_url": "",
     "classifier_model": "clef",
+    # Eigene Schwellen für lokale Modelle: clef meldet tiefere Confidence als Jev.
+    # Vorgaben gemessen an 43 geprüften Dokumenten (ab diesen Werten lag clef nie falsch);
+    # neue Tags waren mit clef unzuverlässig -> praktisch nur noch Vorschläge.
+    "local_thresholds": {
+        "document_type": {"auto": 0.6, "review": 0.3},
+        "correspondent": {"auto": 0.7, "review": 0.4},
+        "storage_path": {"auto": 0.7, "review": 0.4},
+        "created": {"auto": 0.8, "review": 0.4},
+        "tags": {"auto": 0.95, "review": 0.8},
+    },
     # dry_run: nur protokollieren | review: alles in die Review-Queue |
     # auto: sichere Felder direkt setzen, unsichere in die Review-Queue
     "mode": "dry_run",
@@ -114,9 +124,9 @@ class Config:
             value = json.loads(row["value"])
             if row["key"] in SECRET_KEYS:
                 value = self.vault.decrypt(value)
-            if row["key"] == "fields":
+            if row["key"] in ("fields", "local_thresholds"):
                 for name, spec in value.items():
-                    cfg["fields"].setdefault(name, {}).update(spec)
+                    cfg[row["key"]].setdefault(name, {}).update(spec)
             else:
                 cfg[row["key"]] = value
         # Einstellung aus v0.1: title_enabled -> title_mode
@@ -130,6 +140,11 @@ class Config:
         cfg.pop("ollama_model", None)
         if cfg["title_mode"] == "ollama":
             cfg["title_mode"] = "llm"
+        if cfg["classifier"] == "ollama":
+            # aktive Schwellen = die des lokalen Modells; "fields" behält die von Jev
+            cfg["jev_thresholds"] = {n: {k: s[k] for k in ("auto", "review")} for n, s in cfg["fields"].items()}
+            for name, spec in cfg["local_thresholds"].items():
+                cfg["fields"].setdefault(name, {}).update(spec)
         return cfg
 
     def update(self, values: dict[str, Any]) -> None:

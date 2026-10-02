@@ -28,9 +28,16 @@ def is_test(source: str) -> bool:
 
 
 def job_config(job: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
-    """Neuprüfung per Tag lässt bestehende Titel stehen, ausser "+title" wurde gewählt."""
+    """Einstellungen für einen Job.
+
+    - Neuprüfung per Tag lässt bestehende Titel stehen, ausser "+title" wurde gewählt.
+    - Lokale Modelle (clef) bekommen einfache Kriterien: Beispiel-Titel und ähnliche
+      Dokumente verschlechterten bei clef Treffer und Confidence deutlich.
+    """
     if job["source"].startswith(TAG_RUN) and WITH_TITLE not in job["source"]:
-        return {**cfg, "title_mode": "off"}
+        cfg = {**cfg, "title_mode": "off"}
+    if cfg.get("classifier") == "ollama":
+        cfg = {**cfg, "examples": 0, "similar_docs": 0}
     return cfg
 META_TTL = 300
 EXAMPLES_TTL = 3600

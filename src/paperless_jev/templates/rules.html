@@ -14,6 +14,7 @@
 <article>
   <header><strong>{{ _("Felder und Schwellwerte") }}</strong></header>
   <p><small>{{ _("Jev liefert pro Antwort eine kalibrierte <em>Confidence</em> (bei Tags die Wahrscheinlichkeit für „ja“). Ab <em>Auto</em> wird der Wert gesetzt, ab <em>Review</em> vorgeschlagen, darunter ignoriert.")|safe }}</small></p>
+  {% if cfg.classifier == "ollama" %}<p class="flash info"><small>{{ _("Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.", model=cfg.classifier_model) }}</small></p>{% endif %}
   <div class="overflow-auto">
   <table class="thresholds cards">
     <thead><tr><th>{{ _("Feld") }}</th><th>{{ _("aktiv") }}</th><th>{{ _("Auto ≥") }}</th><th>{{ _("Review ≥") }}</th></tr></thead>

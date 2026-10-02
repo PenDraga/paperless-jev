@@ -532,4 +532,6 @@ EN: dict[str, str] = {
     "Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.":
         "The model must support the /v1/systemone endpoint (capability \"decision\"). Local models report different confidence values than Jev – check the thresholds under Rules.",
     "Ollama-URL oder Modell fehlt": "Ollama URL or model missing",
+    "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.":
+        "Thresholds for the local model «{model}» – local models report lower confidence values than Jev and therefore have their own thresholds. Jev's are kept. Example titles and similar documents are not sent to local models.",
 }

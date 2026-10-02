@@ -914,11 +914,17 @@ async def save_rules(request: Request):
         except ValueError:
             return default
 
-    fields = {}
+    fields, local = {}, {}
     for name, spec in cfg["fields"].items():
         auto = min(max(num(f"{name}_auto", spec["auto"]), 0.0), 1.0)
         review = min(max(num(f"{name}_review", spec["review"]), 0.0), auto)
         fields[name] = {"enabled": f"{name}_enabled" in form, "auto": auto, "review": review}
+        if cfg["classifier"] == "ollama":
+            # Schwellen gehören dem lokalen Modell, die von Jev bleiben unverändert
+            local[name] = {"auto": auto, "review": review}
+            fields[name].update(cfg["jev_thresholds"][name])
+    if local:
+        _cfg(request).update({"local_thresholds": local})
     mode = str(form.get("mode", "dry_run"))
     _cfg(request).update(
         {

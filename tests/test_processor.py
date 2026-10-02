@@ -768,3 +768,21 @@ def test_review_unticks_deactivated_tag(client):
     assert job["status"] == "review"
     page = client.get(f"/review?job={job['id']}").text
     assert 'name="keep_tags" value="103">' in page and "deaktiviert" in page
+
+
+def test_local_model_has_own_thresholds_and_plain_criteria(client):
+    from paperless_jev.processor import job_config
+
+    cfg = client.app.state.config
+    cfg.update({"classifier": "ollama", "classifier_url": "http://ollama:11434", "classifier_model": "clef"})
+    assert cfg.all()["fields"]["document_type"]["auto"] == 0.6
+    assert "lokale Modell" in client.get("/rules").text
+    # Schwellen speichern ändert nur die des lokalen Modells
+    form = {f"{n}_enabled": "on" for n in ("document_type", "correspondent", "created", "tags")}
+    form |= {"document_type_auto": "0.65", "document_type_review": "0.3", "mode": "auto"}
+    client.post("/rules", data=form)
+    assert cfg.all()["fields"]["document_type"]["auto"] == 0.65
+    assert job_config({"source": "poll"}, cfg.all())["examples"] == 0
+    cfg.update({"classifier": "typesafe"})
+    assert cfg.all()["fields"]["document_type"]["auto"] == 0.85
+    assert job_config({"source": "poll"}, cfg.all())["examples"] == 5
