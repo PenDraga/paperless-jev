@@ -27,7 +27,7 @@ from .config import FIELD_LABELS, SINGLE_FIELDS, Config
 from .db import Database
 from . import i18n
 from .i18n import gettext as _
-from .jev import USD_PER_MTOK, JevClient, JevError
+from .jev import USD_PER_MTOK, JevError, classifier, classifier_missing
 from .paperless import TAG_SEP, Metadata, PaperlessClient, PaperlessError
 from .processor import TAG_TEST, TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
@@ -219,6 +219,8 @@ async def dashboard(request: Request):
     cfg = _cfg(request).all()
     counts = {r["status"]: r["n"] for r in db.query("SELECT status, COUNT(*) AS n FROM jobs GROUP BY status")}
     tokens = db.one("SELECT COALESCE(SUM(input_tokens), 0) AS t FROM jobs")["t"]
+    # nur TypeSafe kostet; lokale Modelle (Ollama) nicht
+    paid = db.one("SELECT COALESCE(SUM(input_tokens), 0) AS t FROM jobs WHERE model IS NULL OR model LIKE 'jev%'")["t"]
     corrections: dict[str, int] = {}
     reviewed = 0
     for row in db.query("SELECT applied FROM jobs WHERE source LIKE '%+review' AND applied IS NOT NULL"):
@@ -234,7 +236,7 @@ async def dashboard(request: Request):
         instances=_cfg(request).instances(),
         counts=counts,
         tokens=tokens,
-        cost=tokens / 1_000_000 * USD_PER_MTOK,
+        cost=paid / 1_000_000 * USD_PER_MTOK,
         auto_rate=(auto / finished) if finished else None,
         reviewed=reviewed,
         corrections=corrections,
@@ -809,8 +811,16 @@ async def setup_page(request: Request):
 
 
 @app.post("/setup/typesafe")
-async def save_typesafe(request: Request, api_key: str = Form(""), model: str = Form("jev-latest")):
-    values: dict[str, Any] = {"model": model.strip() or "jev-latest"}
+async def save_typesafe(
+    request: Request, api_key: str = Form(""), model: str = Form("jev-latest"), classifier_kind: str = Form("typesafe"),
+    classifier_url: str = Form(""), classifier_model: str = Form(""),
+):
+    values: dict[str, Any] = {
+        "model": model.strip() or "jev-latest",
+        "classifier": classifier_kind if classifier_kind in ("typesafe", "ollama") else "typesafe",
+        "classifier_url": classifier_url.strip().rstrip("/"),
+        "classifier_model": classifier_model.strip() or "clef",
+    }
     if api_key.strip():
         values["typesafe_api_key"] = api_key.strip()
     _cfg(request).update(values)
@@ -820,15 +830,16 @@ async def save_typesafe(request: Request, api_key: str = Form(""), model: str = 
 @app.post("/setup/typesafe/test", response_class=HTMLResponse)
 async def test_typesafe(request: Request):
     cfg = _cfg(request).all()
-    if not cfg["typesafe_api_key"]:
-        return HTMLResponse(f'<span class="bad">{_("Kein API-Key gespeichert")}</span>')
+    if missing := classifier_missing(cfg):
+        return HTMLResponse(f'<span class="bad">{html.escape(_(missing))}</span>')
+    client, model = classifier(cfg, timeout=20 if cfg["classifier"] != "ollama" else 600)
     try:
-        async with JevClient(cfg["typesafe_api_key"], timeout=20) as jev:
+        async with client as jev:
             resp = await jev.ask(
                 "Invoice no. 4711 from Stadtwerke, amount due EUR 84.20",
                 {"t": {"type": "choice", "instructions": "What type of document is this?",
-                       "criteria": {"invoice": None, "letter": None}}},
-                cfg["model"],
+                       "criteria": {"invoice": "An invoice or bill", "letter": "A letter"}}},
+                model,
             )
     except JevError as e:
         return HTMLResponse(f'<span class="bad">{e}</span>')

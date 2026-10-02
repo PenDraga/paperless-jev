@@ -128,7 +128,7 @@ class FakeJev:
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "DATA_DIR", tmp_path)
     monkeypatch.setattr(processor_module, "PaperlessClient", FakePaperless)
-    monkeypatch.setattr(processor_module, "JevClient", FakeJev)
+    monkeypatch.setattr(processor_module, "classifier", lambda cfg, timeout=None: (FakeJev(), cfg["model"]))
     FakePaperless.docs = {42: make_doc()}
     FakePaperless.patches = []
     FakePaperless.meta = make_meta()

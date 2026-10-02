@@ -10,7 +10,7 @@ from typing import Any
 from .classifier import build_request, excluded_tags, interpret, plan, render_title
 from .config import SINGLE_FIELDS, Config, Instance
 from .db import Database
-from .jev import JevClient, JevError
+from .jev import JevError, classifier, classifier_missing
 from .paperless import Metadata, PaperlessClient, PaperlessError, collect_examples
 from .llm import LLM, LLMError
 from .titles import generate_title
@@ -181,7 +181,7 @@ class Processor:
     async def _poller(self) -> None:
         while True:
             minutes = int(self.config.all()["poll_minutes"])
-            if minutes > 0 and self.config.all()["typesafe_api_key"]:
+            if minutes > 0 and not classifier_missing(self.config.all()):
                 try:
                     queued = await self.poll_once()
                     if queued:
@@ -212,8 +212,8 @@ class Processor:
             self.db.update_job(job_id, status="error", error="Instanz existiert nicht mehr")
             return
         cfg = job_config(job, self.config.all())
-        if not cfg["typesafe_api_key"]:
-            self.db.update_job(job_id, status="error", error="Kein TypeSafe-API-Key konfiguriert")
+        if missing := classifier_missing(cfg):
+            self.db.update_job(job_id, status="error", error=missing)
             return
         self.db.update_job(job_id, status="running", error=None)
 
@@ -240,8 +240,9 @@ class Processor:
                     self.db.update_job(job_id, status="skipped", error="Keine Fragen - alle Felder deaktiviert?")
                     return
 
-                async with JevClient(cfg["typesafe_api_key"]) as jev:
-                    response = await jev.ask(req.state, req.questions, cfg["model"])
+                client, model = classifier(cfg)
+                async with client as jev:
+                    response = await jev.ask(req.state, req.questions, model)
 
                 result = interpret(response, req, meta, cfg)
                 decision = plan(result, doc, cfg)

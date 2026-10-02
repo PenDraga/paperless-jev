@@ -27,6 +27,10 @@ FIELD_LABELS = {
 DEFAULTS: dict[str, Any] = {
     "typesafe_api_key": "",
     "model": "jev-latest",
+    # Klassifizierer: "typesafe" (Jev in der Cloud) oder "ollama" (lokales Modell, z. B. clef)
+    "classifier": "typesafe",
+    "classifier_url": "",
+    "classifier_model": "clef",
     # dry_run: nur protokollieren | review: alles in die Review-Queue |
     # auto: sichere Felder direkt setzen, unsichere in die Review-Queue
     "mode": "dry_run",

@@ -3,8 +3,18 @@
 <h2>{{ _("Setup") }}</h2>
 
 <article>
-  <header><strong>TypeSafe / Jev</strong></header>
+  <header><strong>{{ _("Klassifizierung") }}</strong></header>
   <form method="post" action="/setup/typesafe">
+    <fieldset class="clf-choice">
+      <label><input type="radio" name="classifier_kind" value="typesafe"{% if cfg.classifier != "ollama" %} checked{% endif %}> <strong>TypeSafe Jev</strong> – {{ _("Cloud, schnell, kostet wenig pro Dokument") }}</label>
+      <label><input type="radio" name="classifier_kind" value="ollama"{% if cfg.classifier == "ollama" %} checked{% endif %}> <strong>{{ _("Lokal über Ollama") }}</strong> – {{ _("z. B. clef von Cloudflare; Dokumente verlassen das Netz nicht, braucht eine starke GPU") }}</label>
+    </fieldset>
+    <div class="clf-ollama">
+      <label>{{ _("Ollama-URL") }}<input name="classifier_url" value="{{ cfg.classifier_url }}" placeholder="http://192.168.0.16:11434"></label>
+      <label>{{ _("Modell") }}<input name="classifier_model" value="{{ cfg.classifier_model }}" placeholder="clef">
+        <small>{{ _("Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.") }}</small></label>
+    </div>
+    <div class="clf-typesafe">
     <label>{{ _("API-Key") }} {% if has_key %}<small class="good">{{ _("(gespeichert – leer lassen, um ihn zu behalten)") }}</small>{% endif %}
       <input type="password" name="api_key" autocomplete="off" placeholder="{{ _('gespeichert') if has_key else _('API-Key von console.typesafe.ai/keys') }}">
     </label>
@@ -12,6 +22,7 @@
       <input name="model" value="{{ cfg.model }}">
       <small>{{ _("Für stabile Schwellwerte auf eine Version pinnen, z. B. <code>jev-1.13.0</code>. <code>jev-latest</code> wechselt bei neuen Releases automatisch.")|safe }}</small>
     </label>
+    </div>
     <div class="grid">
       <button type="submit">{{ _("Speichern") }}</button>
       <button type="button" class="secondary" hx-post="/setup/typesafe/test" hx-target="#jev-test">{{ _("Verbindung testen") }}</button>

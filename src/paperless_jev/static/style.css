@@ -628,3 +628,8 @@ details.nest summary { font-weight: 600; display: flex; gap: .45rem; align-items
 /* Kontrollkästchen eckig (mehrfach wählbar), Radiobuttons rund (eins aus mehreren):
    der grosse --pico-border-radius machte Kästchen fast kreisrund */
 input[type=checkbox]:not([role=switch]) { border-radius: .28rem !important; }
+
+/* Setup: Klassifizierer */
+.clf-choice { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.clf-choice label { margin: 0; }
+form:has(input[value=ollama]:checked) .clf-typesafe, form:has(input[value=typesafe]:checked) .clf-ollama { display: none; }

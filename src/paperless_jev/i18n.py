@@ -522,4 +522,14 @@ EN: dict[str, str] = {
     "schon gesetzt – unter Beschreibungen deaktiviert, wird zum Entfernen vorgeschlagen": "already set – deactivated under Descriptions, suggested for removal",
     "dunkel = wird gesetzt · hell = abgewählt · rot = laut Jev falsch oder deaktiviert (vorab abgewählt, wird entfernt)":
         "dark = will be set · light = deselected · red = wrong according to Jev or deactivated (deselected in advance, will be removed)",
+    # Klassifizierer
+    "Klassifizierung": "Classification",
+    "Cloud, schnell, kostet wenig pro Dokument": "cloud, fast, costs little per document",
+    "Lokal über Ollama": "Local via Ollama",
+    "z. B. clef von Cloudflare; Dokumente verlassen das Netz nicht, braucht eine starke GPU":
+        "e.g. clef by Cloudflare; documents never leave your network, needs a strong GPU",
+    "Ollama-URL": "Ollama URL",
+    "Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.":
+        "The model must support the /v1/systemone endpoint (capability \"decision\"). Local models report different confidence values than Jev – check the thresholds under Rules.",
+    "Ollama-URL oder Modell fehlt": "Ollama URL or model missing",
 }
