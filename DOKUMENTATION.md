@@ -111,6 +111,33 @@ Ein Eintrag wird nur neu ausformuliert, wenn sich seine Stichworte ändern.
 Die Zuweisungsregeln aus Paperless (Suchbegriff und Algorithmus) stehen grau beim Eintrag. Unter *Regeln*
 lassen sie sich zusätzlich als Hinweis an Jev mitgeben (Standard: aus, siehe *Messungen*).
 
+## Tags ausmisten und neu prüfen
+
+- **Deaktivierte Tags** (unter Beschreibungen) schlägt Jev nie vor. Steht einer auf einem Dokument, kommt es ins
+  Review; der Tag ist vorab abgewählt und wird beim Übernehmen entfernt. Ein deaktivierter Obertag bleibt nur, wenn
+  das Dokument einen Untertag hat, der selbst bleibt.
+- **Dokumente mit Tag prüfen** (Übersicht) reiht alle Dokumente mit einem Tag ein, auch abgelegte. Probelauf
+  (Quelle `tag-test`) zählt nicht fürs Polling; ohne *Titel neu erzeugen* bleibt der Titel.
+- **Lösch-Assistent**: Hängen Dokumente an einem Eintrag, fragt eine eigene Seite, ob sie auf einen anderen
+  übertragen werden (Tag zusätzlich setzen, sonst ersetzen – per `bulk_edit`). Untertags eines gelöschten Tags
+  rücken eine Ebene hoch.
+
+## Lokale Modelle (Ollama, clef)
+
+`jev.py` spricht neben TypeSafe auch Ollamas `/v1/systemone` an – gleiches Format (`state`, `questions` mit
+`choice`/`noul`), aber mit Grenzen, die der Client ausgleicht:
+
+- höchstens **64 Fragen** pro Anfrage → Fragen werden aufgeteilt, Antworten zusammengeführt;
+- **2–26 Kandidaten** pro Auswahlfrage → Turnier: Optionen in Gruppen à 25 (+ „none of these“) bewerten, die
+  25 wahrscheinlichsten aller Gruppen kommen ins Finale, dessen Antwort zählt;
+- `keep_alive: 30m`, damit das Modell (clef ~18 GB VRAM) geladen bleibt.
+
+Lokale Modelle bekommen **keine Beispiel-Titel und keine ähnlichen Dokumente**: Mit diesen strukturierten Kriterien
+bestätigte clef 0 von 25 vorhandenen, korrekten Tags, ohne sie 17 von 25; die Confidence beim Dokumenttyp stieg von
+0.33 auf 0.66. Sie haben **eigene Schwellwerte** (`local_thresholds`), weil clef tiefere Confidence-Werte meldet:
+Vorgabe Typ 0.6, Korrespondent 0.7, Datum 0.8 (ab da lag clef in der Messung nie falsch), Tags 0.95.
+Unter *Regeln* werden jeweils die Schwellen des aktiven Klassifizierers bearbeitet.
+
 ## Protokoll
 
 Standardmässig zeigt das Protokoll nur offene Einträge (Review, Probeläufe, Fehler, wartend); Filter nach Status,
@@ -131,6 +158,8 @@ mit ihr). Zwei identische Läufe unterscheiden sich um ±2 Treffer – kleinere 
 |---|---|
 | Beschreibungen englisch oder deutsch? | Dokumenttyp EN 44–46/60, DE 49/60, ohne 46/60. Der Vorsprung von DE kam fast ganz von 4 Dividenden-Belegen, die eine englische Abgrenzung falsch lenkte. Beschreibungen senken vor allem falsche Tags (Steuerrelevant: 8 statt 14 Fehlalarme). |
 | Paperless-Zuweisungsregeln als Hinweis? | Korrespondent 52/59 mit und ohne, Tags gleich (innerhalb der Schwankung), aber +40 % Tokens. Deshalb standardmässig aus. |
+| clef statt Jev (32 erfundene Dokumente, `bench/`)? | Typ 30 vs. 29, Korrespondent 31 vs. 31, Datum 31 vs. 30 von 32; Tags ab 50 %: Präzision 94 vs. 88 %, Trefferquote 84 vs. 92 %. 5.2 s vs. 0.2 s pro Dokument. |
+| clef statt Jev (43 echte, im Review geprüfte Dokumente)? | Typ 38 vs. 43, Korrespondent 38 vs. 43, Datum 32 vs. 33; neue Tags 0 richtig / 34 falsch vs. 18 / 41. Jevs Werte waren Ausgangspunkt des Reviews – leichter Vorteil für Jev. |
 | Gegenprüfung vorhandener Tags? | 70 gesetzte Tags an 60 Dokumenten: 64 bestätigt, 6 unsicher, 0 als sicher falsch – keine Fehlalarme, rund +20 % Tokens. Standardmässig an. |
 
 ## Dokument-Viewer
@@ -169,9 +198,11 @@ und verarbeitet nur Dokumente im Posteingang, die noch nie bewertet wurden (Fehl
 
 Der OCR-Text (gekürzt) und die Namen der Stammdaten gehen an `api.typesafe.ai`. TypeSafe trainiert laut
 Doku nicht auf Kundendaten; Zero Data Retention gibt es nur im Enterprise-Plan. Sensible Dokumente mit
-dem Tag *ai-ignorieren* versehen (z. B. per Paperless-Workflow nach Speicherpfad oder Korrespondent).
+dem Tag *ai-ignorieren* versehen (z. B. per Paperless-Workflow nach Speicherpfad oder Korrespondent) – oder ein
+lokales Modell über Ollama verwenden, dann verlässt nichts das eigene Netz.
 
 ## Kosten
 
 jev-1.13: 0.042 USD pro Mio. Input-Tokens, Output kostenlos. Gemessen: im Schnitt rund 10k Tokens pro
-Dokument (Text bis 12'000 Zeichen, ~50 Tag-Fragen, Beispieltitel), also rund 0.0004 USD. Die Übersicht zeigt die Summe.
+Dokument (Text bis 12'000 Zeichen, ~50 Tag-Fragen, Beispieltitel), also rund 0.0004 USD. Die Übersicht zeigt die Summe
+(nur TypeSafe-Tokens; lokale Modelle kosten nichts).

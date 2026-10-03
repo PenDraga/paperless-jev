@@ -111,6 +111,32 @@ field) and the text for Jev (shown below with "→"). Invented exclusions are re
 The Paperless matching rules (search term and algorithm) are shown in grey next to each entry. Under *Rules* they can
 additionally be passed to Jev as a hint (default: off, see *Measurements*).
 
+## Cleaning up and re-checking tags
+
+- **Deactivated tags** (under Descriptions) are never suggested. If one is on a document, the document goes to review;
+  the tag is deselected in advance and removed on apply. A deactivated parent tag only stays if the document has a
+  child tag that stays itself.
+- **Check documents with a tag** (overview) queues every document with a tag, including filed ones. A dry run
+  (source `tag-test`) does not count for polling; without *Generate new titles* the title is kept.
+- **Delete assistant**: if documents are attached to an entry, a separate page asks whether to move them to another
+  one (tags are added, other fields replaced – via `bulk_edit`). Child tags of a deleted tag move up one level.
+
+## Local models (Ollama, clef)
+
+Besides TypeSafe, `jev.py` also talks to Ollama's `/v1/systemone` – same format (`state`, `questions` with
+`choice`/`noul`), but with limits the client works around:
+
+- at most **64 questions** per request → questions are split, answers merged;
+- **2–26 candidates** per choice question → tournament: rate options in groups of 25 (+ "none of these"), the 25 most
+  likely across all groups go to a final round whose answer counts;
+- `keep_alive: 30m` so the model (clef ~18 GB VRAM) stays loaded.
+
+Local models get **no example titles and no similar documents**: with these structured criteria clef confirmed 0 of 25
+existing, correct tags, without them 17 of 25; confidence for the document type rose from 0.33 to 0.66. They have
+**their own thresholds** (`local_thresholds`) because clef reports lower confidence: defaults type 0.6, correspondent
+0.7, date 0.8 (from there clef was never wrong in the measurement), tags 0.95. *Rules* always edits the thresholds of
+the active classifier.
+
 ## Log
 
 By default the log shows only open entries (review, dry runs, errors, queued); filters by status, document type,
@@ -130,6 +156,8 @@ Two identical runs differ by ±2 hits – smaller differences are chance.
 |---|---|
 | Descriptions in English or German? | Document type EN 44–46/60, DE 49/60, none 46/60. The German lead came almost entirely from 4 dividend documents that an English exclusion misdirected. Descriptions mainly reduce wrong tags ("tax-relevant": 8 instead of 14 false alarms). |
 | Paperless matching rules as a hint? | Correspondent 52/59 with and without, tags the same (within the variation), but +40 % tokens. Therefore off by default. |
+| clef instead of Jev (32 made-up documents, `bench/`)? | Type 30 vs. 29, correspondent 31 vs. 31, date 31 vs. 30 of 32; tags from 50 %: precision 94 vs. 88 %, recall 84 vs. 92 %. 5.2 s vs. 0.2 s per document. |
+| clef instead of Jev (43 real documents checked in review)? | Type 38 vs. 43, correspondent 38 vs. 43, date 32 vs. 33; new tags 0 right / 34 wrong vs. 18 / 41. Jev's values were the starting point of the review – a slight advantage for Jev. |
 | Double-check existing tags? | 70 tags on 60 documents: 64 confirmed, 6 uncertain, 0 confidently wrong – no false alarms, about +20 % tokens. On by default. |
 
 ## Document viewer
@@ -167,9 +195,11 @@ only processes inbox documents that have never been evaluated (errors: up to 3 a
 
 The shortened OCR text and the names of the metadata are sent to `api.typesafe.ai`. According to its documentation,
 TypeSafe does not train on customer data; zero data retention is only available in the Enterprise plan. Tag sensitive
-documents with *ai-ignorieren* (e.g. via a Paperless workflow by storage path or correspondent).
+documents with *ai-ignorieren* (e.g. via a Paperless workflow by storage path or correspondent) – or use a local
+model via Ollama, then nothing leaves your network.
 
 ## Cost
 
 jev-1.13: USD 0.042 per million input tokens, output free. Measured: on average about 10k tokens per document (text
-up to 12,000 characters, ~50 tag questions, example titles), i.e. about USD 0.0004. The overview shows the total.
+up to 12,000 characters, ~50 tag questions, example titles), i.e. about USD 0.0004. The overview shows the total
+(TypeSafe tokens only; local models cost nothing).

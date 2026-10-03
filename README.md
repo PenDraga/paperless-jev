@@ -4,7 +4,7 @@
 
 Klassifiziert neue Dokumente im [Paperless-ngx](https://docs.paperless-ngx.com/)-Posteingang mit
 [TypeSafe Jev](https://docs.typesafe.ai/introduction): Dokumenttyp, Korrespondent, Speicherpfad,
-Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über eine Web-UI eingerichtet.
+Ausstellungsdatum und Tags – oder lokal mit [clef](https://ollama.com/library/clef) über Ollama. Läuft als Docker-Container und wird komplett über eine Web-UI eingerichtet.
 
 ![Übersicht](docs/screenshots/uebersicht.png)
 
@@ -28,14 +28,21 @@ Ausstellungsdatum und Tags. Läuft als Docker-Container und wird komplett über 
   fürs Handy gemacht. Alle erneut prüfen nach Änderungen an der Konfiguration, Dokument löschen (Papierkorb).
 - **Gegenprüfung** – Jev prüft auch schon gesetzte Tags und Werte. Widersprüche kommen ins Review oder werden
   ab einer einstellbaren Sicherheit direkt korrigiert.
+  Unter Beschreibungen deaktivierte Tags werden auf Dokumenten zum Entfernen vorgeschlagen («ausmisten»).
 - **Einzeltest** – ein Dokument per ID oder Paperless-Link prüfen, ohne etwas zu schreiben.
+- **Neu prüfen per Tag** – alle Dokumente mit einem Tag erneut durch Jev, auch bereits abgelegte; standardmässig
+  als Probelauf, bestehende Titel bleiben.
+- **Lokal statt Cloud** – optional ein lokales Entscheidungsmodell über Ollama statt Jev, z. B.
+  [clef](https://ollama.com/library/clef) von Cloudflare (siehe unten).
 - **Auswertung** auf der Übersicht: Trefferquote je Feld im Vergleich zur heutigen Ablage.
 - **Beschreibungen aus Stichworten** – ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel,
   z. B. Qwen) formuliert deine Stichworte in der Sprache der Oberfläche aus.
 - **Belege scannen** mit dem Handy: Rand wird automatisch erkannt und entzerrt, mehrere Seiten zu einem PDF,
   direkt nach Paperless (siehe unten).
 - **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten, geprüft und bei Bedarf gekürzt)
-  oder per Vorlage; «Titel vorschlagen» zeigt ihn vorab.
+  oder per Vorlage – entsteht schon bei der Analyse und ist im Review vorausgefüllt.
+- **Stammdaten pflegen** ohne Paperless zu öffnen: Dokumenttypen, Korrespondenten und Tags anlegen (auch direkt im
+  Review), Tag-Farben, Löschen mit Assistent – Dokumente auf einen anderen Eintrag übertragen oder nur entfernen.
 - **Ablage-Konventionen** – Titel bereits abgelegter Dokumente gehen als Beispiele an Jev.
 - **Ober-/Untertags** aus Paperless als Baum: Untertags mit Pfad («Haus › Unterhalt»), Jev bekommt den Obertag als
   Kontext, der Obertag wird automatisch mitgesetzt. Umbau-Hilfe hängt Tags wie «Haus (Unterhalt)» auf Wunsch unter «Haus».
@@ -138,10 +145,32 @@ Paperless (≥ 2.14) → *Workflows* → neuer Workflow:
 Polling (Standard alle 5 Minuten) bleibt als Fallback aktiv und verarbeitet nur Dokumente im Posteingang,
 die noch nie bewertet wurden.
 
+## Lokale Klassifizierung mit Ollama (clef)
+
+Statt TypeSafe Jev kann ein lokales Entscheidungsmodell klassifizieren, das den Endpunkt `/v1/systemone` von
+Ollama unterstützt (Fähigkeit «decision»), z. B. [clef](https://ollama.com/library/clef) von Cloudflare (27B,
+Apache 2.0, ~18 GB). Einrichten unter *Setup → Klassifizierung → Lokal über Ollama* mit URL und Modell.
+Dokumente verlassen dann das eigene Netz nicht.
+
+paperless-jev berücksichtigt die Grenzen von clef automatisch: höchstens 64 Fragen pro Anfrage (wird aufgeteilt)
+und 26 Kandidaten pro Auswahlfrage (bei mehr Korrespondenten oder Typen ein Turnier: Gruppen bewerten, Finale mit
+den besten). Lokale Modelle bekommen einfache Kriterien ohne Beispiel-Titel und eigene Schwellwerte.
+
+| Vergleich | Jev | clef |
+|---|---|---|
+| 32 erfundene Dokumente (`bench/`): Typ / Korrespondent / Datum | 29 / 31 / 30 von 32 | 30 / 31 / 31 von 32 |
+| 43 echte, im Review geprüfte Dokumente: Typ / Korrespondent / Datum | 43 / 43 / 33 | 38 / 38 / 32 |
+| Neue Tags bei echten Dokumenten | brauchbar | unzuverlässig |
+| Zeit pro Dokument | unter 1 s | 5–25 s (GPU) |
+
+Mit einfachen, erfundenen Belegen ist clef gleichauf; bei echten Dokumenten mit vielen Tags liegt Jev klar vorne.
+Eigene Messung: `python -m bench.run --jev --ollama http://<host>:11434` (siehe [`bench/`](bench/)).
+
 ## Datenschutz und Kosten
 
 - Der gekürzte OCR-Text und die Namen deiner Stammdaten gehen an `api.typesafe.ai`. TypeSafe trainiert laut
   Doku nicht auf Kundendaten. Dokumente mit dem Tag `ai-ignorieren` werden nie gesendet.
+- Mit einem lokalen Modell über Ollama (z. B. clef) bleibt alles im eigenen Netz.
 - Das optionale Sprachmodell läuft bei dir (Ollama, SGLang, vLLM, LM Studio …).
 - jev-1.13 kostet 0.042 USD pro Mio. Input-Tokens. Ein Dokument liegt je nach Anzahl Tags und Beispielen
   bei grob 5–15k Tokens, also unter 0.001 USD. Die Übersicht zeigt die Summe.
