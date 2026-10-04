@@ -51,6 +51,26 @@ function orderQuad(pts) {
 }
 const fullQuad = (w, h) => [[0, 0], [w, 0], [w, h], [0, h]];
 
+// Verkleinern in Halbierungsschritten (≈ Mittelwert über die Pixel): ein einzelnes drawImage
+// lässt Rauschen wie Holzmaserung stehen, und die Randerkennung wird zufällig.
+function downscale(source, w, h, tw, th) {
+  let cur = source; let cw = w; let ch = h;
+  while (cw / 2 >= tw && ch / 2 >= th) {
+    const c = document.createElement("canvas");
+    c.width = Math.round(cw / 2); c.height = Math.round(ch / 2);
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(cur, 0, 0, c.width, c.height);
+    cur = c; cw = c.width; ch = c.height;
+  }
+  const out = document.createElement("canvas");
+  out.width = tw; out.height = th;
+  const ctx = out.getContext("2d");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(cur, 0, 0, tw, th);
+  return out;
+}
+
 // Grösstes konvexes Viereck unter den äusseren Konturen eines Binärbildes
 function largestQuad(cv, bin, minArea, keep) {
   const contours = keep(new cv.MatVector());
@@ -73,15 +93,17 @@ function largestQuad(cv, bin, minArea, keep) {
   return best;
 }
 
+const polyArea = (q) => Math.abs(q.reduce((acc, [x, y], i) => {
+  const [nx, ny] = q[(i + 1) % q.length];
+  return acc + x * ny - nx * y;
+}, 0)) / 2;
+
 // Grösstes Viereck im Bild (Beleg); null, wenn nichts Plausibles gefunden
 function detectQuad(source, w, h) {
   const cv = cvReady();
   if (!cv) return null;
   const scale = 480 / Math.max(w, h);
-  const small = document.createElement("canvas");
-  small.width = Math.round(w * scale);
-  small.height = Math.round(h * scale);
-  small.getContext("2d").drawImage(source, 0, 0, small.width, small.height);
+  const small = downscale(source, w, h, Math.round(w * scale), Math.round(h * scale));
   const mats = [];
   const keep = (m) => (mats.push(m), m);
   try {
@@ -95,10 +117,22 @@ function detectQuad(source, w, h) {
     cv.Canny(gray, edges, 40, 120);
     cv.dilate(edges, edges, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))));
     let best = largestQuad(cv, edges, minArea, keep);
+    const rgb = keep(new cv.Mat());
     if (!best) {
-      // 2. helle, farblose Fläche (Papier auf Holz o. ä.: Maserung erzeugt zu viele Kanten)
-      const rgb = keep(new cv.Mat());
+      // 2. Kanten nach kantenerhaltendem Glätten: bügelt Holzmaserung aus, die Papierkante bleibt
+      //    (nötig bei Lampenlicht, wo Holz grau und farblos wirkt wie das Papier)
       cv.cvtColor(src, rgb, cv.COLOR_RGBA2RGB);
+      const smooth = keep(new cv.Mat());
+      cv.bilateralFilter(rgb, smooth, 9, 60, 60, cv.BORDER_DEFAULT);
+      const g2 = keep(new cv.Mat());
+      cv.cvtColor(smooth, g2, cv.COLOR_RGB2GRAY);
+      cv.GaussianBlur(g2, g2, new cv.Size(7, 7), 0);
+      cv.Canny(g2, g2, 30, 90);
+      cv.dilate(g2, g2, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))));
+      best = largestQuad(cv, g2, minArea, keep);
+    }
+    if (!best) {
+      // 3. helle, farblose Fläche (Papier auf Holz o. ä.)
       const hsv = keep(new cv.Mat());
       cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
       const ch = keep(new cv.MatVector());
@@ -110,6 +144,23 @@ function detectQuad(source, w, h) {
       cv.morphologyEx(white, white, cv.MORPH_CLOSE, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(9, 9))));
       cv.morphologyEx(white, white, cv.MORPH_OPEN, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))));
       best = largestQuad(cv, white, minArea, keep);
+    }
+    if (!best) {
+      // 4. Farbton: Papier kühl-weiss, Holz im Lampenlicht warm-beige (Lab-b = gelb↔blau).
+      //    Stärker öffnen, damit kleine Flecken am Rand das Viereck nicht verderben.
+      const lab = keep(new cv.Mat());
+      cv.cvtColor(rgb, lab, cv.COLOR_RGB2Lab);
+      const lch = keep(new cv.MatVector());
+      cv.split(lab, lch);
+      const blue = keep(new cv.Mat());
+      cv.bitwise_not(keep(lch.get(2)), blue);
+      cv.GaussianBlur(blue, blue, new cv.Size(5, 5), 0);
+      cv.threshold(blue, blue, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+      cv.morphologyEx(blue, blue, cv.MORPH_CLOSE, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(9, 9))));
+      cv.morphologyEx(blue, blue, cv.MORPH_OPEN, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(21, 21))));
+      const q = largestQuad(cv, blue, minArea, keep);
+      // fast das ganze Bild ist kein Beleg (z. B. einfarbiger Hintergrund)
+      if (q && polyArea(q) < small.width * small.height * 0.9) best = q;
     }
     return best ? orderQuad(best.map(([x, y]) => [x / scale, y / scale])) : null;
   } finally {
