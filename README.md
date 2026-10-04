@@ -12,6 +12,10 @@ Ausstellungsdatum und Tags – oder lokal mit [clef](https://ollama.com/library/
 |---|---|
 | ![Review](docs/screenshots/review.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
 
+| Tags als Baum mit Umbau-Hilfe | Lösch-Assistent (Handy) |
+|---|---|
+| ![Tags](docs/screenshots/tags-baum.png) | ![Löschen](docs/screenshots/loeschen-handy.png) |
+
 | Review (Handy) | Scannen (Handy) | Protokoll (Handy) | Beschreibungen (Handy) |
 |---|---|---|---|
 | ![Review Handy](docs/screenshots/review-handy.png) | ![Scannen](docs/screenshots/scan-1-kamera.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) |

@@ -12,6 +12,10 @@ issue date and tags – or locally with [clef](https://ollama.com/library/clef) 
 |---|---|
 | ![Review](docs/screenshots/review-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
 
+| Tags as a tree with restructuring helper | Delete assistant (phone) |
+|---|---|
+| ![Tags](docs/screenshots/tags-baum-en.png) | ![Delete](docs/screenshots/loeschen-handy-en.png) |
+
 | Review (phone) | Scan (phone) | Log (phone) | Descriptions (phone) |
 |---|---|---|---|
 | ![Review phone](docs/screenshots/review-handy-en.png) | ![Scan](docs/screenshots/scan-1-kamera-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) |
