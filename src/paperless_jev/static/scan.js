@@ -51,6 +51,28 @@ function orderQuad(pts) {
 }
 const fullQuad = (w, h) => [[0, 0], [w, 0], [w, h], [0, h]];
 
+// Grösstes konvexes Viereck unter den äusseren Konturen eines Binärbildes
+function largestQuad(cv, bin, minArea, keep) {
+  const contours = keep(new cv.MatVector());
+  const hier = keep(new cv.Mat());
+  cv.findContours(bin, contours, hier, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+  let best = null;
+  let bestArea = minArea;
+  for (let i = 0; i < contours.size(); i++) {
+    const c = keep(contours.get(i));
+    const area = cv.contourArea(c);
+    if (area < bestArea) continue;
+    const approx = keep(new cv.Mat());
+    cv.approxPolyDP(c, approx, 0.02 * cv.arcLength(c, true), true);
+    if (approx.rows === 4 && cv.isContourConvex(approx)) {
+      const d = approx.data32S;
+      best = [[d[0], d[1]], [d[2], d[3]], [d[4], d[5]], [d[6], d[7]]];
+      bestArea = area;
+    }
+  }
+  return best;
+}
+
 // Grösstes Viereck im Bild (Beleg); null, wenn nichts Plausibles gefunden
 function detectQuad(source, w, h) {
   const cv = cvReady();
@@ -64,29 +86,30 @@ function detectQuad(source, w, h) {
   const keep = (m) => (mats.push(m), m);
   try {
     const src = keep(cv.imread(small));
+    const minArea = small.width * small.height * 0.12;
+    // 1. Kanten (Beleg auf dunklem oder einfarbigem Grund)
     const gray = keep(new cv.Mat());
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0);
     const edges = keep(new cv.Mat());
     cv.Canny(gray, edges, 40, 120);
-    const kernel = keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5)));
-    cv.dilate(edges, edges, kernel);
-    const contours = keep(new cv.MatVector());
-    const hier = keep(new cv.Mat());
-    cv.findContours(edges, contours, hier, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    let best = null;
-    let bestArea = small.width * small.height * 0.12;
-    for (let i = 0; i < contours.size(); i++) {
-      const c = keep(contours.get(i));
-      const area = cv.contourArea(c);
-      if (area < bestArea) continue;
-      const approx = keep(new cv.Mat());
-      cv.approxPolyDP(c, approx, 0.02 * cv.arcLength(c, true), true);
-      if (approx.rows === 4 && cv.isContourConvex(approx)) {
-        const d = approx.data32S;
-        best = [[d[0], d[1]], [d[2], d[3]], [d[4], d[5]], [d[6], d[7]]];
-        bestArea = area;
-      }
+    cv.dilate(edges, edges, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))));
+    let best = largestQuad(cv, edges, minArea, keep);
+    if (!best) {
+      // 2. helle, farblose Fläche (Papier auf Holz o. ä.: Maserung erzeugt zu viele Kanten)
+      const rgb = keep(new cv.Mat());
+      cv.cvtColor(src, rgb, cv.COLOR_RGBA2RGB);
+      const hsv = keep(new cv.Mat());
+      cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+      const ch = keep(new cv.MatVector());
+      cv.split(hsv, ch);
+      const white = keep(new cv.Mat());
+      cv.subtract(keep(ch.get(2)), keep(ch.get(1)), white);
+      cv.GaussianBlur(white, white, new cv.Size(5, 5), 0);
+      cv.threshold(white, white, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+      cv.morphologyEx(white, white, cv.MORPH_CLOSE, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(9, 9))));
+      cv.morphologyEx(white, white, cv.MORPH_OPEN, keep(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))));
+      best = largestQuad(cv, white, minArea, keep);
     }
     return best ? orderQuad(best.map(([x, y]) => [x / scale, y / scale])) : null;
   } finally {
