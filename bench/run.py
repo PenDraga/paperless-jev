@@ -119,7 +119,8 @@ async def main() -> None:
     ap.add_argument("--model", default="clef", help="Ollama-Modell")
     ap.add_argument("--json", help="Rohdaten in diese Datei schreiben")
     args = ap.parse_args()
-    base = copy.deepcopy(DEFAULTS) | {"examples": 0, "similar_docs": 0}
+    # Ohne Beispiel-Titel und ähnliche Dokumente: die erfundenen Belege haben keine abgelegten Vorgänger
+    base = copy.deepcopy(DEFAULTS)
     runs: dict[str, dict[str, Any]] = {}
     if args.jev:
         runs[f"Jev ({args.jev_model})"] = base | {"classifier": "typesafe", "typesafe_api_key": os.environ["TYPESAFE_API_KEY"], "model": args.jev_model}
