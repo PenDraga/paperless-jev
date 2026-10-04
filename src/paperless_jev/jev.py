@@ -28,6 +28,13 @@ class JevError(Exception):
 
 OLLAMA_MAX_QUESTIONS = 64
 OLLAMA_MAX_CHOICES = 26  # clef: 2-26 Kandidaten pro Auswahlfrage
+# Lokale Server, die viele Kandidaten ablehnen (z. B. clef über Ollama) - gemerkt pro URL.
+# Andere (z. B. Decision-1.0-Lux, bis 255) werden ohne Turnier gefragt: das Turnier kostet dort Treffer.
+_LIMITED: set[str] = set()
+
+
+class TooManyCandidates(JevError):
+    pass
 NONE_LABEL = "(none of these)"  # wie classifier.NONE
 ROUND_KEY = "{key}@{n}"
 
@@ -44,6 +51,8 @@ class JevClient:
         )
         self.max_questions = max_questions
         self.max_choices = max_choices
+        self.base_url = (base_url or BASE_URL).rstrip("/")
+        self.adaptive = False  # max_choices erst nach einer Ablehnung durch den Server
         self.keep_alive = keep_alive
         self.name = "Ollama" if base_url else "TypeSafe"
 
@@ -54,6 +63,19 @@ class JevClient:
         await self._http.aclose()
 
     async def ask(
+        self, state: Any, questions: dict[str, dict[str, Any]], model: str
+    ) -> dict[str, Any]:
+        if self.adaptive and self.base_url not in _LIMITED:
+            limit, self.max_choices = self.max_choices, None
+            try:
+                return await self._ask_tournament(state, questions, model)
+            except TooManyCandidates:
+                _LIMITED.add(self.base_url)
+            finally:
+                self.max_choices = limit
+        return await self._ask_tournament(state, questions, model)
+
+    async def _ask_tournament(
         self, state: Any, questions: dict[str, dict[str, Any]], model: str
     ) -> dict[str, Any]:
         big = {k: q for k, q in questions.items() if self._too_many(q)}
@@ -130,6 +152,8 @@ class JevClient:
             else:
                 if resp.status_code < 400:
                     return resp.json()
+                if resp.status_code == 400 and "candidates" in resp.text:
+                    raise TooManyCandidates(f"{self.name} HTTP 400: {resp.text[:500]}")
                 if resp.status_code not in RETRY_STATUS or attempt == MAX_ATTEMPTS:
                     raise JevError(f"{self.name} HTTP {resp.status_code}: {resp.text[:500]}")
                 retry_after = resp.headers.get("retry-after")
@@ -152,6 +176,7 @@ def classifier(cfg: dict[str, Any], timeout: float | None = None) -> tuple[JevCl
         # lokale Modelle sind langsamer, besonders beim ersten Laden
         client = JevClient(None, timeout=timeout or 600.0, base_url=cfg["classifier_url"],
                            max_questions=OLLAMA_MAX_QUESTIONS, keep_alive="30m", max_choices=OLLAMA_MAX_CHOICES)
+        client.adaptive = True
         return client, cfg["classifier_model"]
     return JevClient(cfg["typesafe_api_key"], timeout=timeout or 60.0), cfg["model"]
 

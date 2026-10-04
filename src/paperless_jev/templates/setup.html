@@ -7,10 +7,10 @@
   <form method="post" action="/setup/typesafe">
     <fieldset class="clf-choice">
       <label><input type="radio" name="classifier_kind" value="typesafe"{% if cfg.classifier != "ollama" %} checked{% endif %}> <strong>TypeSafe Jev</strong> – {{ _("Cloud, schnell, kostet wenig pro Dokument") }}</label>
-      <label><input type="radio" name="classifier_kind" value="ollama"{% if cfg.classifier == "ollama" %} checked{% endif %}> <strong>{{ _("Lokal über Ollama") }}</strong> – {{ _("z. B. clef von Cloudflare; Dokumente verlassen das Netz nicht, braucht eine starke GPU") }}</label>
+      <label><input type="radio" name="classifier_kind" value="ollama"{% if cfg.classifier == "ollama" %} checked{% endif %}> <strong>{{ _("Lokal über Ollama") }}</strong> – {{ _("Ollama oder ein anderer System-One-kompatibler Server, z. B. clef oder Decision-1.0-Lux; Dokumente verlassen das Netz nicht, braucht eine starke GPU") }}</label>
     </fieldset>
     <div class="clf-ollama">
-      <label>{{ _("Ollama-URL") }}<input name="classifier_url" value="{{ cfg.classifier_url }}" placeholder="http://192.168.0.16:11434"></label>
+      <label>{{ _("Server-URL") }}<input name="classifier_url" value="{{ cfg.classifier_url }}" placeholder="http://192.168.0.16:11434"></label>
       <label>{{ _("Modell") }}<input name="classifier_model" value="{{ cfg.classifier_model }}" placeholder="clef">
         <small>{{ _("Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.") }}</small></label>
     </div>

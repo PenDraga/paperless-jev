@@ -152,7 +152,8 @@ Instead of TypeSafe Jev, a local decision model that supports Ollama's `/v1/syst
 Set it up under *Setup → Classification → Local via Ollama* with URL and model. Documents then never leave your network.
 
 paperless-jev handles clef's limits automatically: at most 64 questions per request (split up) and 26 candidates per
-choice question (with more correspondents or types, a tournament: rate groups, final round with the best). Local
+choice question (with more correspondents or types, a tournament: rate groups, final round with the best) – only if
+the server rejects too many candidates; servers like Decision-1.0-Lux (up to 255) are asked directly. Local
 models get plain criteria without example titles and their own thresholds.
 
 | Comparison | Jev | clef |
@@ -160,6 +161,7 @@ models get plain criteria without example titles and their own thresholds.
 | 32 made-up documents (`bench/`): type / correspondent / date | 29 / 31 / 30 of 32 | 30 / 31 / 31 of 32 |
 | 43 real documents checked in review: type / correspondent / date | 43 / 43 / 33 | 38 / 38 / 32 |
 | New tags on real documents | usable | unreliable |
+| [Decision-1.0-Lux-9B](https://huggingface.co/vllm-sr/Decision-1.0-Lux-9B) on the same 43 | – | type 41–42, correspondent 37, date 32; better calibrated, more auto-set values; new tags unreliable too |
 | Time per document | under 1 s | 5–25 s (GPU) |
 
 On simple made-up documents clef is on par; on real documents with many tags Jev is clearly ahead.

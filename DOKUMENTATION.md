@@ -128,7 +128,8 @@ lassen sie sich zusätzlich als Hinweis an Jev mitgeben (Standard: aus, siehe *M
 `choice`/`noul`), aber mit Grenzen, die der Client ausgleicht:
 
 - höchstens **64 Fragen** pro Anfrage → Fragen werden aufgeteilt, Antworten zusammengeführt;
-- **2–26 Kandidaten** pro Auswahlfrage → Turnier: Optionen in Gruppen à 25 (+ „none of these“) bewerten, die
+- **2–26 Kandidaten** pro Auswahlfrage (clef) → paperless-jev fragt zuerst ohne Limit; lehnt der Server ab
+  („candidates“), wird für diese URL auf das Turnier umgestellt: Optionen in Gruppen à 25 (+ „none of these“) bewerten, die
   25 wahrscheinlichsten aller Gruppen kommen ins Finale, dessen Antwort zählt;
 - `keep_alive: 30m`, damit das Modell (clef ~18 GB VRAM) geladen bleibt.
 
@@ -165,6 +166,7 @@ mit ihr). Zwei identische Läufe unterscheiden sich um ±2 Treffer – kleinere 
 | Paperless-Zuweisungsregeln als Hinweis? | Korrespondent 52/59 mit und ohne, Tags gleich (innerhalb der Schwankung), aber +40 % Tokens. Deshalb standardmässig aus. |
 | clef statt Jev (32 erfundene Dokumente, `bench/`)? | Typ 30 vs. 29, Korrespondent 31 vs. 31, Datum 31 vs. 30 von 32; Tags ab 50 %: Präzision 94 vs. 88 %, Trefferquote 84 vs. 92 %. 5.2 s vs. 0.2 s pro Dokument. |
 | clef statt Jev (43 echte, im Review geprüfte Dokumente)? | Typ 38 vs. 43, Korrespondent 38 vs. 43, Datum 32 vs. 33; neue Tags 0 richtig / 34 falsch vs. 18 / 41. Jevs Werte waren Ausgangspunkt des Reviews – leichter Vorteil für Jev. |
+| Decision-1.0-Lux-9B (43 echte Dokumente, ohne Turnier)? | Typ 41/43 (mit Beispiel-Titeln 42), Korrespondent 37, Datum 32/38. Confidence richtig/falsch beim Typ 0.90/0.19 (clef 0.66/0.39) – mit den lokalen Schwellen automatisch gesetzt 31/30/30 ohne Fehler (clef 30/28/17). Neue Tags 0 richtig / 54–67 falsch. Beispiel-Titel schaden Lux nicht, helfen aber kaum. |
 | Gegenprüfung vorhandener Tags? | 70 gesetzte Tags an 60 Dokumenten: 64 bestätigt, 6 unsicher, 0 als sicher falsch – keine Fehlalarme, rund +20 % Tokens. Standardmässig an. |
 
 ## Dokument-Viewer

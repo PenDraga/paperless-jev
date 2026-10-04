@@ -127,7 +127,8 @@ Besides TypeSafe, `jev.py` also talks to Ollama's `/v1/systemone` – same forma
 `choice`/`noul`), but with limits the client works around:
 
 - at most **64 questions** per request → questions are split, answers merged;
-- **2–26 candidates** per choice question → tournament: rate options in groups of 25 (+ "none of these"), the 25 most
+- **2–26 candidates** per choice question (clef) → paperless-jev first asks without a limit; if the server rejects
+  it ("candidates"), it switches to the tournament for that URL: rate options in groups of 25 (+ "none of these"), the 25 most
   likely across all groups go to a final round whose answer counts;
 - `keep_alive: 30m` so the model (clef ~18 GB VRAM) stays loaded.
 
@@ -163,6 +164,7 @@ Two identical runs differ by ±2 hits – smaller differences are chance.
 | Paperless matching rules as a hint? | Correspondent 52/59 with and without, tags the same (within the variation), but +40 % tokens. Therefore off by default. |
 | clef instead of Jev (32 made-up documents, `bench/`)? | Type 30 vs. 29, correspondent 31 vs. 31, date 31 vs. 30 of 32; tags from 50 %: precision 94 vs. 88 %, recall 84 vs. 92 %. 5.2 s vs. 0.2 s per document. |
 | clef instead of Jev (43 real documents checked in review)? | Type 38 vs. 43, correspondent 38 vs. 43, date 32 vs. 33; new tags 0 right / 34 wrong vs. 18 / 41. Jev's values were the starting point of the review – a slight advantage for Jev. |
+| Decision-1.0-Lux-9B (43 real documents, no tournament)? | Type 41/43 (with example titles 42), correspondent 37, date 32/38. Confidence right/wrong for type 0.90/0.19 (clef 0.66/0.39) – with the local thresholds 31/30/30 auto-set without errors (clef 30/28/17). New tags 0 right / 54–67 wrong. Example titles don't hurt Lux, but hardly help. |
 | Double-check existing tags? | 70 tags on 60 documents: 64 confirmed, 6 uncertain, 0 confidently wrong – no false alarms, about +20 % tokens. On by default. |
 
 ## Document viewer

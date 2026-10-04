@@ -154,13 +154,15 @@ Dokumente verlassen dann das eigene Netz nicht.
 
 paperless-jev berücksichtigt die Grenzen von clef automatisch: höchstens 64 Fragen pro Anfrage (wird aufgeteilt)
 und 26 Kandidaten pro Auswahlfrage (bei mehr Korrespondenten oder Typen ein Turnier: Gruppen bewerten, Finale mit
-den besten). Lokale Modelle bekommen einfache Kriterien ohne Beispiel-Titel und eigene Schwellwerte.
+den besten) – das Turnier nur, wenn der Server zu viele Kandidaten ablehnt; Server wie Decision-1.0-Lux (bis 255)
+werden direkt gefragt. Lokale Modelle bekommen einfache Kriterien ohne Beispiel-Titel und eigene Schwellwerte.
 
 | Vergleich | Jev | clef |
 |---|---|---|
 | 32 erfundene Dokumente (`bench/`): Typ / Korrespondent / Datum | 29 / 31 / 30 von 32 | 30 / 31 / 31 von 32 |
 | 43 echte, im Review geprüfte Dokumente: Typ / Korrespondent / Datum | 43 / 43 / 33 | 38 / 38 / 32 |
 | Neue Tags bei echten Dokumenten | brauchbar | unzuverlässig |
+| [Decision-1.0-Lux-9B](https://huggingface.co/vllm-sr/Decision-1.0-Lux-9B) bei denselben 43 | – | Typ 41–42, Korrespondent 37, Datum 32; sauberer kalibriert, mehr automatisch gesetzt; neue Tags ebenfalls unzuverlässig |
 | Zeit pro Dokument | unter 1 s | 5–25 s (GPU) |
 
 Mit einfachen, erfundenen Belegen ist clef gleichauf; bei echten Dokumenten mit vielen Tags liegt Jev klar vorne.
