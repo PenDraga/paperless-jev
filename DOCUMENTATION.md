@@ -137,6 +137,11 @@ existing, correct tags, without them 17 of 25; confidence for the document type 
 0.7, date 0.8 (from there clef was never wrong in the measurement), tags 0.95. *Rules* always edits the thresholds of
 the active classifier.
 
+The questions stay in English for clef too: with German questions, confidence on the 43 real documents rose
+everywhere – for wrong answers as well (correspondent 36 instead of 38 right, 2 wrongly auto-set values instead
+of 0, 46 instead of 34 wrong tag suggestions). clef's confidence depends on the wording; don't set its thresholds
+too tight.
+
 ## Log
 
 By default the log shows only open entries (review, dry runs, errors, queued); filters by status, document type,

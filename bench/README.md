@@ -16,3 +16,10 @@ im Text (Fälligkeit, Lieferung, Periode), ein Kündigungsschreiben an statt von
 passenden Korrespondenten und mehr als 26 Korrespondenten (für Modelle mit Kandidaten-Limit).
 Gemessen werden Trefferquote, Confidence bei richtigen und falschen Antworten, wie viele Werte mit den
 Standard-Schwellen automatisch gesetzt würden (und wie viele davon falsch wären), Tags sowie Zeit pro Dokument.
+
+**Grenzen:** Der Benchmark vergleicht Trefferquoten, aber keine Kalibrierung. Pro Feld gibt es nur ein bis zwei
+falsche Antworten und bei 10 Tags kaum Raum für Fehlvorschläge – ob die Confidence auch bei Fehlern steigt, lässt
+sich damit nicht beantworten. Für Schwellwerte, Auto-Quoten und die Präzision von Tag-Vorschlägen braucht es echte,
+geprüfte Dokumente. Bei clef lagen Benchmark und echte Dokumente dreimal auseinander: Beispiel-Titel, Tag-Schwelle
+und Sprache der Fragen (deutsche Fragen hoben die Confidence auch falscher Antworten – mehr automatisch gesetzte
+Werte, aber auch Fehler). Details in der [Dokumentation](../DOKUMENTATION.md#lokale-modelle-ollama-clef).

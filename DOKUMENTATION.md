@@ -138,6 +138,11 @@ bestätigte clef 0 von 25 vorhandenen, korrekten Tags, ohne sie 17 von 25; die C
 Vorgabe Typ 0.6, Korrespondent 0.7, Datum 0.8 (ab da lag clef in der Messung nie falsch), Tags 0.95.
 Unter *Regeln* werden jeweils die Schwellen des aktiven Klassifizierers bearbeitet.
 
+Die Fragen bleiben auch für clef englisch: Mit deutschen Fragen stieg die Confidence an den 43 echten Dokumenten
+überall – auch bei falschen Antworten (Korrespondent 36 statt 38 richtig, 2 falsch automatisch gesetzte Werte
+statt 0, 46 statt 34 falsche Tag-Vorschläge). clefs Confidence hängt also an der Formulierung; die Schwellen nicht
+zu knapp setzen.
+
 ## Protokoll
 
 Standardmässig zeigt das Protokoll nur offene Einträge (Review, Probeläufe, Fehler, wartend); Filter nach Status,
