@@ -1,7 +1,10 @@
 // Belege scannen: Kamera, Randerkennung (OpenCV.js), Entzerren, Filter, mehrseitiges PDF, Upload nach Paperless.
 const CV_URL = "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js";
-const MAX_SIDE = 3000; // Originale so gross behalten (Speicher auf dem Handy)
-const OUT_SIDE = 2400; // entzerrte Seite
+const MAX_SIDE = 3000; // Originale so gross behalten (Canvas-Speicher in Safari ist begrenzt)
+// Entzerrte Seite nach Fläche begrenzen, nicht nach der langen Seite: sonst bleiben bei
+// langen Kassenzetteln nur ~750 px Breite und die Schrift wird für die Texterkennung zu klein.
+const OUT_PIXELS = 6e6; // ein langer Kassenzettel braucht ~3 MP, eine A4-Seite bleibt knapp in voller Auflösung
+const PDF_DPI = 300; // Seitengrösse im PDF so, dass Paperless die echte Auflösung sieht
 const data = JSON.parse(document.getElementById("sc-data").textContent);
 const T = data.t;
 const $ = (id) => document.getElementById(id);
@@ -98,7 +101,7 @@ function processPage(page) {
   const [tl, tr, br, bl] = page.quad;
   let W = Math.max(dist(tl, tr), dist(bl, br));
   let H = Math.max(dist(tl, bl), dist(tr, br));
-  const k = Math.min(1, OUT_SIDE / Math.max(W, H));
+  const k = Math.min(1, Math.sqrt(OUT_PIXELS / (W * H)));
   W = Math.round(W * k); H = Math.round(H * k);
   if (!cv) {
     // ohne OpenCV: nur zuschneiden auf das umschliessende Rechteck
@@ -465,11 +468,12 @@ function buildPdf() {
   const { jsPDF } = window.jspdf;
   let doc = null;
   for (const p of pages) {
-    const w = 595; // A4-Breite in Punkt, Höhe nach Seitenverhältnis
+    // Punkt = Pixel bei 300 dpi (höchstens A4-Breite), Höhe nach Seitenverhältnis
+    const w = Math.min(595, Math.round((p.out.width * 72) / PDF_DPI));
     const h = Math.round((p.out.height / p.out.width) * w);
     if (!doc) doc = new jsPDF({ unit: "pt", format: [w, h], orientation: h >= w ? "p" : "l", compress: true });
     else doc.addPage([w, h], h >= w ? "p" : "l");
-    doc.addImage(p.out.toDataURL("image/jpeg", 0.82), "JPEG", 0, 0, w, h, undefined, "FAST");
+    doc.addImage(p.out.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, w, h, undefined, "FAST");
   }
   return doc.output("blob");
 }
