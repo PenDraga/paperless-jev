@@ -200,6 +200,7 @@ function processPage(page) {
     const M = keep(cv.getPerspectiveTransform(from, to));
     let dst = keep(new cv.Mat());
     cv.warpPerspective(src, dst, M, new cv.Size(W, H), cv.INTER_LINEAR, cv.BORDER_REPLICATE);
+    const color = dst;
     if (page.filter !== "color") {
       const gray = keep(new cv.Mat());
       cv.cvtColor(dst, gray, cv.COLOR_RGBA2GRAY);
@@ -215,7 +216,7 @@ function processPage(page) {
         cv.bitwise_not(diff, diff);
         cv.normalize(diff, diff, 0, 255, cv.NORM_MINMAX);
         diff.convertTo(diff, -1, 1.25, -40);
-        dst = diff;
+        dst = keepColors(cv, color, bg, diff, keep);
       }
     }
     const codes = { 90: cv.ROTATE_90_CLOCKWISE, 180: cv.ROTATE_180, 270: cv.ROTATE_90_COUNTERCLOCKWISE };
@@ -229,6 +230,33 @@ function processPage(page) {
   } finally {
     mats.forEach((m) => m.delete());
   }
+}
+
+// Filter "Scan": kräftige Farben (Logos, Stempel, farbige Schrift) bleiben farbig, alles andere wird
+// zum kontrastreichen Graubild. Blasse Sicherheitsmuster sind wenig gesättigt und verschwinden trotzdem.
+function keepColors(cv, rgba, bg, scanGray, keep) {
+  const rgb = keep(new cv.Mat());
+  cv.cvtColor(rgba, rgb, cv.COLOR_RGBA2RGB);
+  const bg3 = keep(new cv.Mat());
+  cv.cvtColor(bg, bg3, cv.COLOR_GRAY2RGB);
+  const flat = keep(new cv.Mat());
+  cv.divide(rgb, bg3, flat, 255); // Lichtausgleich pro Farbkanal
+  const hsv = keep(new cv.Mat());
+  cv.cvtColor(flat, hsv, cv.COLOR_RGB2HSV);
+  const ch = keep(new cv.MatVector());
+  cv.split(hsv, ch);
+  const mask = keep(new cv.Mat());
+  cv.threshold(keep(ch.get(1)), mask, 90, 255, cv.THRESH_BINARY);
+  cv.morphologyEx(mask, mask, cv.MORPH_OPEN, keep(cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))));
+  cv.dilate(mask, mask, keep(cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))));
+  // Rand ausnehmen: dort bleibt oft ein Streifen Tisch stehen
+  const m = Math.round(Math.min(mask.cols, mask.rows) * 0.015);
+  cv.rectangle(mask, new cv.Point(0, 0), new cv.Point(mask.cols - 1, mask.rows - 1), new cv.Scalar(0), 2 * m);
+  if (cv.countNonZero(mask) === 0) return scanGray; // nichts Farbiges: Graubild (kleinere Datei)
+  const out = keep(new cv.Mat());
+  cv.cvtColor(scanGray, out, cv.COLOR_GRAY2RGB);
+  flat.copyTo(out, mask);
+  return out;
 }
 
 function toCanvas(source, w, h) {
