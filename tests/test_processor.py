@@ -29,6 +29,9 @@ class FakePaperless:
         return None
 
     async def document(self, doc_id):
+        if doc_id not in self.docs:
+            from paperless_jev.paperless import DocumentMissing
+            raise DocumentMissing(f"Paperless GET /api/documents/{doc_id}/: HTTP 404")
         return copy.deepcopy(self.docs[doc_id])
 
     async def metadata(self):
@@ -786,3 +789,19 @@ def test_local_model_has_own_thresholds_and_plain_criteria(client):
     cfg.update({"classifier": "typesafe"})
     assert cfg.all()["fields"]["document_type"]["auto"] == 0.85
     assert job_config({"source": "poll"}, cfg.all())["examples"] == 5
+
+
+def test_document_deleted_elsewhere_marks_all_entries(client):
+    # wie bei Carla: Dokument über einen neueren Eintrag gelöscht, älterer "erledigt" bot noch Übernehmen an
+    FakePaperless.deleted.clear()
+    db = client.app.state.db
+    older = db.create_job(1, 42, "scan"); db.update_job(older, status="done", result={"fields": {}, "tags": [], "current": {}})
+    newer = db.create_job(1, 42, "manual"); db.update_job(newer, status="review", result={"fields": {}, "tags": [], "current": {}})
+    client.post(f"/jobs/{newer}/delete-document", data={"back": "/log"})
+    assert db.job(older)["status"] == "deleted" and db.job(newer)["status"] == "deleted"
+    page = client.get(f"/jobs/{older}").text
+    assert "nur noch Protokoll" in page and "Vorschlag bearbeiten" not in page
+    # Dokument fehlt (z. B. direkt in Paperless gelöscht): Übernehmen meldet es verständlich
+    other = db.create_job(1, 999, "scan"); db.update_job(other, status="review", result={"fields": {}, "tags": [], "current": {}})
+    r = client.post(f"/jobs/{other}/apply", data={"action": "apply"}, follow_redirects=False)
+    assert "nicht+mehr" in r.headers["location"] and db.job(other)["status"] == "deleted"

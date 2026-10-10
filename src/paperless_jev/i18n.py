@@ -534,4 +534,7 @@ EN: dict[str, str] = {
     "Ollama-URL oder Modell fehlt": "Ollama URL or model missing",
     "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.":
         "Thresholds for the local model «{model}» – local models report lower confidence values than Jev and therefore have their own thresholds. Jev's are kept. Example titles and similar documents are not sent to local models.",
+    "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)": "The document no longer exists in Paperless (deleted or in the trash)",
+    "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.":
+        "The document was deleted in Paperless (trash). This entry is only a record now – in Paperless it can be restored from the trash.",
 }

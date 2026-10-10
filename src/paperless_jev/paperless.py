@@ -17,6 +17,10 @@ class PaperlessError(Exception):
     pass
 
 
+class DocumentMissing(PaperlessError):
+    """Dokument gibt es in Paperless nicht (mehr) - gelöscht oder im Papierkorb."""
+
+
 # Paperless matching_algorithm: 1 beliebiges Wort, 2 alle Wörter, 3 exakt, 4 Regex, 5 ungefähr
 # (0 = keine, 6 = automatisch/gelernt - dort gibt es keinen Suchbegriff)
 RULE_ALGORITHMS = (1, 2, 3, 4, 5)
@@ -143,6 +147,8 @@ class PaperlessClient:
             resp = await self._http.request(method, path, **kwargs)
         except httpx.HTTPError as e:
             raise PaperlessError(f"Paperless nicht erreichbar: {e}") from e
+        if resp.status_code == 404 and re.match(r"/api/documents/\d+/", path):
+            raise DocumentMissing(f"Paperless {method} {path}: HTTP 404")
         if resp.status_code >= 400:
             raise PaperlessError(
                 f"Paperless {method} {path}: HTTP {resp.status_code} {resp.text[:300]}"
