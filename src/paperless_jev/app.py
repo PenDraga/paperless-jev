@@ -28,8 +28,8 @@ from .db import Database
 from . import i18n
 from .i18n import gettext as _
 from .jev import USD_PER_MTOK, JevError, classifier, classifier_missing
-from .paperless import TAG_SEP, Metadata, PaperlessClient, PaperlessError
-from .processor import TAG_TEST, TEST, Processor
+from .paperless import TAG_SEP, DocumentMissing, Metadata, PaperlessClient, PaperlessError
+from .processor import DOC_MISSING, TAG_TEST, TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
 from .titles import describe_category
 from .vault import Vault
@@ -758,6 +758,10 @@ async def apply_job(request: Request, job_id: int):
         choice["title"] = title[:128]
     try:
         await _proc(request).apply_review(job_id, choice)
+    except DocumentMissing:
+        job = request.app.state.db.job(job_id)
+        _proc(request).mark_deleted(job["instance_id"], job["doc_id"])
+        return _redirect(f"/jobs/{job_id}", err=_(DOC_MISSING))
     except PaperlessError as e:
         return _redirect(f"/jobs/{job_id}", err=str(e))
     return _redirect(_local_path(str(form.get("back") or ""), "/review"), msg=_("Übernommen"))

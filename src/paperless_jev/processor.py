@@ -11,7 +11,7 @@ from .classifier import build_request, excluded_tags, interpret, plan, render_ti
 from .config import SINGLE_FIELDS, Config, Instance
 from .db import Database
 from .jev import JevError, classifier, classifier_missing
-from .paperless import Metadata, PaperlessClient, PaperlessError, collect_examples
+from .paperless import DocumentMissing, Metadata, PaperlessClient, PaperlessError, collect_examples
 from .llm import LLM, LLMError
 from .titles import generate_title
 
@@ -19,6 +19,7 @@ log = logging.getLogger("paperless_jev")
 
 ACTIVE = ("queued", "running")
 TEST = "test"  # Quelle für Einzeltests: schreibt nie, zählt nicht fürs Polling
+DOC_MISSING = "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)"
 # Neuprüfung aller Dokumente mit einem Tag: "tag" bzw. "tag-test" (Probelauf), "+title" = Titel neu erzeugen
 TAG_RUN, TAG_TEST, WITH_TITLE = "tag", "tag-test", "+title"
 
@@ -286,6 +287,9 @@ class Processor:
                     applied = await self.apply(inst, pl, meta, doc, updates, cfg, finished=True)
                     self.db.update_job(job_id, status="done", applied=applied)
                     self._supersede(job)
+        except DocumentMissing:
+            self.db.update_job(job_id, status="deleted", error=DOC_MISSING)
+            self.mark_deleted(job["instance_id"], job["doc_id"])
         except (PaperlessError, JevError) as e:
             self.db.update_job(job_id, status="error", error=str(e))
 
@@ -437,11 +441,19 @@ class Processor:
         if not job or not inst:
             raise PaperlessError("Job oder Instanz nicht gefunden")
         async with self.client(inst) as pl:
-            await pl.delete_document(job["doc_id"])
+            try:
+                await pl.delete_document(job["doc_id"])
+            except DocumentMissing:
+                pass  # schon weg - Ziel erreicht
+        self.mark_deleted(job["instance_id"], job["doc_id"])
+
+    def mark_deleted(self, instance_id: int, doc_id: int) -> None:
+        """Alle Einträge eines gelöschten Dokuments als gelöscht markieren (auch erledigte):
+        sonst bietet ein alter Eintrag noch Übernehmen/Löschen an und scheitert."""
         self.db.execute(
             "UPDATE jobs SET status = 'deleted' WHERE instance_id = ? AND doc_id = ?"
-            " AND (id = ? OR status IN ('review', 'dry_run', 'error'))",
-            (job["instance_id"], job["doc_id"], job_id),
+            " AND status NOT IN ('queued', 'running')",
+            (instance_id, doc_id),
         )
 
     async def dismiss(self, job_id: int) -> None:
