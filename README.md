@@ -1,99 +1,99 @@
 # paperless-jev
 
-**Deutsch** · [English](README.en.md)
+**English** · [Deutsch](README.de.md)
 
-Klassifiziert neue Dokumente im [Paperless-ngx](https://docs.paperless-ngx.com/)-Posteingang mit
-[TypeSafe Jev](https://docs.typesafe.ai/introduction): Dokumenttyp, Korrespondent, Speicherpfad,
-Ausstellungsdatum und Tags – oder lokal mit [clef](https://ollama.com/library/clef) über Ollama. Läuft als Docker-Container und wird komplett über eine Web-UI eingerichtet.
+Classifies new documents in the [Paperless-ngx](https://docs.paperless-ngx.com/) inbox with
+[TypeSafe Jev](https://docs.typesafe.ai/introduction): document type, correspondent, storage path,
+issue date and tags – or locally with [clef](https://ollama.com/library/clef) via Ollama. Runs as a Docker container and is configured entirely through a web UI.
 
-![Übersicht](docs/screenshots/uebersicht.png)
+![Overview](docs/screenshots/uebersicht-en.png)
 
-| Review (Desktop) | Dark Mode |
+| Review (desktop) | Dark mode |
 |---|---|
-| ![Review](docs/screenshots/review.png) | ![Dark Mode](docs/screenshots/uebersicht-dark.png) |
+| ![Review](docs/screenshots/review-en.png) | ![Dark mode](docs/screenshots/uebersicht-dark-en.png) |
 
-| Tags als Baum mit Umbau-Hilfe | Lösch-Assistent (Handy) |
+| Tags as a tree with restructuring helper | Delete assistant (phone) |
 |---|---|
-| ![Tags](docs/screenshots/tags-baum.png) | ![Löschen](docs/screenshots/loeschen-handy.png) |
+| ![Tags](docs/screenshots/tags-baum-en.png) | ![Delete](docs/screenshots/loeschen-handy-en.png) |
 
-| Review (Handy) | Scannen (Handy) | Protokoll (Handy) | Beschreibungen (Handy) |
+| Review (phone) | Scan (phone) | Log (phone) | Descriptions (phone) |
 |---|---|---|---|
-| ![Review Handy](docs/screenshots/review-handy.png) | ![Scannen](docs/screenshots/scan-1-kamera.png) | ![Protokoll](docs/screenshots/protokoll-handy.png) | ![Beschreibungen](docs/screenshots/beschreibungen-handy.png) |
+| ![Review phone](docs/screenshots/review-handy-en.png) | ![Scan](docs/screenshots/scan-1-kamera-en.png) | ![Log](docs/screenshots/protokoll-handy-en.png) | ![Descriptions](docs/screenshots/beschreibungen-handy-en.png) |
 
-<sub>Screenshots mit erfundenen Demodaten, siehe [`demo/`](demo/).</sub>
+<sub>Screenshots with made-up demo data, see [`demo/`](demo/).</sub>
 
-## Funktionen
+## Features
 
-- **Klassifizierung mit Confidence** – Jev wählt aus deinen vorhandenen Paperless-Stammdaten und liefert
-  zu jeder Antwort eine kalibrierte Sicherheit. Sichere Werte werden gesetzt, unsichere landen im Review.
-- **Drei Modi** – *Probelauf* (nur protokollieren), *Nur Vorschläge* (alles ins Review) und
-  *Automatisch* (sichere Werte setzen, Rest ins Review).
-- **Review** Dokument für Dokument: PDF direkt im Review mit markierten Jev-Werten, Korrektur per Antippen,
-  fürs Handy gemacht. Alle erneut prüfen nach Änderungen an der Konfiguration, Dokument löschen (Papierkorb).
-- **Gegenprüfung** – Jev prüft auch schon gesetzte Tags und Werte. Widersprüche kommen ins Review oder werden
-  ab einer einstellbaren Sicherheit direkt korrigiert.
-  Unter Beschreibungen deaktivierte Tags werden auf Dokumenten zum Entfernen vorgeschlagen («ausmisten»).
-- **Einzeltest** – ein Dokument per ID oder Paperless-Link prüfen, ohne etwas zu schreiben.
-- **Neu prüfen per Tag** – alle Dokumente mit einem Tag erneut durch Jev, auch bereits abgelegte; standardmässig
-  als Probelauf, bestehende Titel bleiben.
-- **Lokal statt Cloud** – optional ein lokales Entscheidungsmodell über Ollama statt Jev, z. B.
-  [clef](https://ollama.com/library/clef) von Cloudflare (siehe unten).
-- **Auswertung** auf der Übersicht: Trefferquote je Feld im Vergleich zur heutigen Ablage.
-- **Beschreibungen aus Stichworten** – ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel,
-  z. B. Qwen) formuliert deine Stichworte in der Sprache der Oberfläche aus.
-- **Belege scannen** mit dem Handy: Rand wird automatisch erkannt und entzerrt, mehrere Seiten zu einem PDF,
-  direkt nach Paperless (siehe unten).
-- **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten, geprüft und bei Bedarf gekürzt)
-  oder per Vorlage – entsteht schon bei der Analyse und ist im Review vorausgefüllt.
-- **Stammdaten pflegen** ohne Paperless zu öffnen: Dokumenttypen, Korrespondenten und Tags anlegen (auch direkt im
-  Review), Tag-Farben, Löschen mit Assistent – Dokumente auf einen anderen Eintrag übertragen oder nur entfernen.
-- **Ablage-Konventionen** – Titel bereits abgelegter Dokumente gehen als Beispiele an Jev.
-- **Ober-/Untertags** aus Paperless als Baum: Untertags mit Pfad («Haus › Unterhalt»), Jev bekommt den Obertag als
-  Kontext, der Obertag wird automatisch mitgesetzt. Umbau-Hilfe hängt Tags wie «Haus (Unterhalt)» auf Wunsch unter «Haus».
-- **Protokoll** mit Filtern nach Dokumenttyp, Korrespondent und Tag, standardmässig nur Offenes, bereinigen.
-- **Webhook und Polling**, mehrere Paperless-Instanzen, Paperless-ngx 2.x und 3.x.
-- **Oberfläche** auf Deutsch und Englisch, fürs Handy optimiert, Dark Mode automatisch.
+- **Classification with confidence** – Jev chooses from your existing Paperless metadata and returns a
+  calibrated confidence for every answer. Confident values are applied, uncertain ones go to review.
+- **Three modes** – *dry run* (log only), *suggestions only* (everything to review) and
+  *automatic* (apply confident values, the rest to review).
+- **Review** one document at a time: the PDF right in the review with Jev's values highlighted, corrections with
+  a tap, built for phones. Re-check all after configuration changes, delete documents (trash).
+- **Double-check** – Jev also checks tags and values that are already set. Contradictions go to review or are
+  corrected directly above a configurable confidence.
+  Tags deactivated under Descriptions are suggested for removal from documents ("clean-up").
+- **Single test** – check one document by ID or Paperless link without writing anything.
+- **Re-check by tag** – run every document with a given tag through Jev again, including documents already filed;
+  a dry run by default, existing titles are kept.
+- **Local instead of cloud** – optionally a local decision model via Ollama instead of Jev, e.g.
+  [clef](https://ollama.com/library/clef) by Cloudflare (see below).
+- **Evaluation** on the overview: hit rate per field compared with your current filing.
+- **Descriptions from keywords** – a local language model (Ollama or OpenAI-compatible, e.g. Qwen)
+  turns your keywords into a full description in the interface language.
+- **Scan documents** with your phone: edges detected and straightened automatically, several pages into one PDF,
+  straight to Paperless (see below).
+- **Titles** optionally by language model (in the style of documents already filed, checked and shortened if
+  needed) or by template – created during analysis and pre-filled in review.
+- **Manage metadata** without opening Paperless: create document types, correspondents and tags (also right in
+  review), tag colours, delete with an assistant – move documents to another entry or just remove it.
+- **Filing conventions** – titles of documents already filed are sent to Jev as examples.
+- **Parent/child tags** from Paperless as a tree: child tags with their path ("House › Maintenance"), Jev gets the
+  parent as context, the parent is set along automatically. A restructuring helper can move tags like "House (Maintenance)" under "House".
+- **Log** with filters by document type, correspondent and tag, open entries by default, cleanup.
+- **Webhook and polling**, multiple Paperless instances, Paperless-ngx 2.x and 3.x.
+- **Interface** in English and German (follows the browser language, otherwise English), optimised for phones, automatic dark mode.
 
-## Belege mit dem Handy scannen
+## Scan documents with your phone
 
-Paperless hat keinen eigenen Handy-Scanner – paperless-jev bringt einen mit. Unter **Scannen** fotografierst du
-Belege direkt im Browser, auch mehrseitige:
+Paperless has no phone scanner of its own – paperless-jev brings one. Under **Scan** you photograph documents
+right in the browser, multi-page ones included:
 
-| ① Fotografieren | ② Rand prüfen | ③ Seiten &amp; hochladen | ④ Status |
+| ① Photograph | ② Check edges | ③ Pages &amp; upload | ④ Status |
 |---|---|---|---|
-| ![Fotografieren](docs/screenshots/scan-1-kamera.png) | ![Rand prüfen](docs/screenshots/scan-2-rand.png) | ![Seiten](docs/screenshots/scan-3-seiten.png) | ![Status](docs/screenshots/scan-4-status.png) |
+| ![Photograph](docs/screenshots/scan-1-kamera-en.png) | ![Check edges](docs/screenshots/scan-2-rand-en.png) | ![Pages](docs/screenshots/scan-3-seiten-en.png) | ![Status](docs/screenshots/scan-4-status-en.png) |
 
-1. **Fotografieren** – der Beleg wird live erkannt (grüner Rahmen), Seite für Seite aufnehmen.
-2. **Rand prüfen** – die Seite wird perspektivisch gerade gerückt; Ecken bei Bedarf verschieben, drehen,
-   Filter *Original*, *Graustufen* oder *Scan* (Schatten ausgeglichen, kontrastreich für die Texterkennung).
-3. **Hochladen** – Seiten sortieren, Instanz, optional Titel und Tags; alle Seiten gehen als **ein PDF** an Paperless.
-   Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich ebenfalls hochladen.
-4. **Status** – Texterkennung in Paperless, danach klassifiziert paperless-jev sofort; das Ergebnis erscheint direkt.
+1. **Photograph** – the document is detected live (green frame); take one page after another.
+2. **Check edges** – the page is straightened in perspective; move the corners if needed, rotate, choose the
+   filter *Original*, *Greyscale* or *Scan* (shadows evened out, high contrast for text recognition).
+3. **Upload** – reorder pages, pick the instance, optionally title and tags; all pages go to Paperless as **one PDF**.
+   Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded too.
+4. **Status** – text recognition in Paperless, then paperless-jev classifies right away; the result appears directly.
 
-Voraussetzungen: Die Seite läuft über **HTTPS** (Kamera im Browser), und ein `Permissions-Policy`-Header des
-Reverse Proxys sperrt die Kamera nicht (`camera=(self)`). Die Randerkennung (OpenCV.js, ~10 MB) wird beim ersten
-Kamerastart geladen und danach aus dem Cache verwendet.
+Requirements: the page is served over **HTTPS** (camera in the browser), and a `Permissions-Policy` header from the
+reverse proxy does not block the camera (`camera=(self)`). Edge detection (OpenCV.js, ~10 MB) is loaded on the first
+camera start and cached afterwards.
 
-## So funktioniert es
+## How it works
 
 ```
-Paperless-ngx ──Webhook "Dokument hinzugefügt"──▶ paperless-jev ──▶ TypeSafe Jev
-      ▲                  (oder Polling)               │
-      └──────────── REST: Dokument lesen, Werte setzen ┘
+Paperless-ngx ──webhook "document added"──▶ paperless-jev ──▶ TypeSafe Jev
+      ▲              (or polling)               │
+      └──────── REST: read document, set values ┘
 ```
 
-Jev erzeugt keinen Text, es **wählt aus**: aus deinen Stammdaten bzw. aus Datumsangaben, die der Code
-vorher im OCR-Text gefunden hat. Pro Dokument geht **eine** Anfrage mit allen Fragen an Jev.
+Jev does not generate text, it **chooses**: from your metadata, or from dates that the code found in the
+OCR text beforehand. Each document is sent to Jev as **one** request containing all questions.
 
-| Confidence | Aktion (Modus *Automatisch*) |
+| Confidence | Action (*automatic* mode) |
 |---|---|
-| ≥ Auto-Schwelle | Wert wird direkt in Paperless gesetzt |
-| ≥ Review-Schwelle | Vorschlag in der Review-Queue (Tag `ai-review`) |
-| darunter | ignoriert |
+| ≥ auto threshold | value is set in Paperless directly |
+| ≥ review threshold | suggestion in the review queue (tag `ai-review`) |
+| below | ignored |
 
-## Schnellstart
+## Quick start
 
-Fertiges Image (amd64 und arm64):
+Ready-made image (amd64 and arm64):
 
 ```bash
 docker run -d --name paperless-jev -p 8090:8000 -v paperless-jev-data:/data \
@@ -101,7 +101,7 @@ docker run -d --name paperless-jev -p 8090:8000 -v paperless-jev-data:/data \
 # → http://localhost:8090
 ```
 
-Oder selbst bauen:
+Or build it yourself:
 
 ```bash
 git clone https://github.com/PenDraga/paperless-jev.git
@@ -110,91 +110,90 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-1. **Setup** – TypeSafe-API-Key eintragen, Paperless-Instanz mit URL und API-Token anlegen, „Verbindung testen“.
-2. **Regeln** – im Modus *Probelauf* starten, Felder und Schwellwerte wählen, optional ein Sprachmodell einrichten.
-3. **Beschreibungen** – für Dokumenttypen und Tags ein paar Stichworte hinterlegen, vor allem zur Abgrenzung
-   ähnlicher Kategorien („… – nicht: …“).
-4. **Übersicht → Posteingang jetzt verarbeiten** und im Protokoll prüfen, wie gut die Vorschläge sind.
-5. Danach Modus *Automatisch* aktivieren und in Paperless den Webhook anlegen (siehe unten).
+1. **Setup** – enter your TypeSafe API key, add a Paperless instance with URL and API token, "Test connection".
+2. **Rules** – start in *dry run* mode, choose fields and thresholds, optionally set up a language model.
+3. **Descriptions** – add a few keywords for document types and tags, especially to separate similar
+   categories ("… – not: …").
+4. **Overview → Process inbox now** and check the log to see how good the suggestions are.
+5. Then switch to *automatic* mode and create the webhook in Paperless (see below).
 
-### Umgebungsvariablen
+### Environment variables
 
-Alles Fachliche wird in der Web-UI eingestellt. Per Umgebung gibt es nur:
+Everything else is configured in the web UI. The environment only covers:
 
-| Variable | Standard | Zweck |
+| Variable | Default | Purpose |
 |---|---|---|
-| `PJ_SECRET_KEY` | – | Schlüssel für die Verschlüsselung der gespeicherten Tokens. Ohne Angabe wird `/data/secret.key` erzeugt. |
-| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optionaler Basic-Auth-Schutz der Web-UI (`/hook/*` und `/health` bleiben offen). |
-| `PJ_LOG_LEVEL` | `INFO` | Log-Level |
-| `PJ_DATA_DIR` | `/data` | Datenverzeichnis (SQLite, Schlüssel) |
-| `TZ` | `Europe/Zurich` | Zeitzone für die Anzeige |
+| `PJ_SECRET_KEY` | – | Key for encrypting stored tokens. If unset, `/data/secret.key` is created. |
+| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optional basic auth for the web UI (`/hook/*` and `/health` stay open). |
+| `PJ_LOG_LEVEL` | `INFO` | Log level |
+| `PJ_DATA_DIR` | `/data` | Data directory (SQLite, key) |
+| `TZ` | `Europe/Zurich` | Time zone for display |
 
-**`/data` sichern** – `paperless-jev.db` und `secret.key` gehören zusammen, sonst sind die gespeicherten Tokens nicht mehr lesbar.
+**Back up `/data`** – `paperless-jev.db` and `secret.key` belong together, otherwise the stored tokens can no longer be read.
 
-### Betrieb hinter Traefik
+### Running behind Traefik
 
-Beispiel: [`deploy/compose.yaml`](deploy/compose.yaml) – im selben Netz wie Paperless, Web-UI nur aus dem
-internen Netz (IP-Allowlist). Wichtig: Eine Header-Middleware mit `frameDeny: true`
-(`X-Frame-Options: DENY`) blockiert den Dokument-Viewer. paperless-jev setzt selbst
-`X-Frame-Options: SAMEORIGIN`, eine Middleware ohne `frameDeny` genügt also. Fürs Scannen darf ein `Permissions-Policy`-Header die Kamera nicht sperren (`camera=(self)` statt `camera=()`), und die Seite muss über HTTPS laufen.
+Example: [`deploy/compose.yaml`](deploy/compose.yaml) – in the same network as Paperless, web UI reachable
+from the internal network only (IP allowlist). Note: a headers middleware with `frameDeny: true`
+(`X-Frame-Options: DENY`) blocks the document viewer. paperless-jev sends
+`X-Frame-Options: SAMEORIGIN` itself, so a middleware without `frameDeny` is enough. For scanning, a `Permissions-Policy` header must not block the camera (`camera=(self)` instead of `camera=()`), and the page must be served over HTTPS.
 
 ### Webhook in Paperless
 
-Paperless (≥ 2.14) → *Workflows* → neuer Workflow:
+Paperless (≥ 2.14) → *Workflows* → new workflow:
 
-- Auslöser *Dokument hinzugefügt*
-- Aktion *Webhook*: `http://paperless-jev:8000/hook/<instanzname>?token=<secret>` (Secret auf der Setup-Seite),
-  *Webhook-Parameter verwenden* aktiv, Parameter `doc_id` = `{{ doc_id }}`
+- Trigger *Document added*
+- Action *Webhook*: `http://paperless-jev:8000/hook/<instance name>?token=<secret>` (secret on the setup page),
+  *Use webhook parameters* enabled, parameter `doc_id` = `{{ doc_id }}`
 
-Polling (Standard alle 5 Minuten) bleibt als Fallback aktiv und verarbeitet nur Dokumente im Posteingang,
-die noch nie bewertet wurden.
+Polling (every 5 minutes by default) stays active as a fallback and only processes inbox documents that
+have never been evaluated.
 
-## Lokale Klassifizierung mit Ollama (clef)
+## Local classification with Ollama (clef)
 
-Statt TypeSafe Jev kann ein lokales Entscheidungsmodell klassifizieren, das den Endpunkt `/v1/systemone` von
-Ollama unterstützt (Fähigkeit «decision»), z. B. [clef](https://ollama.com/library/clef) von Cloudflare (27B,
-Apache 2.0, ~18 GB). Einrichten unter *Setup → Klassifizierung → Lokal über Ollama* mit URL und Modell.
-Dokumente verlassen dann das eigene Netz nicht.
+Instead of TypeSafe Jev, a local decision model that supports Ollama's `/v1/systemone` endpoint (capability
+"decision") can classify, e.g. [clef](https://ollama.com/library/clef) by Cloudflare (27B, Apache 2.0, ~18 GB).
+Set it up under *Setup → Classification → Local via Ollama* with URL and model. Documents then never leave your network.
 
-paperless-jev berücksichtigt die Grenzen von clef automatisch: höchstens 64 Fragen pro Anfrage (wird aufgeteilt)
-und 26 Kandidaten pro Auswahlfrage (bei mehr Korrespondenten oder Typen ein Turnier: Gruppen bewerten, Finale mit
-den besten) – das Turnier nur, wenn der Server zu viele Kandidaten ablehnt; Server wie Decision-1.0-Lux (bis 255)
-werden direkt gefragt. Lokale Modelle bekommen einfache Kriterien ohne Beispiel-Titel und eigene Schwellwerte.
+paperless-jev handles clef's limits automatically: at most 64 questions per request (split up) and 26 candidates per
+choice question (with more correspondents or types, a tournament: rate groups, final round with the best) – only if
+the server rejects too many candidates; servers like Decision-1.0-Lux (up to 255) are asked directly. Local
+models get plain criteria without example titles and their own thresholds.
 
-| Vergleich | Jev | clef |
+| Comparison | Jev | clef |
 |---|---|---|
-| 32 erfundene Dokumente (`bench/`): Typ / Korrespondent / Datum | 29 / 31 / 30 von 32 | 30 / 31 / 31 von 32 |
-| 43 echte, im Review geprüfte Dokumente: Typ / Korrespondent / Datum | 43 / 43 / 33 | 38 / 38 / 32 |
-| Neue Tags bei echten Dokumenten | brauchbar | unzuverlässig |
-| [Decision-1.0-Lux-9B](https://huggingface.co/vllm-sr/Decision-1.0-Lux-9B) bei denselben 43 | – | Typ 41–42, Korrespondent 37, Datum 32; sauberer kalibriert, mehr automatisch gesetzt; neue Tags ebenfalls unzuverlässig |
-| Zeit pro Dokument | unter 1 s | 5–25 s (GPU) |
+| 32 made-up documents (`bench/`): type / correspondent / date | 29 / 31 / 30 of 32 | 30 / 31 / 31 of 32 |
+| 43 real documents checked in review: type / correspondent / date | 43 / 43 / 33 | 38 / 38 / 32 |
+| New tags on real documents | usable | unreliable |
+| [Decision-1.0-Lux-9B](https://huggingface.co/vllm-sr/Decision-1.0-Lux-9B) on the same 43 | – | type 41–42, correspondent 37, date 32; better calibrated, more auto-set values; new tags unreliable too |
+| Time per document | under 1 s | 5–25 s (GPU) |
 
-Mit einfachen, erfundenen Belegen ist clef gleichauf; bei echten Dokumenten mit vielen Tags liegt Jev klar vorne.
-Eigene Messung: `python -m bench.run --jev --ollama http://<host>:11434` (siehe [`bench/`](bench/)).
+On simple made-up documents clef is on par; on real documents with many tags Jev is clearly ahead.
+Run your own: `python -m bench.run --jev --ollama http://<host>:11434` (see [`bench/`](bench/)).
 
-## Datenschutz und Kosten
+## Privacy and cost
 
-- Der gekürzte OCR-Text und die Namen deiner Stammdaten gehen an `api.typesafe.ai`. TypeSafe trainiert laut
-  Doku nicht auf Kundendaten. Dokumente mit dem Tag `ai-ignorieren` werden nie gesendet.
-- Mit einem lokalen Modell über Ollama (z. B. clef) bleibt alles im eigenen Netz.
-- Das optionale Sprachmodell läuft bei dir (Ollama, SGLang, vLLM, LM Studio …).
-- jev-1.13 kostet 0.042 USD pro Mio. Input-Tokens. Ein Dokument liegt je nach Anzahl Tags und Beispielen
-  bei grob 5–15k Tokens, also unter 0.001 USD. Die Übersicht zeigt die Summe.
+- The shortened OCR text and the names of your metadata are sent to `api.typesafe.ai`. According to its
+  documentation, TypeSafe does not train on customer data. Documents tagged `ai-ignorieren` are never sent.
+- With a local model via Ollama (e.g. clef) everything stays in your own network.
+- The optional language model runs on your own hardware (Ollama, SGLang, vLLM, LM Studio …).
+- jev-1.13 costs USD 0.042 per million input tokens. A document takes roughly 5–15k tokens, depending on
+  the number of tags and examples, i.e. less than USD 0.001. The overview shows the total.
 
-## Probelauf auf der Kommandozeile
+## Command-line dry run
 
-Schreibt nichts nach Paperless und zeigt pro Dokument Vorschlag, Confidence und aktuellen Wert:
+Writes nothing to Paperless and shows suggestion, confidence and current value per document:
 
 ```bash
-docker run --rm -it --network <paperless-netz> \
+docker run --rm -it --network <paperless network> \
   -e PAPERLESS_URL=http://paperless:8000 -e PAPERLESS_TOKEN=... -e TYPESAFE_API_KEY=... \
   paperless-jev:latest paperless-jev-spike --sample 50 --blind
 ```
 
-`--blind` blendet die heutige Ablage aus und vergleicht die Vorschläge damit. Beschreibungen lassen sich
-vorab mit `--descriptions` testen, Vorlage: [`beschreibungen.beispiel.json`](beschreibungen.beispiel.json).
+`--blind` hides the current filing and compares the suggestions with it. Descriptions can be tested
+beforehand with `--descriptions`, template: [`beschreibungen.beispiel.json`](beschreibungen.beispiel.json).
 
-## Entwicklung
+## Development
 
 ```bash
 pip install -e '.[dev]'
@@ -202,8 +201,8 @@ pytest
 PJ_DATA_DIR=./data paperless-jev
 ```
 
-Architektur, Designentscheidungen und Messungen: [DOKUMENTATION.md](DOKUMENTATION.md).
+Architecture, design decisions and measurements: [DOCUMENTATION.md](DOCUMENTATION.md).
 
-## Lizenz
+## License
 
 [MIT](LICENSE)

@@ -1,6 +1,6 @@
 # paperless-jev documentation
 
-[Deutsch](DOKUMENTATION.md) · **English**
+**English** · [Deutsch](DOKUMENTATION.md)
 
 ## Architecture
 

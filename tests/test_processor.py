@@ -136,7 +136,7 @@ def client(tmp_path, monkeypatch):
     FakePaperless.patches = []
     FakePaperless.meta = make_meta()
     FakeJev.response = jev_response()
-    with TestClient(app_module.app) as c:
+    with TestClient(app_module.app, headers={"Accept-Language": "de-CH"}) as c:
         cfg = c.app.state.config
         cfg.update({"typesafe_api_key": "test", "mode": "auto", "poll_minutes": 0})
         cfg.save_instance(None, "home", "http://paperless:8000", "", "tok", True)
@@ -281,6 +281,7 @@ def test_descriptions_are_expanded_on_change(client, monkeypatch):
 
 def test_language_switch(client):
     assert "Übersicht" in client.get("/").text
+    assert "Overview" in client.get("/", headers={"Accept-Language": "fr-CH"}).text  # unbekannt: Englisch
     r = client.get("/lang/en?next=/rules", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/rules"
     client.cookies.set("lang", "en")

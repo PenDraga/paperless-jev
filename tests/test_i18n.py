@@ -41,5 +41,6 @@ def test_placeholders_match():
 def test_pick_language():
     assert i18n.pick("en", "de-CH") == "en"
     assert i18n.pick(None, "en-US,en;q=0.9") == "en"
-    assert i18n.pick(None, "fr-CH,fr;q=0.9") == "de"
-    assert i18n.pick("xx", None) == "de"
+    assert i18n.pick(None, "fr-CH,fr;q=0.9") == "en"
+    assert i18n.pick(None, "de-CH,de;q=0.9,en;q=0.8") == "de"
+    assert i18n.pick("xx", None) == "en"

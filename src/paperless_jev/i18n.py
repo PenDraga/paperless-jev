@@ -2,7 +2,7 @@
 
 Die deutschen Texte im Code sind zugleich die Schlüssel; ``EN`` enthält die
 Übersetzungen. Fehlt eine, erscheint der deutsche Text. Die Sprache gilt pro
-Request (Cookie ``lang``, sonst Accept-Language des Browsers).
+Request (Cookie ``lang``, sonst Accept-Language des Browsers, sonst Englisch).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from contextvars import ContextVar
 from typing import Any
 
 LANGUAGES = {"de": "Deutsch", "en": "English"}
-DEFAULT = "de"
+DEFAULT = "en"
 COOKIE = "lang"
 
 current: ContextVar[str] = ContextVar("lang", default=DEFAULT)
