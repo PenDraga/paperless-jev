@@ -281,7 +281,7 @@ def test_descriptions_are_expanded_on_change(client, monkeypatch):
 
 def test_language_switch(client):
     assert "Übersicht" in client.get("/").text
-    assert "Overview" in client.get("/", headers={"Accept-Language": "fr-CH"}).text  # unbekannt: Englisch
+    assert "Overview" in client.get("/", headers={"Accept-Language": "pt-BR"}).text  # unbekannt: Englisch
     r = client.get("/lang/en?next=/rules", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/rules"
     client.cookies.set("lang", "en")

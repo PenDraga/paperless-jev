@@ -1,16 +1,28 @@
-"""Mehrsprachige Oberfläche (Deutsch/Englisch) ohne Zusatzbibliothek.
+"""Mehrsprachige Oberfläche ohne Zusatzbibliothek.
 
 Die deutschen Texte im Code sind zugleich die Schlüssel; ``EN`` enthält die
-Übersetzungen. Fehlt eine, erscheint der deutsche Text. Die Sprache gilt pro
-Request (Cookie ``lang``, sonst Accept-Language des Browsers, sonst Englisch).
+englischen Übersetzungen, ``locales/<code>.json`` die weiteren Sprachen. Fehlt
+eine Übersetzung, erscheint der englische Text, sonst der deutsche. Die Sprache
+gilt pro Request (Cookie ``lang``, sonst Accept-Language des Browsers, sonst
+Englisch).
 """
 
 from __future__ import annotations
 
+import json
 from contextvars import ContextVar
+from pathlib import Path
 from typing import Any
 
-LANGUAGES = {"de": "Deutsch", "en": "English"}
+LANGUAGES = {
+    "en": "English",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "nl": "Nederlands",
+    "pl": "Polski",
+}
 DEFAULT = "en"
 COOKIE = "lang"
 
@@ -28,8 +40,9 @@ def pick(cookie: str | None, accept_language: str | None) -> str:
 
 
 def gettext(text: str, **kwargs: Any) -> str:
-    if current.get() == "en":
-        text = EN.get(text, text)
+    lang = current.get()
+    if lang != "de":
+        text = TRANSLATIONS.get(lang, {}).get(text) or EN.get(text, text)
     return text.format(**kwargs) if kwargs else text
 
 
@@ -390,7 +403,7 @@ EN: dict[str, str] = {
     "bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)":
         "overwrite values that are already set (e.g. from Paperless' own matching)",
     "Sammel-Korrespondent, wenn keiner passt": "Catch-all correspondent if none fits",
-    "z. B. Diverses – leer = Feld bleibt leer": "e.g. Diverses – empty = field stays empty",
+    "z. B. Diverses – leer = Feld bleibt leer": "e.g. Misc – empty = field stays empty",
     "unsichere Tag-Vorschläge allein schicken ein Dokument ins Review":
         "uncertain tag suggestions alone send a document to review",
     "ins Review, wenn Jev einem vorhandenen Wert sicher widerspricht (z. B. falsche Paperless-Zuordnung)":
@@ -430,7 +443,7 @@ EN: dict[str, str] = {
         "Titles of documents already filed – this is how Jev learns your filing conventions. 0 = off",
     # --- Beschreibungen ---------------------------------------------------------------
     "Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich. Schreib wie eine Regel: was dazugehört und was ausdrücklich nicht, z. B. Dokumenttyp „Kontoauszug“: <em>Bankbelege zu Kontobewegungen: Kontoauszüge, Gutschrifts- und Belastungsanzeigen. Keine Jahres- oder Steuerbescheinigungen.</em>":
-        "Jev picks from your Paperless master data. A short description per entry noticeably improves accuracy. Write it like a rule: what belongs and what explicitly does not, e.g. document type “Kontoauszug”: <em>Bank documents about account movements: statements, credit and debit advices. No annual or tax certificates.</em>",
+        "Jev picks from your Paperless master data. A short description per entry noticeably improves accuracy. Write it like a rule: what belongs and what explicitly does not, e.g. document type “Bank statement”: <em>Bank documents about account movements: statements, credit and debit advices. No annual or tax certificates.</em>",
     "Es genügen <strong>Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer ganzen Beschreibung aus – in der Sprache der Oberfläche – und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.":
         "<strong>Keywords</strong> are enough, e.g. <em>bank documents, credit, debit – not: tax certificate</em>. On save, the language model turns changed entries into a full description – in the interface language – also using the titles of documents already filed. The result is shown below the field – if it does not fit, add keywords and save again.",
     "Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.":
@@ -538,3 +551,10 @@ EN: dict[str, str] = {
     "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.":
         "The document was deleted in Paperless (trash). This entry is only a record now – in Paperless it can be restored from the trash.",
 }
+
+LOCALES = Path(__file__).parent / "locales"
+TRANSLATIONS: dict[str, dict[str, str]] = {"en": EN}
+for _code in LANGUAGES:
+    _file = LOCALES / f"{_code}.json"
+    if _file.exists():
+        TRANSLATIONS[_code] = json.loads(_file.read_text(encoding="utf-8"))

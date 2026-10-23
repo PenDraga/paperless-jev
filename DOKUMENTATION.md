@@ -103,7 +103,7 @@ paperless-jev und haben damit das letzte Wort.
 
 Unter *Beschreibungen* genügen Stichworte („Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung“).
 Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer Beschreibung aus – in der Sprache der
-Oberfläche, mit „Nicht: …“ bzw. „Not: …“ für Ausschlüsse – und nutzt dazu die Titel bereits abgelegter
+Oberfläche (bei anderen Sprachen als Deutsch/Englisch auf Englisch), mit „Nicht: …“ bzw. „Not: …“ für Ausschlüsse – und nutzt dazu die Titel bereits abgelegter
 Dokumente. Gespeichert werden beide Fassungen: die Stichworte (im Eingabefeld) und der Text für Jev
 (darunter mit „→“). Erfundene Ausschlüsse werden entfernt, wenn die Stichworte kein „nicht/kein/ohne“ enthalten.
 Ein Eintrag wird nur neu ausformuliert, wenn sich seine Stichworte ändern.

@@ -30,7 +30,7 @@ paperless-jev-spike = "paperless_jev.spike:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-paperless_jev = ["templates/*.html", "static/*"]
+paperless_jev = ["templates/*.html", "static/*", "locales/*.json"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -40,7 +40,7 @@ issue date and tags – or locally with [clef](https://ollama.com/library/clef) 
   [clef](https://ollama.com/library/clef) by Cloudflare (see below).
 - **Evaluation** on the overview: hit rate per field compared with your current filing.
 - **Descriptions from keywords** – a local language model (Ollama or OpenAI-compatible, e.g. Qwen)
-  turns your keywords into a full description in the interface language.
+  turns your keywords into a full description in the interface language (German or English; English for all other languages).
 - **Scan documents** with your phone: edges detected and straightened automatically, several pages into one PDF,
   straight to Paperless (see below).
 - **Titles** optionally by language model (in the style of documents already filed, checked and shortened if
@@ -52,7 +52,8 @@ issue date and tags – or locally with [clef](https://ollama.com/library/clef) 
   parent as context, the parent is set along automatically. A restructuring helper can move tags like "House (Maintenance)" under "House".
 - **Log** with filters by document type, correspondent and tag, open entries by default, cleanup.
 - **Webhook and polling**, multiple Paperless instances, Paperless-ngx 2.x and 3.x.
-- **Interface** in English and German (follows the browser language, otherwise English), optimised for phones, automatic dark mode.
+- **Interface** in English, German, French, Dutch, Spanish, Italian and Polish (follows the browser language, otherwise
+  English), optimised for phones, automatic dark mode.
 
 ## Scan documents with your phone
 

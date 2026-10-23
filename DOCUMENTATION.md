@@ -103,8 +103,8 @@ run after paperless-jev and therefore have the last word.
 ## Descriptions from keywords
 
 Under *Descriptions*, keywords are enough ("bank documents, credit, debit – not: tax certificate"). On save, the
-language model turns changed entries into a description – in the interface language, with "Not: …" / "Nicht: …" for
-exclusions – using the titles of documents already filed. Both versions are stored: the keywords (in the input
+language model turns changed entries into a description – in the interface language (English for interfaces other
+than German/English), with "Not: …" / "Nicht: …" for exclusions – using the titles of documents already filed. Both versions are stored: the keywords (in the input
 field) and the text for Jev (shown below with "→"). Invented exclusions are removed if the keywords contain no
 "not/no/without". An entry is only rewritten when its keywords change.
 

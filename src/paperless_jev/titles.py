@@ -152,8 +152,11 @@ KIND_NAMES = {
 async def describe_category(
     llm: LLM, kind: str, name: str, notes: str, examples: list[str], lang: str = "de"
 ) -> str:
-    """Formuliert Stichworte zu einer Beschreibung für Jev aus, in der Sprache der Oberfläche."""
-    lang = lang if lang in DESCRIBE_PROMPTS else "de"
+    """Formuliert Stichworte zu einer Beschreibung für Jev aus, in der Sprache der Oberfläche.
+
+    Für weitere Oberflächensprachen entsteht eine englische Beschreibung (Jev ist primär auf Englisch trainiert).
+    """
+    lang = lang if lang in DESCRIBE_PROMPTS else "en"
     example_lines = "\n".join(f"- {t}" for t in examples[:8]) or ("- (keine)" if lang == "de" else "- (none)")
     prompt = DESCRIBE_PROMPTS[lang].format(
         kind=KIND_NAMES[lang].get(kind, kind), name=name, notes=notes.strip(), examples=example_lines

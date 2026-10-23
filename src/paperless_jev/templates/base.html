@@ -27,9 +27,10 @@
     <nav class="tabs" aria-label="{{ _('Navigation') }}">
       {% for href, label, ic in nav %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}{{ badge(href) }}</a>{% endfor %}
     </nav>
-    <div class="lang-switch" title="{{ _('Sprache') }}">
-      {% for code in LANGUAGES %}{% if code == current_lang() %}<strong>{{ code|upper }}</strong>{% else %}<a href="/lang/{{ code }}?next={{ here|urlencode }}" hreflang="{{ code }}" lang="{{ code }}">{{ code|upper }}</a>{% endif %}{% endfor %}
-    </div>
+    <details class="lang-switch">
+      <summary title="{{ _('Sprache') }}" aria-label="{{ _('Sprache') }}">{{ current_lang()|upper }}<span class="caret" aria-hidden="true"></span></summary>
+      <div class="lang-menu">{% for code, name in LANGUAGES.items() %}<a href="/lang/{{ code }}?next={{ here|urlencode }}" hreflang="{{ code }}" lang="{{ code }}"{% if code == current_lang() %} aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</div>
+    </details>
   </div>
 </header>
 <nav class="bottom-nav" aria-label="{{ _('Navigation') }}">
@@ -85,8 +86,7 @@ function closeToast(t) { t.classList.add("out"); setTimeout(() => t.remove(), 30
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-close-toast]");
   if (btn) closeToast(btn.closest(".toast"));
-  const more = document.querySelector(".bottom-nav details[open]");
-  if (more && !more.contains(e.target)) more.open = false;
+  document.querySelectorAll(".bottom-nav details[open], .lang-switch[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
 });
 document.querySelectorAll(".toast.good").forEach((t) => setTimeout(() => closeToast(t), 6000));
 if (/[?&](msg|err)=/.test(location.search)) {

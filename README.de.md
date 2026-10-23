@@ -40,7 +40,7 @@ Ausstellungsdatum und Tags – oder lokal mit [clef](https://ollama.com/library/
   [clef](https://ollama.com/library/clef) von Cloudflare (siehe unten).
 - **Auswertung** auf der Übersicht: Trefferquote je Feld im Vergleich zur heutigen Ablage.
 - **Beschreibungen aus Stichworten** – ein lokales Sprachmodell (Ollama oder OpenAI-kompatibel,
-  z. B. Qwen) formuliert deine Stichworte in der Sprache der Oberfläche aus.
+  z. B. Qwen) formuliert deine Stichworte in der Sprache der Oberfläche aus (Deutsch oder Englisch, bei allen anderen Sprachen Englisch).
 - **Belege scannen** mit dem Handy: Rand wird automatisch erkannt und entzerrt, mehrere Seiten zu einem PDF,
   direkt nach Paperless (siehe unten).
 - **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten, geprüft und bei Bedarf gekürzt)
@@ -52,7 +52,8 @@ Ausstellungsdatum und Tags – oder lokal mit [clef](https://ollama.com/library/
   Kontext, der Obertag wird automatisch mitgesetzt. Umbau-Hilfe hängt Tags wie «Haus (Unterhalt)» auf Wunsch unter «Haus».
 - **Protokoll** mit Filtern nach Dokumenttyp, Korrespondent und Tag, standardmässig nur Offenes, bereinigen.
 - **Webhook und Polling**, mehrere Paperless-Instanzen, Paperless-ngx 2.x und 3.x.
-- **Oberfläche** auf Englisch und Deutsch (folgt der Browsersprache, sonst Englisch), fürs Handy optimiert, Dark Mode automatisch.
+- **Oberfläche** auf Englisch, Deutsch, Französisch, Niederländisch, Spanisch, Italienisch und Polnisch (folgt der
+  Browsersprache, sonst Englisch), fürs Handy optimiert, Dark Mode automatisch.
 
 ## Belege mit dem Handy scannen
 
