@@ -204,6 +204,11 @@ PJ_DATA_DIR=./data paperless-jev
 
 Architektur, Designentscheidungen und Messungen: [DOKUMENTATION.md](DOKUMENTATION.md).
 
+## Mitwirken
+
+Ideen, Wünsche und Fehlermeldungen sind willkommen – bitte als
+[Issue](https://github.com/PenDraga/paperless-jev/issues) erfassen. Pull Requests werden vorerst nicht angenommen.
+
 ## Lizenz
 
 [MIT](LICENSE)
