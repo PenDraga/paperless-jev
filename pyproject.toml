@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paperless-jev"
-version = "0.3.0"
-description = "Klassifiziert den Paperless-NGX-Posteingang mit TypeSafe Jev"
+version = "0.4.0"
+description = "Classifies the Paperless-ngx inbox with TypeSafe Jev or a local model"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
