@@ -446,5 +446,6 @@
  "Ollama-URL oder Modell fehlt": "Ollama-URL of model ontbreekt",
  "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.": "Drempelwaarden voor het lokale model «{model}» – lokale modellen melden lagere zekerheidswaarden dan Jev en hebben daarom eigen drempelwaarden. Die van Jev blijven behouden. Voorbeeldtitels en vergelijkbare documenten worden niet naar lokale modellen gestuurd.",
  "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)": "Het document bestaat niet meer in Paperless (verwijderd of in de prullenbak)",
- "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.": "Het document is verwijderd in Paperless (prullenbak). Dit item is nu alleen nog een registratie – in Paperless kan het uit de prullenbak worden hersteld."
+ "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.": "Het document is verwijderd in Paperless (prullenbak). Dit item is nu alleen nog een registratie – in Paperless kan het uit de prullenbak worden hersteld.",
+ "Quellcode": "Broncode"
 }

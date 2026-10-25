@@ -212,4 +212,8 @@ Ideen, Wünsche und Fehlermeldungen sind willkommen – bitte als
 
 ## Lizenz
 
-[MIT](LICENSE)
+Copyright (C) 2026 PenDraga. Lizenziert unter der [GNU Affero General Public License v3.0](LICENSE) oder neuer,
+ab Version 0.4.1 (Versionen bis 0.4.0 erschienen unter MIT).
+
+Kurz: paperless-jev darf frei genutzt, verändert und weitergegeben werden – auch zu Hause für die Familie. Wer eine
+veränderte Fassung anderen zugänglich macht, auch als Webdienst, muss deren Quellcode unter derselben Lizenz veröffentlichen.
