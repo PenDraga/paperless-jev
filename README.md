@@ -125,7 +125,7 @@ Everything else is configured in the web UI. The environment only covers:
 | Variable | Default | Purpose |
 |---|---|---|
 | `PJ_SECRET_KEY` | – | Key for encrypting stored tokens. If unset, `/data/secret.key` is created. |
-| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optional basic auth for the web UI (`/hook/*` and `/health` stay open). |
+| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optional login for the web UI: sign-in page that works with password managers, stays signed in for 30 days of use, sign-out button. `/hook/*` and `/health` stay open; a basic-auth header is still accepted for scripts. |
 | `PJ_LOG_LEVEL` | `INFO` | Log level |
 | `PJ_DATA_DIR` | `/data` | Data directory (SQLite, key) |
 | `TZ` | `Europe/Zurich` | Time zone for display |

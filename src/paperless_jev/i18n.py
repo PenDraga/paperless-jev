@@ -548,6 +548,13 @@ EN: dict[str, str] = {
     "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.":
         "Thresholds for the local model «{model}» – local models report lower confidence values than Jev and therefore have their own thresholds. Jev's are kept. Example titles and similar documents are not sent to local models.",
     "Quellcode": "Source code",
+    "Anmelden": "Sign in",
+    "Abmelden": "Sign out",
+    "Abgemeldet": "Signed out",
+    "Benutzer": "Username",
+    "Passwort": "Password",
+    "Benutzer oder Passwort falsch": "Wrong username or password",
+    "Zu viele Fehlversuche – bitte eine Minute warten": "Too many failed attempts – please wait a minute",
     "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)": "The document no longer exists in Paperless (deleted or in the trash)",
     "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.":
         "The document was deleted in Paperless (trash). This entry is only a record now – in Paperless it can be restored from the trash.",

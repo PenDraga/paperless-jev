@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import html
 import re
 import logging
@@ -14,6 +13,7 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 import uvicorn
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import __version__
+from .auth import COOKIE as SESSION_COOKIE, MAX_AGE as SESSION_MAX_AGE, Auth
 from .classifier import excluded_tags
 from .config import FIELD_LABELS, SINGLE_FIELDS, Config
 from .db import Database
@@ -39,7 +40,7 @@ HERE = Path(__file__).parent
 DATA_DIR = Path(os.environ.get("PJ_DATA_DIR", "/data"))
 ADMIN_USER = os.environ.get("PJ_ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("PJ_ADMIN_PASSWORD", "")
-PUBLIC_PATHS = ("/hook/", "/health", "/static/")
+PUBLIC_PATHS = ("/hook/", "/health", "/static/", "/login", "/lang/")
 MODE_LABELS = {
     "dry_run": "Probelauf – schreibt nichts",
     "review": "Nur Vorschläge (Review)",
@@ -70,8 +71,10 @@ STATUS_LABELS = {
 async def lifespan(app: FastAPI):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     db = Database(DATA_DIR / "paperless-jev.db")
-    config = Config(db, Vault(DATA_DIR))
+    vault = Vault(DATA_DIR)
+    config = Config(db, vault)
     processor = Processor(db, config)
+    app.state.auth = Auth(ADMIN_USER, ADMIN_PASSWORD, vault.derive("session"))
     app.state.db, app.state.config, app.state.processor = db, config, processor
     await processor.start()
     yield
@@ -141,20 +144,67 @@ async def set_language(code: str, next: str = "/"):
 
 
 @app.middleware("http")
-async def basic_auth(request: Request, call_next):
-    """Optionaler Passwortschutz; hinter Traefik + Authentik meist nicht nötig."""
-    if ADMIN_PASSWORD and not request.url.path.startswith(PUBLIC_PATHS):
-        header = request.headers.get("authorization", "")
-        ok = False
-        if header.startswith("Basic "):
-            try:
-                user, _, pw = base64.b64decode(header[6:]).decode().partition(":")
-                ok = secrets.compare_digest(user, ADMIN_USER) and secrets.compare_digest(pw, ADMIN_PASSWORD)
-            except ValueError:
-                ok = False
-        if not ok:
-            return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="paperless-jev"'})
-    return await call_next(request)
+async def require_login(request: Request, call_next):
+    """Optionaler Passwortschutz (PJ_ADMIN_PASSWORD); hinter Traefik + Authentik meist nicht nötig."""
+    auth: Auth = request.app.state.auth
+    token = request.cookies.get(SESSION_COOKIE)
+    if auth.enabled and not request.url.path.startswith(PUBLIC_PATHS):
+        if not (auth.valid(token) or auth.basic_ok(request.headers.get("authorization", ""))):
+            target = _local_path(request.url.path + (f"?{request.url.query}" if request.url.query else ""), "/")
+            login = "/login" + (f"?{urlencode({'next': target})}" if target != "/" else "")
+            if request.headers.get("hx-request"):
+                return Response(status_code=401, headers={"HX-Redirect": login})
+            if request.method == "GET" and "text/html" in request.headers.get("accept", ""):
+                return RedirectResponse(login, status_code=303)
+            return Response(status_code=401)
+    response = await call_next(request)
+    if auth.enabled and auth.needs_renewal(token):
+        _set_session(request, response, auth)
+    return response
+
+
+def _set_session(request: Request, response: Response, auth: Auth) -> None:
+    secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    response.set_cookie(SESSION_COOKIE, auth.issue(), max_age=SESSION_MAX_AGE, httponly=True, samesite="lax", secure=secure)
+
+
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "?"
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, next: str = "/"):
+    if not request.app.state.auth.enabled:
+        return RedirectResponse("/", status_code=303)
+    return _render(request, "login.html", next=_local_path(next, "/"), review_count=0, bare=True)
+
+
+@app.post("/login")
+async def login(request: Request, username: str = Form(""), password: str = Form(""), next: str = Form("/")):
+    auth: Auth = request.app.state.auth
+    target = _local_path(next, "/")
+    back = "/login" + (f"?{urlencode({'next': target})}" if target != "/" else "")
+    ip = _client_ip(request)
+    if not auth.enabled:
+        return RedirectResponse("/", status_code=303)
+    if auth.locked(ip):
+        return _redirect(back, err=_("Zu viele Fehlversuche – bitte eine Minute warten"))
+    if not auth.check(username, password):
+        auth.failed(ip)
+        log.warning("Anmeldung fehlgeschlagen von %s", ip)
+        await asyncio.sleep(0.5)
+        return _redirect(back, err=_("Benutzer oder Passwort falsch"))
+    auth.succeeded(ip)
+    resp = RedirectResponse(target, status_code=303)
+    _set_session(request, resp, auth)
+    return resp
+
+
+@app.post("/logout")
+async def logout():
+    resp = _redirect("/login", msg=_("Abgemeldet"))
+    resp.delete_cookie(SESSION_COOKIE)
+    return resp
 
 
 def _cfg(request: Request) -> Config:

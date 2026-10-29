@@ -21,7 +21,7 @@
   <div class="stat acc"><span class="ic">{{ icon("zap") }}</span><span class="num">{{ "{:,}".format(tokens).replace(",", "'") }}</span><span class="lbl">{{ _("Tokens (≈ ${cost})", cost="%.4f"|format(cost)) }}</span></div>
   <div class="stat ring">
     <div class="ring-wrap">
-      <svg viewBox="0 0 76 76" aria-hidden="true">
+      <svg viewBox="0 0 76 76" width="76" height="76" aria-hidden="true">
         <defs><linearGradient id="ring-grad"><stop offset="0" stop-color="#17541f"/><stop offset="1" stop-color="#4cc25e"/></linearGradient></defs>
         <circle class="track" cx="38" cy="38" r="31" stroke-width="9" fill="none"/>
         {% if auto_rate %}<circle cx="38" cy="38" r="31" stroke="url(#ring-grad)" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="194.78" stroke-dashoffset="{{ '%.2f'|format(194.78 * (1 - auto_rate)) }}"/>{% endif %}

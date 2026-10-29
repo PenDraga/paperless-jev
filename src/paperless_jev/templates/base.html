@@ -17,6 +17,7 @@
 <body class="{% block body_class %}{% endblock %}" hx-indicator="#pj-loader">
 <div id="pj-loader" aria-hidden="true"></div>
 {% set path = request.url.path %}
+{% set login_enabled = request.app.state.auth.enabled %}
 {% set here = request.url.path ~ ("?" ~ request.url.query if request.url.query else "") %}
 {% set nav = [("/", "Übersicht", "dashboard"), ("/review", "Review", "inbox"), ("/scan", "Scannen", "camera"), ("/log", "Protokoll", "list"), ("/rules", "Regeln", "filter"), ("/descriptions", "Beschreibungen", "file"), ("/setup", "Setup", "settings")] %}
 {% macro current(href) %}{% if path == href or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
@@ -24,22 +25,25 @@
 <header class="appbar">
   <div class="container appbar-inner">
     <a href="/" class="brand"><span class="brand-mark">{{ icon("logo") }}</span>paperless-jev</a>
-    <nav class="tabs" aria-label="{{ _('Navigation') }}">
+    {% if not bare %}<nav class="tabs" aria-label="{{ _('Navigation') }}">
       {% for href, label, ic in nav %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}{{ badge(href) }}</a>{% endfor %}
-    </nav>
+    </nav>{% endif %}
     <details class="lang-switch">
       <summary title="{{ _('Sprache') }}" aria-label="{{ _('Sprache') }}">{{ current_lang()|upper }}<span class="caret" aria-hidden="true"></span></summary>
       <div class="lang-menu">{% for code, name in LANGUAGES.items() %}<a href="/lang/{{ code }}?next={{ here|urlencode }}" hreflang="{{ code }}" lang="{{ code }}"{% if code == current_lang() %} aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</div>
     </details>
+    {% if login_enabled and not bare %}<form method="post" action="/logout" class="logout-form">
+      <button type="submit" class="logout-btn" title="{{ _('Abmelden') }}" aria-label="{{ _('Abmelden') }}">{{ icon("logout") }}</button>
+    </form>{% endif %}
   </div>
 </header>
-<nav class="bottom-nav" aria-label="{{ _('Navigation') }}">
+{% if not bare %}<nav class="bottom-nav" aria-label="{{ _('Navigation') }}">
   {% for href, label, ic in nav[:4] %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}{{ badge(href) }}</a>{% endfor %}
   <details{% if current("/rules") or current("/descriptions") or current("/setup") %} class="current"{% endif %}>
     <summary>{{ icon("more") }}{{ _("Mehr") }}</summary>
     <div class="more-menu">{% for href, label, ic in nav[4:] %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}</a>{% endfor %}</div>
   </details>
-</nav>
+</nav>{% endif %}
 {% if msg or err %}<div class="toasts" aria-live="polite">
   {% if msg %}<div class="toast good" role="status"><span class="ti">{{ icon("check") }}</span><span class="msg">{{ msg }}</span><button type="button" data-close-toast aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</button></div>{% endif %}
   {% if err %}<div class="toast bad" role="alert"><span class="ti">{{ icon("alert") }}</span><span class="msg">{{ err }}</span><button type="button" data-close-toast aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</button></div>{% endif %}

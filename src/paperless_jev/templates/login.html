@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ _("Anmelden") }} · paperless-jev{% endblock %}
+{% block content %}
+<article class="login-card">
+  <header><h3>{{ icon("lock") }} {{ _("Anmelden") }}</h3></header>
+  <form method="post" action="/login">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>{{ _("Benutzer") }}
+      <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+    </label>
+    <label>{{ _("Passwort") }}
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit">{{ _("Anmelden") }}</button>
+  </form>
+</article>
+{% endblock %}

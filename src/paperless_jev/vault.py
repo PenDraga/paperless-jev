@@ -25,7 +25,12 @@ class Vault:
                 key_file.write_bytes(Fernet.generate_key())
                 key_file.chmod(0o600)
             key = key_file.read_bytes().strip()
+        self._key = key
         self._fernet = Fernet(key)
+
+    def derive(self, purpose: str) -> bytes:
+        """Eigener Schlüssel für einen Zweck (z. B. Sitzungs-Cookies), abgeleitet vom Hauptschlüssel."""
+        return hashlib.sha256(self._key + b"\0" + purpose.encode()).digest()
 
     def encrypt(self, plain: str) -> str:
         if not plain:

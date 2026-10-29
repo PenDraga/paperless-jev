@@ -125,7 +125,7 @@ Alles Fachliche wird in der Web-UI eingestellt. Per Umgebung gibt es nur:
 | Variable | Standard | Zweck |
 |---|---|---|
 | `PJ_SECRET_KEY` | – | Schlüssel für die Verschlüsselung der gespeicherten Tokens. Ohne Angabe wird `/data/secret.key` erzeugt. |
-| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optionaler Basic-Auth-Schutz der Web-UI (`/hook/*` und `/health` bleiben offen). |
+| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optionale Anmeldung für die Web-UI: Anmeldeseite, die mit Passwort-Managern funktioniert, bleibt bei Nutzung 30 Tage angemeldet, Abmelde-Knopf. `/hook/*` und `/health` bleiben offen; ein Basic-Auth-Header wird für Skripte weiter akzeptiert. |
 | `PJ_LOG_LEVEL` | `INFO` | Log-Level |
 | `PJ_DATA_DIR` | `/data` | Datenverzeichnis (SQLite, Schlüssel) |
 | `TZ` | `Europe/Zurich` | Zeitzone für die Anzeige |

@@ -447,5 +447,12 @@
  "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.": "Umbrales para el modelo local «{model}» – los modelos locales dan valores de confianza más bajos que Jev y por eso tienen sus propios umbrales. Los de Jev se conservan. Los títulos de ejemplo y los documentos similares no se envían a los modelos locales.",
  "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)": "El documento ya no existe en Paperless (eliminado o en la papelera)",
  "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.": "El documento se eliminó en Paperless (papelera). Esta entrada ahora es solo un registro – en Paperless se puede restaurar desde la papelera.",
- "Quellcode": "Código fuente"
+ "Quellcode": "Código fuente",
+ "Anmelden": "Iniciar sesión",
+ "Abmelden": "Cerrar sesión",
+ "Abgemeldet": "Sesión cerrada",
+ "Benutzer": "Usuario",
+ "Passwort": "Contraseña",
+ "Benutzer oder Passwort falsch": "Usuario o contraseña incorrectos",
+ "Zu viele Fehlversuche – bitte eine Minute warten": "Demasiados intentos fallidos – espera un minuto"
 }
