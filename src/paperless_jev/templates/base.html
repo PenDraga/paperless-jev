@@ -7,12 +7,10 @@
   <meta name="theme-color" content="#17541f">
   <title>{% block title %}paperless-jev{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+  <link rel="stylesheet" href="/static/vendor/fonts/inter.css">
+  <link rel="stylesheet" href="/static/vendor/pico.min.css">
   <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
-  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <script src="/static/vendor/htmx.min.js" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}" hx-indicator="#pj-loader">
 <div id="pj-loader" aria-hidden="true"></div>

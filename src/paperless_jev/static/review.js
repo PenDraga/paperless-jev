@@ -1,5 +1,5 @@
 // Review: Dokument per pdf.js mit markierten Jev-Werten, Auswahl-Blätter, Titelvorschlag, Tastatur.
-const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38";
+const PDFJS = "/static/vendor/pdfjs";
 const data = JSON.parse(document.getElementById("rv-data").textContent);
 const T = data.t;
 

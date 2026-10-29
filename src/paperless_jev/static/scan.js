@@ -1,5 +1,4 @@
 // Belege scannen: Kamera, Randerkennung (OpenCV.js), Entzerren, Filter, mehrseitiges PDF, Upload nach Paperless.
-const CV_URL = "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js";
 const MAX_SIDE = 3000; // Originale so gross behalten (Canvas-Speicher in Safari ist begrenzt)
 // Entzerrte Seite nach Fläche begrenzen, nicht nach der langen Seite: sonst bleiben bei
 // langen Kassenzetteln nur ~750 px Breite und die Schrift wird für die Texterkennung zu klein.
@@ -7,6 +6,7 @@ const OUT_PIXELS = 6e6; // ein langer Kassenzettel braucht ~3 MP, eine A4-Seite 
 const PDF_DPI = 300; // Seitengrösse im PDF so, dass Paperless die echte Auflösung sieht
 const data = JSON.parse(document.getElementById("sc-data").textContent);
 const T = data.t;
+const CV_URL = data.cv;
 const $ = (id) => document.getElementById(id);
 const fmt = (s, v) => Object.entries(v).reduce((a, [k, x]) => a.replace(`{${k}}`, x), s);
 

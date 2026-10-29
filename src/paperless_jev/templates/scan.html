@@ -94,14 +94,14 @@
 </div>
 
 <script type="application/json" id="sc-data">{{ {
-  "tags": scan_tags,
+  "tags": scan_tags, "cv": cv_url,
   "t": {"pages": _("{n} Seite(n)"), "none": _("noch keine Seiten"), "upload": _("Als PDF hochladen ({n} Seiten)"), "uploadFiles": _("{n} Datei(en) hochladen"),
         "page": _("Seite {n}"), "detected": _("Beleg erkannt – ruhig halten"), "search": _("Beleg ins Bild halten"), "loadingCv": _("Randerkennung wird geladen …"),
         "nocam": _("Keine Kamera verfügbar – Foto mit der Kamera-App aufnehmen"), "uploading": _("wird hochgeladen …"), "sent": _("{size} gesendet"),
         "ocr": _("läuft in Paperless …"), "docid": _("Dokument #{id}"), "jev": _("läuft …"), "failed": _("Fehler: {error}"),
         "view": _("Dokument ansehen"), "job": _("Details"), "overview": _("zur Übersicht"), "status": _("Status: {status}"), "more": _("+ weitere")}
 }|tojson }}</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="/static/vendor/jspdf.umd.min.js" defer></script>
 <script type="module" src="/static/scan.js?v={{ asset_v }}"></script>
 {% endif %}
 {% endblock %}

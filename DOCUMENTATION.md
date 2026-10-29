@@ -184,8 +184,10 @@ Paperless task and queues the new document for classification right away, withou
 Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded on the same page. A `Permissions-Policy` header from the
 reverse proxy must not block the camera (`camera=(self)`).
 
-Libraries are loaded from a CDN at runtime, not bundled: OpenCV.js (`@techstark/opencv-js`, Apache 2.0, ~10 MB,
-only when the camera starts), jsPDF (MIT), pdf.js (Apache 2.0, in the review).
+All libraries are served by paperless-jev itself – no CDN, no requests to third-party servers, works with ad
+blockers and without internet access: Pico CSS, htmx, the Inter font, jsPDF, pdf.js (in the review) and OpenCV.js
+(`@techstark/opencv-js`, Apache 2.0, ~10 MB, loaded only when the camera starts; added to the Docker image at build
+time with a checksum). Versions and licences: [`static/vendor/README.md`](src/paperless_jev/static/vendor/README.md).
 
 ## Webhook
 

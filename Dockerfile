@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM python:3.12-slim
 
 # Vorgaben fuer den Containerbetrieb; alles Fachliche wird in der Web-UI
@@ -11,6 +12,10 @@ ENV PJ_DATA_DIR=/data \
 WORKDIR /app
 COPY pyproject.toml ./
 COPY src ./src
+# OpenCV.js für den Scanner (10 MB, nicht im Repo) - feste Version, Prüfsumme kontrolliert
+ADD --checksum=sha256:19b46167b59efbef9cc3836264b0b657110833e4b1df84282004b8b3141c048d \
+    https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js \
+    src/paperless_jev/static/vendor/opencv.js
 RUN pip install --no-cache-dir . \
     && useradd --create-home --uid 10001 jev \
     && mkdir -p /data && chown jev /data

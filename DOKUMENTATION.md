@@ -187,8 +187,10 @@ verfolgt den Paperless-Task und reiht das neue Dokument sofort zur Klassifizieru
 Polling zu warten. Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich auf derselben Seite hochladen.
 Ein `Permissions-Policy`-Header des Reverse Proxys darf die Kamera nicht sperren (`camera=(self)`).
 
-Bibliotheken werden zur Laufzeit vom CDN geladen, nicht mitgeliefert: OpenCV.js (`@techstark/opencv-js`,
-Apache 2.0, ~10 MB, erst beim Start der Kamera), jsPDF (MIT), pdf.js (Apache 2.0, im Review).
+Alle Bibliotheken liefert paperless-jev selbst aus – kein CDN, keine Anfragen an fremde Server, funktioniert mit
+Werbeblockern und ohne Internet: Pico CSS, htmx, die Schrift Inter, jsPDF, pdf.js (im Review) und OpenCV.js
+(`@techstark/opencv-js`, Apache 2.0, ~10 MB, erst beim Start der Kamera; kommt beim Docker-Build mit geprüfter
+Prüfsumme ins Image). Versionen und Lizenzen: [`static/vendor/README.md`](src/paperless_jev/static/vendor/README.md).
 
 ## Webhook
 

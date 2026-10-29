@@ -8,3 +8,4 @@ data/
 spike*.json
 runs/
 demo-data/
+src/paperless_jev/static/vendor/opencv.js

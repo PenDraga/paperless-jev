@@ -6,6 +6,7 @@ import asyncio
 import html
 import re
 import logging
+import mimetypes
 import os
 import secrets
 from contextlib import asynccontextmanager
@@ -37,9 +38,17 @@ from .vault import Vault
 
 log = logging.getLogger("paperless_jev")
 HERE = Path(__file__).parent
+# Schlanke Images kennen nicht alle Typen der mitgelieferten Dateien
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("text/javascript", ".mjs")
 DATA_DIR = Path(os.environ.get("PJ_DATA_DIR", "/data"))
 ADMIN_USER = os.environ.get("PJ_ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("PJ_ADMIN_PASSWORD", "")
+# OpenCV.js (10 MB, nur für den Scanner) liefert das Docker-Image mit; sonst vom CDN
+CV_URL = (
+    "/static/vendor/opencv.js" if (HERE / "static" / "vendor" / "opencv.js").exists()
+    else "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js"
+)
 PUBLIC_PATHS = ("/hook/", "/health", "/static/", "/login", "/lang/")
 MODE_LABELS = {
     "dry_run": "Probelauf – schreibt nichts",
@@ -706,7 +715,7 @@ async def scan_page(request: Request):
             tags[inst.id] = [[t, meta.tag_label(t), meta.tag_colors.get(t)] for t, _depth in meta.tag_tree(set(meta.tags) - hidden)]
         except PaperlessError:
             tags[inst.id] = []
-    return _render(request, "scan.html", instances=instances, scan_tags=tags)
+    return _render(request, "scan.html", instances=instances, scan_tags=tags, cv_url=CV_URL)
 
 
 @app.post("/scan/upload")

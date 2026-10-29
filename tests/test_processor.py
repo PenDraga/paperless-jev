@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import copy
 
 import pytest
@@ -806,3 +807,13 @@ def test_document_deleted_elsewhere_marks_all_entries(client):
     other = db.create_job(1, 999, "scan"); db.update_job(other, status="review", result={"fields": {}, "tags": [], "current": {}})
     r = client.post(f"/jobs/{other}/apply", data={"action": "apply"}, follow_redirects=False)
     assert "nicht+mehr" in r.headers["location"] and db.job(other)["status"] == "deleted"
+
+
+def test_pages_load_no_third_party_assets(client):
+    # Pico, htmx, Schrift und pdf.js liefert paperless-jev selbst aus (Werbeblocker, offline, Datenschutz)
+    for path in ("/", "/log", "/rules", "/review"):
+        page = client.get(path).text
+        assets = re.findall(r'<(?:link|script)[^>]+(?:href|src)="([^"]+)"', page)
+        assert assets and not [a for a in assets if a.startswith(("http:", "https:", "//"))], (path, assets)
+    assert client.get("/static/vendor/pico.min.css").status_code == 200
+    assert client.get("/static/vendor/fonts/inter-latin-wght-normal.woff2").headers["content-type"] == "font/woff2"
