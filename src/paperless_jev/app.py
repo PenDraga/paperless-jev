@@ -685,6 +685,7 @@ async def review_queue(request: Request, job: int | None = None, after: int | No
     return _render(
         request, "review.html", rv_job=current, total=len(jobs), pos=idx + 1,
         next_id=ids[(idx + 1) % len(ids)] if len(ids) > 1 else None,
+        next_job=jobs[(idx + 1) % len(ids)] if len(ids) > 1 else None,
         prev_id=ids[idx - 1] if len(ids) > 1 else None,
         choices=_review_choices(current, ctx["meta"]) if ctx.get("meta") else None,
         **ctx,

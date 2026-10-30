@@ -32,7 +32,7 @@
 <div class="rv-progress"><span style="width: {{ (pos / total * 100)|round|int }}%"></span></div>
 
 <div class="rv">
-  <section class="rv-doc" id="rv-doc" data-src="/doc/{{ job.instance_id }}/{{ job.doc_id }}?view={{ asset_v }}">
+  <section class="rv-doc" id="rv-doc" data-src="/doc/{{ job.instance_id }}/{{ job.doc_id }}?view={{ asset_v }}"{% if next_job %} data-next="/doc/{{ next_job.instance_id }}/{{ next_job.doc_id }}?view={{ asset_v }}"{% endif %}>
     <div class="rv-pages" id="rv-pages"><div class="rv-loading">{{ _("Dokument wird geladen …") }}</div></div>
     <div class="rv-docbar">
       <span class="rv-pill" id="rv-pageinfo">{{ icon("file") }} <span>–</span></span>

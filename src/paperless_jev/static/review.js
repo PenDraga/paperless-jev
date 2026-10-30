@@ -11,6 +11,10 @@ let zoom = 1;
 let pdf = null;
 let imageUrl = null;
 let renderToken = 0;
+let lastWidth = 0;
+let pageObserver;
+// Obergrenze pro Seite: iOS Safari beendet die Seite, wenn Canvas-Speicher knapp wird
+const MAX_PIXELS = 5e6;
 
 const norm = (s) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
 
@@ -37,15 +41,37 @@ async function loadDocument() {
       window.pdfjsUtil = pdfjs.Util;
     }
     await render();
+    prefetchNext();
   } catch (e) {
     pagesEl.innerHTML = `<div class="rv-loading">${T.failed}<br><a href="${docEl.dataset.src.split("?")[0]}" target="_blank" rel="noopener">${T.open}</a></div>`;
   }
 }
 
+// Nächstes Dokument der Queue schon in den Browser-Cache laden
+function prefetchNext() {
+  const next = docEl.dataset.next;
+  if (!next || next === docEl.dataset.src) return;
+  setTimeout(() => fetch(next, { priority: "low" }).then((r) => r.arrayBuffer()).catch(() => {}), 1000);
+}
+
+function freeCanvas(canvas) {
+  // Safari gibt Canvas-Speicher sonst erst spät frei
+  canvas.width = 0;
+  canvas.height = 0;
+  canvas.remove();
+}
+
+function releasePages() {
+  pageObserver?.disconnect();
+  pagesEl.querySelectorAll(".rv-page").forEach(clearPage);
+  pagesEl.innerHTML = "";
+}
+
 async function render() {
   const token = ++renderToken;
-  const width = Math.max(pagesEl.clientWidth - 16, 200) * zoom;
-  pagesEl.innerHTML = "";
+  lastWidth = pagesEl.clientWidth;
+  const width = Math.max(lastWidth - 16, 200) * zoom;
+  releasePages();
   if (imageUrl) {
     const box = document.createElement("div");
     box.className = "rv-page";
@@ -57,26 +83,60 @@ async function render() {
   }
   const total = Math.min(pdf.numPages, 30);
   pageInfo.textContent = T.page.replace("{n}", 1).replace("{total}", pdf.numPages);
+  const boxes = [];
   for (let n = 1; n <= total; n++) {
-    if (token !== renderToken) return;
     const page = await pdf.getPage(n);
+    if (token !== renderToken) return;
     const base = page.getViewport({ scale: 1 });
-    const viewport = page.getViewport({ scale: width / base.width });
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
     const box = document.createElement("div");
     box.className = "rv-page";
     box.dataset.page = n;
-    box.style.width = `${viewport.width}px`;
-    box.style.height = `${viewport.height}px`;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.floor(viewport.width * dpr);
-    canvas.height = Math.floor(viewport.height * dpr);
-    box.append(canvas);
+    box.page = page;
+    box.viewport = page.getViewport({ scale: width / base.width });
+    box.style.width = `${box.viewport.width}px`;
+    box.style.height = `${box.viewport.height}px`;
     pagesEl.append(box);
-    await page.render({ canvasContext: canvas.getContext("2d"), viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    boxes.push(box);
+  }
+  // Nur Seiten in und nahe der Ansicht zeichnen, weiter entfernte wieder freigeben
+  pageObserver = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) drawPage(e.target);
+      else clearPage(e.target);
+      if (e.intersectionRatio >= 0.5) pageInfo.textContent = T.page.replace("{n}", e.target.dataset.page).replace("{total}", pdf.numPages);
+    }
+  }, { root: pagesEl, rootMargin: "100% 0px", threshold: [0, 0.5] });
+  boxes.forEach((b) => pageObserver.observe(b));
+}
+
+async function drawPage(box) {
+  if (box.task || box.querySelector("canvas")) return;
+  const { page, viewport } = box;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(MAX_PIXELS / (viewport.width * viewport.height)));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(viewport.width * dpr);
+  canvas.height = Math.floor(viewport.height * dpr);
+  box.prepend(canvas);
+  const task = page.render({ canvasContext: canvas.getContext("2d"), viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null });
+  box.task = task;
+  try {
+    await task.promise;
+  } catch {
+    return; // abgebrochen
+  } finally {
+    if (box.task === task) box.task = null;
+  }
+  if (!box.marked) {
+    box.marked = true;
     await highlight(page, viewport, box);
   }
-  observePages();
+}
+
+function clearPage(box) {
+  box.task?.cancel();
+  box.task = null;
+  const canvas = box.querySelector("canvas");
+  if (canvas) freeCanvas(canvas);
 }
 
 // Markiert Textstellen, die zu Jevs Werten passen (ganzer Wert zuerst, sonst markante Wörter)
@@ -110,17 +170,6 @@ async function highlight(page, viewport, box) {
   return any;
 }
 
-let observer;
-function observePages() {
-  observer?.disconnect();
-  observer = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (e.isIntersecting) pageInfo.textContent = T.page.replace("{n}", e.target.dataset.page).replace("{total}", pdf.numPages);
-    }
-  }, { root: pagesEl, threshold: 0.5 });
-  pagesEl.querySelectorAll(".rv-page").forEach((p) => observer.observe(p));
-}
-
 document.querySelectorAll("[data-zoom]").forEach((b) => b.addEventListener("click", () => {
   zoom = Math.min(Math.max(zoom + Number(b.dataset.zoom) * 0.25, 0.5), 3);
   render();
@@ -132,7 +181,14 @@ document.getElementById("rv-fs").addEventListener("click", () => {
   render();
 });
 let resizeTimer;
-window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => (pdf || imageUrl) && render(), 250); });
+// iOS meldet beim Scrollen ständig "resize" (Adressleiste) - nur bei neuer Breite neu zeichnen
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => (pdf || imageUrl) && pagesEl.clientWidth !== lastWidth && render(), 250);
+});
+// Seiten im Back-Forward-Cache nicht mit vollem Canvas-Speicher liegen lassen
+window.addEventListener("pagehide", () => { renderToken++; releasePages(); });
+window.addEventListener("pageshow", (e) => e.persisted && (pdf || imageUrl) && render());
 loadDocument();
 
 // --- Auswahl-Blätter ------------------------------------------------------------------
@@ -227,8 +283,19 @@ document.querySelectorAll("[data-sheet]").forEach((row) => row.addEventListener(
   search.value = "";
   fillSheet();
   sheet.showModal();
+  fitSheet();
 }));
 search.addEventListener("input", fillSheet);
+// Blatt auf den sichtbaren Bereich begrenzen, damit es nicht hinter der Bildschirmtastatur verschwindet
+const vv = window.visualViewport;
+function fitSheet() {
+  if (!vv || !sheet.open) return;
+  sheet.style.top = `${vv.offsetTop}px`;
+  sheet.style.height = `${vv.height}px`;
+}
+vv?.addEventListener("resize", fitSheet);
+vv?.addEventListener("scroll", fitSheet);
+sheet.addEventListener("close", () => { sheet.style.top = ""; sheet.style.height = ""; });
 sheet.addEventListener("click", (e) => { if (e.target === sheet || e.target.closest("[data-close-sheet]")) sheet.close(); });
 
 // --- weitere Tags, Titelvorschlag -------------------------------------------------------
