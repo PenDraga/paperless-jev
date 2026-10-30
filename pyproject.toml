@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paperless-jev"
-version = "0.4.3"
+version = "0.4.4"
 description = "Classifies the Paperless-ngx inbox with TypeSafe Jev or a local model"
 requires-python = ">=3.12"
 license = { text = "AGPL-3.0-or-later" }
