@@ -43,7 +43,7 @@
  "Kein TypeSafe-API-Key konfiguriert": "No hay ninguna clave de API de TypeSafe configurada",
  "Keine Fragen - alle Felder deaktiviert?": "No hay preguntas: ¿están desactivados todos los campos?",
  "Instanz existiert nicht mehr": "La instancia ya no existe",
- "Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.": "Aún no está configurado – añade una clave de TypeSafe y al menos una instancia de Paperless en <a href=\"/setup\">Configuración</a>.",
+ "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.": "Aún no hay ninguna instancia de Paperless – añade una en <a href=\"/setup\">Configuración</a>.",
  "Modus": "Modo",
  "Probelauf – schreibt nichts": "Simulación – no escribe nada",
  "Nur Vorschläge (Review)": "Solo sugerencias (revisión)",
@@ -454,5 +454,10 @@
  "Benutzer": "Usuario",
  "Passwort": "Contraseña",
  "Benutzer oder Passwort falsch": "Usuario o contraseña incorrectos",
- "Zu viele Fehlversuche – bitte eine Minute warten": "Demasiados intentos fallidos – espera un minuto"
+ "Zu viele Fehlversuche – bitte eine Minute warten": "Demasiados intentos fallidos – espera un minuto",
+ "optional, wird als Bearer-Token gesendet": "opcional, se envía como token Bearer",
+ "Warteschlangen-Tag": "Etiqueta de cola",
+ "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Vacío: Jev consulta la bandeja de entrada. Si no, solo documentos con esta etiqueta, p. ej. puesta por una herramienta previa; Jev la quita tras procesarlos.",
+ "System-Tags": "Etiquetas del sistema",
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Separadas por comas. Jev nunca sugiere ni revisa estas etiquetas, p. ej. etiquetas de estado de otras herramientas."
 }

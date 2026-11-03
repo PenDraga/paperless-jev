@@ -43,7 +43,7 @@
  "Kein TypeSafe-API-Key konfiguriert": "Geen TypeSafe-API-sleutel ingesteld",
  "Keine Fragen - alle Felder deaktiviert?": "Geen vragen - zijn alle velden uitgeschakeld?",
  "Instanz existiert nicht mehr": "Instantie bestaat niet meer",
- "Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.": "Nog niet ingesteld – voeg onder <a href=\"/setup\">Configuratie</a> een TypeSafe-sleutel en minstens één Paperless-instantie toe.",
+ "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.": "Nog geen Paperless-instantie – voeg er een toe onder <a href=\"/setup\">Configuratie</a>.",
  "Modus": "Modus",
  "Probelauf – schreibt nichts": "Proefrun – schrijft niets",
  "Nur Vorschläge (Review)": "Alleen suggesties (controle)",
@@ -454,5 +454,10 @@
  "Benutzer": "Gebruikersnaam",
  "Passwort": "Wachtwoord",
  "Benutzer oder Passwort falsch": "Onjuiste gebruikersnaam of wachtwoord",
- "Zu viele Fehlversuche – bitte eine Minute warten": "Te veel mislukte pogingen – wacht een minuut"
+ "Zu viele Fehlversuche – bitte eine Minute warten": "Te veel mislukte pogingen – wacht een minuut",
+ "optional, wird als Bearer-Token gesendet": "optioneel, wordt als bearer-token verzonden",
+ "Warteschlangen-Tag": "Wachtrij-tag",
+ "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Leeg: Jev controleert de inbox. Anders alleen documenten met deze tag, bijv. gezet door een tool ervoor; Jev verwijdert hem na verwerking.",
+ "System-Tags": "Systeemtags",
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Kommagescheiden. Jev stelt deze tags nooit voor en controleert ze niet, bijv. statustags van andere tools."
 }

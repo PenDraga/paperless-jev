@@ -13,6 +13,9 @@
       <label>{{ _("Server-URL") }}<input name="classifier_url" value="{{ cfg.classifier_url }}" placeholder="http://192.168.0.16:11434"></label>
       <label>{{ _("Modell") }}<input name="classifier_model" value="{{ cfg.classifier_model }}" placeholder="clef">
         <small>{{ _("Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.") }}</small></label>
+      <label>{{ _("API-Key") }} {% if has_classifier_key %}<small class="good">{{ _("(gespeichert – leer lassen, um ihn zu behalten)") }}</small>{% endif %}
+        <input type="password" name="classifier_api_key" autocomplete="off" placeholder="{{ _('gespeichert') if has_classifier_key else _('optional, wird als Bearer-Token gesendet') }}">
+      </label>
     </div>
     <div class="clf-typesafe">
     <label>{{ _("API-Key") }} {% if has_key %}<small class="good">{{ _("(gespeichert – leer lassen, um ihn zu behalten)") }}</small>{% endif %}

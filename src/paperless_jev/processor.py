@@ -177,7 +177,7 @@ class Processor:
                 continue
             try:
                 async with self.client(inst) as pl:
-                    doc_ids = await pl.inbox_document_ids()
+                    doc_ids = await self.pending_ids(inst, pl)
             except PaperlessError as e:
                 log.warning("Polling %s fehlgeschlagen: %s", inst.name, e)
                 continue
@@ -185,6 +185,21 @@ class Processor:
                 if await self.enqueue(inst.id, doc_id, "manual" if force else "poll", force=force):
                     count += 1
         return count
+
+    async def pending_ids(self, inst: Instance, pl: PaperlessClient) -> list[int]:
+        """Posteingang, oder bei gesetztem Warteschlangen-Tag nur die damit übergebenen Dokumente."""
+        if not (poll_tag := self.config.all().get("poll_tag")):
+            return await pl.inbox_document_ids()
+        tag_id = (await self.metadata(inst, pl)).tag_id(poll_tag)
+        return await pl.document_ids_with_tag(tag_id) if tag_id is not None else []
+
+    async def handed_over(self, inst: Instance, doc_id: int) -> bool:
+        """Darf der Webhook das Dokument schon einreihen? Mit Warteschlangen-Tag erst, wenn er gesetzt ist."""
+        if not (poll_tag := self.config.all().get("poll_tag")):
+            return True
+        async with self.client(inst) as pl:
+            tag_id = (await self.metadata(inst, pl)).tag_id(poll_tag)
+            return tag_id is not None and tag_id in (await pl.document(doc_id)).get("tags", [])
 
     async def _poller(self) -> None:
         while True:
@@ -345,6 +360,9 @@ class Processor:
                 data["title"] = title
         else:
             tags.add(review_tag)
+        # Übergabe erledigt: der Warteschlangen-Tag geht in beiden Fällen weg
+        if cfg.get("poll_tag") and (poll_tag := meta.tag_id(cfg["poll_tag"])) is not None:
+            tags.discard(poll_tag)
         data["tags"] = sorted(tags)
         await pl.patch_document(doc["id"], data)
         return data

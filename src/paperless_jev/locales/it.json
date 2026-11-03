@@ -43,7 +43,7 @@
  "Kein TypeSafe-API-Key konfiguriert": "Nessuna chiave API TypeSafe configurata",
  "Keine Fragen - alle Felder deaktiviert?": "Nessuna domanda – tutti i campi sono disattivati?",
  "Instanz existiert nicht mehr": "L'istanza non esiste più",
- "Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.": "Non ancora configurato – aggiungi una chiave TypeSafe e almeno un'istanza Paperless in <a href=\"/setup\">Configurazione</a>.",
+ "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.": "Nessuna istanza Paperless – aggiungine una in <a href=\"/setup\">Configurazione</a>.",
  "Modus": "Modalità",
  "Probelauf – schreibt nichts": "Simulazione – non scrive nulla",
  "Nur Vorschläge (Review)": "Solo suggerimenti (revisione)",
@@ -454,5 +454,10 @@
  "Benutzer": "Nome utente",
  "Passwort": "Password",
  "Benutzer oder Passwort falsch": "Nome utente o password errati",
- "Zu viele Fehlversuche – bitte eine Minute warten": "Troppi tentativi falliti – attendi un minuto"
+ "Zu viele Fehlversuche – bitte eine Minute warten": "Troppi tentativi falliti – attendi un minuto",
+ "optional, wird als Bearer-Token gesendet": "facoltativo, inviato come token Bearer",
+ "Warteschlangen-Tag": "Tag di coda",
+ "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Vuoto: Jev interroga la posta in arrivo. Altrimenti solo i documenti con questo tag, ad es. impostato da uno strumento a monte; Jev lo rimuove dopo l’elaborazione.",
+ "System-Tags": "Tag di sistema",
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Separati da virgole. Jev non suggerisce né verifica mai questi tag, ad es. i tag di stato di altri strumenti."
 }

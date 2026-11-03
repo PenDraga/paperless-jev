@@ -150,12 +150,20 @@ Paperless (≥ 2.14) → *Workflows* → neuer Workflow:
 Polling (Standard alle 5 Minuten) bleibt als Fallback aktiv und verarbeitet nur Dokumente im Posteingang,
 die noch nie bewertet wurden.
 
+### Übergabe von einem anderen Werkzeug
+
+Soll ein anderes Werkzeug zuerst fertig werden (z. B. paperless-gpt für OCR und Titel), lässt man es einen Tag
+wie `jev-pending` setzen und trägt diesen unter *Regeln → Tags für den Status* als *Warteschlangen-Tag* ein. Jev nimmt
+dann nur Dokumente mit diesem Tag – per Polling und per Webhook – und entfernt ihn danach. Die eigenen Tags des
+anderen Werkzeugs gehören unter *System-Tags*, damit Jev sie nie vorschlägt oder prüft.
+
 ## Lokale Klassifizierung mit Ollama (clef)
 
 Statt TypeSafe Jev kann ein lokales Entscheidungsmodell klassifizieren, das den Endpunkt `/v1/systemone` von
 Ollama unterstützt (Fähigkeit «decision»), z. B. [clef](https://ollama.com/library/clef) von Cloudflare (27B,
 Apache 2.0, ~18 GB). Einrichten unter *Setup → Klassifizierung → Lokal über Ollama* mit URL und Modell.
 Dokumente verlassen dann das eigene Netz nicht.
+Verlangt der Server eine Anmeldung, einen API-Key eintragen; er wird als Bearer-Token gesendet.
 
 paperless-jev berücksichtigt die Grenzen von clef automatisch: höchstens 64 Fragen pro Anfrage (wird aufgeteilt)
 und 26 Kandidaten pro Auswahlfrage (bei mehr Korrespondenten oder Typen ein Turnier: Gruppen bewerten, Finale mit

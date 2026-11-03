@@ -150,11 +150,19 @@ Paperless (≥ 2.14) → *Workflows* → new workflow:
 Polling (every 5 minutes by default) stays active as a fallback and only processes inbox documents that
 have never been evaluated.
 
+### Handing off from another tool
+
+To let another tool (e.g. paperless-gpt for OCR and titles) finish first, have it add a tag such as
+`jev-pending` and enter that as the *queue tag* under *Rules → Status tags*. Jev then only takes documents
+with that tag – by polling and by webhook – and removes it afterwards. List the other tool's own tags under
+*system tags* so Jev never suggests or checks them.
+
 ## Local classification with Ollama (clef)
 
 Instead of TypeSafe Jev, a local decision model that supports Ollama's `/v1/systemone` endpoint (capability
 "decision") can classify, e.g. [clef](https://ollama.com/library/clef) by Cloudflare (27B, Apache 2.0, ~18 GB).
 Set it up under *Setup → Classification → Local via Ollama* with URL and model. Documents then never leave your network.
+If the server requires authentication, enter an API key; it is sent as a bearer token.
 
 paperless-jev handles clef's limits automatically: at most 64 questions per request (split up) and 26 candidates per
 choice question (with more correspondents or types, a tournament: rate groups, final round with the best) – only if

@@ -96,8 +96,8 @@ EN: dict[str, str] = {
     "Keine Fragen - alle Felder deaktiviert?": "No questions - are all fields disabled?",
     "Instanz existiert nicht mehr": "Instance no longer exists",
     # --- Übersicht ------------------------------------------------------------
-    "Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.":
-        "Not set up yet – please add a TypeSafe key and at least one Paperless instance under <a href=\"/setup\">Setup</a>.",
+    "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.":
+        "No Paperless instance yet – please add one under <a href=\"/setup\">Setup</a>.",
     "Modus": "Mode",
     "Probelauf – schreibt nichts": "Dry run – writes nothing",
     "Nur Vorschläge (Review)": "Suggestions only (review)",
@@ -545,6 +545,13 @@ EN: dict[str, str] = {
     "Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.":
         "The model must support the /v1/systemone endpoint (capability \"decision\"). Local models report different confidence values than Jev – check the thresholds under Rules.",
     "Ollama-URL oder Modell fehlt": "Ollama URL or model missing",
+    "optional, wird als Bearer-Token gesendet": "optional, sent as a bearer token",
+    "Warteschlangen-Tag": "Queue tag",
+    "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.":
+        "Empty: Jev polls the inbox. Otherwise only documents with this tag, e.g. set by an upstream tool; Jev removes it after processing.",
+    "System-Tags": "System tags",
+    "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.":
+        "Comma-separated. Jev never suggests or checks these tags, e.g. status tags of other tools.",
     "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.":
         "Thresholds for the local model «{model}» – local models report lower confidence values than Jev and therefore have their own thresholds. Jev's are kept. Example titles and similar documents are not sent to local models.",
     "Quellcode": "Source code",

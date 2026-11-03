@@ -292,6 +292,7 @@ async def dashboard(request: Request):
         request,
         "dashboard.html",
         cfg=cfg,
+        classifier_error=classifier_missing(cfg),
         instances=_cfg(request).instances(),
         counts=counts,
         tokens=tokens,
@@ -869,6 +870,7 @@ async def setup_page(request: Request):
         "setup.html",
         cfg=cfg,
         has_key=bool(cfg["typesafe_api_key"]),
+        has_classifier_key=bool(cfg["classifier_api_key"]),
         instances=_cfg(request).instances(),
         base_url=str(request.base_url).rstrip("/"),
     )
@@ -877,7 +879,7 @@ async def setup_page(request: Request):
 @app.post("/setup/typesafe")
 async def save_typesafe(
     request: Request, api_key: str = Form(""), model: str = Form("jev-latest"), classifier_kind: str = Form("typesafe"),
-    classifier_url: str = Form(""), classifier_model: str = Form(""),
+    classifier_url: str = Form(""), classifier_model: str = Form(""), classifier_api_key: str = Form(""),
 ):
     values: dict[str, Any] = {
         "model": model.strip() or "jev-latest",
@@ -885,8 +887,10 @@ async def save_typesafe(
         "classifier_url": classifier_url.strip().rstrip("/"),
         "classifier_model": classifier_model.strip() or "clef",
     }
-    if api_key.strip():
-        values["typesafe_api_key"] = api_key.strip()
+    # leere Passwortfelder behalten den gespeicherten Wert
+    for key, value in (("typesafe_api_key", api_key), ("classifier_api_key", classifier_api_key)):
+        if value.strip():
+            values[key] = value.strip()
     _cfg(request).update(values)
     return _redirect("/setup", msg=_("TypeSafe-Einstellungen gespeichert"))
 
@@ -1009,6 +1013,8 @@ async def save_rules(request: Request):
             "tag_done": str(form.get("tag_done") or cfg["tag_done"]).strip(),
             "tag_review": str(form.get("tag_review") or cfg["tag_review"]).strip(),
             "tag_ignore": str(form.get("tag_ignore") or cfg["tag_ignore"]).strip(),
+            "poll_tag": str(form.get("poll_tag") or "").strip(),
+            "system_tags": list(dict.fromkeys(t.strip() for t in str(form.get("system_tags") or "").split(",") if t.strip())),
             "title_mode": mode_title if (mode_title := str(form.get("title_mode", "off"))) in ("off", "template", "llm") else "off",
             "title_template": str(form.get("title_template") or cfg["title_template"]),
             "llm_provider": provider if (provider := str(form.get("llm_provider", "ollama"))) in PROVIDERS else "ollama",
@@ -1372,6 +1378,11 @@ async def webhook(request: Request, instance_name: str, token: str = ""):
         doc_id = int(str(doc_id).strip())
     except (TypeError, ValueError):
         raise HTTPException(400, "doc_id fehlt") from None
+    try:
+        if not await _proc(request).handed_over(inst, doc_id):
+            return JSONResponse({"queued": False, "job_id": None, "reason": "queue tag not set"})
+    except PaperlessError as e:
+        raise HTTPException(502, str(e)) from None
     job_id = await _proc(request).enqueue(inst.id, doc_id, "webhook", force=True)
     return JSONResponse({"queued": job_id is not None, "job_id": job_id})
 

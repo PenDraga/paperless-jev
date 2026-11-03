@@ -174,7 +174,7 @@ def classifier(cfg: dict[str, Any], timeout: float | None = None) -> tuple[JevCl
     """Client und Modellname je nach Einstellung unter Setup."""
     if cfg.get("classifier") == "ollama":
         # lokale Modelle sind langsamer, besonders beim ersten Laden
-        client = JevClient(None, timeout=timeout or 600.0, base_url=cfg["classifier_url"],
+        client = JevClient(cfg.get("classifier_api_key") or None, timeout=timeout or 600.0, base_url=cfg["classifier_url"],
                            max_questions=OLLAMA_MAX_QUESTIONS, keep_alive="30m", max_choices=OLLAMA_MAX_CHOICES)
         client.adaptive = True
         return client, cfg["classifier_model"]

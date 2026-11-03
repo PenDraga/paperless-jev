@@ -50,6 +50,10 @@
     <label>{{ _("Review nötig") }} <input name="tag_review" value="{{ cfg.tag_review }}"></label>
     <label>{{ _("Ignorieren") }} <input name="tag_ignore" value="{{ cfg.tag_ignore }}"><small>{{ _("Dokumente mit diesem Tag gehen nie an Jev.") }}</small></label>
   </div>
+  <div class="grid">
+    <label>{{ _("Warteschlangen-Tag") }} <input name="poll_tag" value="{{ cfg.poll_tag }}" placeholder="jev-pending"><small>{{ _("Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.") }}</small></label>
+    <label>{{ _("System-Tags") }} <input name="system_tags" value="{{ cfg.system_tags|join(', ') }}"><small>{{ _("Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.") }}</small></label>
+  </div>
 </article>
 
 <article>

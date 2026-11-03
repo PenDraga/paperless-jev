@@ -43,7 +43,7 @@
  "Kein TypeSafe-API-Key konfiguriert": "Nie skonfigurowano klucza API TypeSafe",
  "Keine Fragen - alle Felder deaktiviert?": "Brak pytań – czy wszystkie pola są wyłączone?",
  "Instanz existiert nicht mehr": "Instancja już nie istnieje",
- "Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.": "Jeszcze nie skonfigurowano – dodaj klucz TypeSafe i co najmniej jedną instancję Paperless w <a href=\"/setup\">Konfiguracji</a>.",
+ "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.": "Brak instancji Paperless – dodaj ją w <a href=\"/setup\">Konfiguracji</a>.",
  "Modus": "Tryb",
  "Probelauf – schreibt nichts": "Przebieg próbny – nic nie zapisuje",
  "Nur Vorschläge (Review)": "Tylko sugestie (weryfikacja)",
@@ -454,5 +454,10 @@
  "Benutzer": "Nazwa użytkownika",
  "Passwort": "Hasło",
  "Benutzer oder Passwort falsch": "Nieprawidłowa nazwa użytkownika lub hasło",
- "Zu viele Fehlversuche – bitte eine Minute warten": "Zbyt wiele nieudanych prób – odczekaj minutę"
+ "Zu viele Fehlversuche – bitte eine Minute warten": "Zbyt wiele nieudanych prób – odczekaj minutę",
+ "optional, wird als Bearer-Token gesendet": "opcjonalnie, wysyłany jako token Bearer",
+ "Warteschlangen-Tag": "Tag kolejki",
+ "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Puste: Jev sprawdza skrzynkę odbiorczą. W przeciwnym razie tylko dokumenty z tym tagiem, np. ustawionym przez wcześniejsze narzędzie; Jev usuwa go po przetworzeniu.",
+ "System-Tags": "Tagi systemowe",
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Oddzielone przecinkami. Jev nigdy nie proponuje ani nie sprawdza tych tagów, np. tagów stanu innych narzędzi."
 }

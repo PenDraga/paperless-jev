@@ -43,7 +43,7 @@
  "Kein TypeSafe-API-Key konfiguriert": "Aucune clé API TypeSafe configurée",
  "Keine Fragen - alle Felder deaktiviert?": "Aucune question – tous les champs sont-ils désactivés ?",
  "Instanz existiert nicht mehr": "L’instance n’existe plus",
- "Noch nicht eingerichtet – bitte unter <a href=\"/setup\">Setup</a> TypeSafe-Key und mindestens eine Paperless-Instanz hinterlegen.": "Pas encore configuré – ajoutez une clé TypeSafe et au moins une instance Paperless sous <a href=\"/setup\">Configuration</a>.",
+ "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.": "Aucune instance Paperless – veuillez en ajouter une sous <a href=\"/setup\">Configuration</a>.",
  "Modus": "Mode",
  "Probelauf – schreibt nichts": "Simulation – n’écrit rien",
  "Nur Vorschläge (Review)": "Suggestions uniquement (vérification)",
@@ -454,5 +454,10 @@
  "Benutzer": "Nom d'utilisateur",
  "Passwort": "Mot de passe",
  "Benutzer oder Passwort falsch": "Nom d'utilisateur ou mot de passe incorrect",
- "Zu viele Fehlversuche – bitte eine Minute warten": "Trop de tentatives échouées – veuillez patienter une minute"
+ "Zu viele Fehlversuche – bitte eine Minute warten": "Trop de tentatives échouées – veuillez patienter une minute",
+ "optional, wird als Bearer-Token gesendet": "facultatif, envoyé comme jeton Bearer",
+ "Warteschlangen-Tag": "Étiquette de file d’attente",
+ "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Vide : Jev interroge la boîte de réception. Sinon, uniquement les documents portant cette étiquette, p. ex. posée par un outil en amont ; Jev la retire après traitement.",
+ "System-Tags": "Étiquettes système",
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Séparées par des virgules. Jev ne propose ni ne vérifie jamais ces étiquettes, p. ex. les étiquettes d’état d’autres outils."
 }
