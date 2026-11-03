@@ -26,13 +26,28 @@ MONTHS = {
     "oktober": 10, "october": 10, "okt": 10, "oct": 10,
     "november": 11, "nov": 11,
     "dezember": 12, "december": 12, "dez": 12, "dec": 12,
+    # Niederländisch, Französisch, Italienisch, Spanisch, Polnisch (Genitiv)
+    "januari": 1, "janvier": 1, "gennaio": 1, "enero": 1, "stycznia": 1,
+    "februari": 2, "février": 2, "fevrier": 2, "febbraio": 2, "febrero": 2, "lutego": 2,
+    "maart": 3, "mrt": 3, "mars": 3, "marzo": 3, "marca": 3,
+    "avril": 4, "aprile": 4, "abril": 4, "kwietnia": 4,
+    "mei": 5, "maggio": 5, "mayo": 5, "maja": 5,
+    "juin": 6, "giugno": 6, "junio": 6, "czerwca": 6,
+    "juillet": 7, "luglio": 7, "julio": 7, "lipca": 7,
+    "augustus": 8, "août": 8, "aout": 8, "agosto": 8, "sierpnia": 8,
+    "septembre": 9, "settembre": 9, "septiembre": 9, "września": 9, "wrzesnia": 9,
+    "octobre": 10, "ottobre": 10, "octubre": 10, "października": 10, "pazdziernika": 10,
+    "novembre": 11, "noviembre": 11, "listopada": 11,
+    "décembre": 12, "decembre": 12, "dicembre": 12, "diciembre": 12, "grudnia": 12,
 }  # fmt: skip
 _MONTH_RE = "|".join(sorted(MONTHS, key=len, reverse=True))
 
 NUMERIC_DMY = re.compile(r"(?<![\d.])(\d{1,2})[./](\d{1,2})[./](\d{4}|\d{2})(?![\d])")
+# 17-03-2021, in den Niederlanden üblich; nur mit vierstelligem Jahr (sonst zu viele Fehltreffer)
+DASH_DMY = re.compile(r"(?<![\d-])(\d{1,2})-(\d{1,2})-(\d{4})(?![\d-])")
 ISO = re.compile(r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)")
 NAMED_DMY = re.compile(
-    rf"(?<!\d)(\d{{1,2}})\.?\s*({_MONTH_RE})\.?\s+(\d{{4}})(?!\d)", re.IGNORECASE
+    rf"(?<!\d)(\d{{1,2}})\.?\s*(?:de\s+)?({_MONTH_RE})\.?\s+(?:de\s+)?(\d{{4}})(?!\d)", re.IGNORECASE
 )
 NAMED_MDY = re.compile(
     rf"\b({_MONTH_RE})\.?\s+(\d{{1,2}}),?\s+(\d{{4}})(?!\d)", re.IGNORECASE
@@ -73,6 +88,9 @@ def find_dates(text: str, limit: int = MAX_DATE_CANDIDATES) -> list[DateCandidat
     found: list[tuple[int, str, date]] = []
     for m in NUMERIC_DMY.finditer(text):
         if value := _make(_year(m[3]), int(m[2]), int(m[1])):
+            found.append((m.start(), m[0], value))
+    for m in DASH_DMY.finditer(text):
+        if value := _make(int(m[3]), int(m[2]), int(m[1])):
             found.append((m.start(), m[0], value))
     for m in ISO.finditer(text):
         if value := _make(int(m[1]), int(m[2]), int(m[3])):

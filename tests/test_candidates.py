@@ -25,6 +25,23 @@ def test_find_dates_english_and_limits():
     assert [d.value for d in found] == [date(2026, 3, 5)]
 
 
+def test_find_dates_dash_and_other_languages():
+    text = (
+        "Factuurdatum: 17-03-2021, vervaldatum 1-4-2021. Klantnummer 12-34-5678\n"
+        "Datum: 5 mei 2021 · le 3 août 2021 · 9 de marzo de 2021 · 2 września 2021\n"
+        "Uitgifte 2021-06-30"
+    )
+    assert [d.value for d in find_dates(text)] == [
+        date(2021, 3, 17),
+        date(2021, 4, 1),
+        date(2021, 5, 5),
+        date(2021, 8, 3),
+        date(2021, 3, 9),
+        date(2021, 9, 2),
+        date(2021, 6, 30),
+    ]
+
+
 def test_correspondent_prefilter_only_for_many():
     few = {1: "Swisscom", 2: "Stadtwerke"}
     assert correspondent_candidates("irgendwas", few) == few
