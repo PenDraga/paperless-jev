@@ -459,5 +459,12 @@
  "Warteschlangen-Tag": "Étiquette de file d’attente",
  "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Vide : Jev interroge la boîte de réception. Sinon, uniquement les documents portant cette étiquette, p. ex. posée par un outil en amont ; Jev la retire après traitement.",
  "System-Tags": "Étiquettes système",
- "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Séparées par des virgules. Jev ne propose ni ne vérifie jamais ces étiquettes, p. ex. les étiquettes d’état d’autres outils."
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Séparées par des virgules. Jev ne propose ni ne vérifie jamais ces étiquettes, p. ex. les étiquettes d’état d’autres outils.",
+ "Konto-ID": "ID du compte",
+ "Token mit Workers-AI-Berechtigung": "jeton avec l’autorisation Workers AI",
+ "Token-Datei aus der Umgebung gefunden.": "Fichier de jeton trouvé dans l’environnement.",
+ "Keine Cloudflare-Konto-ID konfiguriert": "Aucun ID de compte Cloudflare configuré",
+ "Kein Cloudflare-API-Token konfiguriert": "Aucun jeton d’API Cloudflare configuré",
+ "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "le même Jev via votre propre compte Cloudflare, payé avec du crédit AI Gateway",
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Modèle <code>typesafe/jev</code> – Cloudflare choisit la version, elle ne peut pas être figée. Les champs vides se rabattent sur <code>CLOUDFLARE_ACCOUNT_ID</code> et <code>CLOUDFLARE_API_TOKEN_FILE</code> de l’environnement."
 }

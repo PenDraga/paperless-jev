@@ -644,7 +644,8 @@ input[type=checkbox]:not([role=switch]) { border-radius: .28rem !important; }
 /* Setup: Klassifizierer */
 .clf-choice { display: grid; gap: .4rem; margin-bottom: 1rem; }
 .clf-choice label { margin: 0; }
-form:has(input[value=ollama]:checked) .clf-typesafe, form:has(input[value=typesafe]:checked) .clf-ollama { display: none; }
+.clf-section { display: none; }
+form:has(input[name=classifier_kind][value=typesafe]:checked) .clf-typesafe, form:has(input[name=classifier_kind][value=cloudflare]:checked) .clf-cloudflare, form:has(input[name=classifier_kind][value=ollama]:checked) .clf-ollama { display: block; }
 
 /* --- Anmeldung ------------------------------------------------------------------ */
 .login-card { max-width: 24rem; margin: 2rem auto; }

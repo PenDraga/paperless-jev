@@ -1,4 +1,4 @@
-"""Client für den System-One-Endpunkt: TypeSafe Jev (Cloud) oder lokal über Ollama (z. B. clef).
+"""Client für den System-One-Endpunkt: TypeSafe Jev (direkt oder über Cloudflare Workers AI) oder lokal über Ollama (z. B. clef).
 
 Bewusst direkt über HTTP statt über das SDK: der Endpunkt ist ein einzelner
 POST, und so bleibt das Image klein und das Verhalten bei 429 nachvollziehbar.
@@ -10,11 +10,16 @@ from __future__ import annotations
 
 import asyncio
 import os
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 BASE_URL = os.environ.get("TYPESAFE_BASE_URL", "https://api.typesafe.ai")
+CLOUDFLARE_URL = "https://api.cloudflare.com"
+CLOUDFLARE_MODEL = "typesafe/jev"
+# Unter Setup wählbare Klassifizierer
+CLASSIFIERS = ("typesafe", "cloudflare", "ollama")
 RETRY_STATUS = {429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 4
 
@@ -43,7 +48,12 @@ class JevClient:
     def __init__(
         self, api_key: str | None, timeout: float = 60.0, base_url: str | None = None,
         max_questions: int | None = None, keep_alive: str | None = None, max_choices: int | None = None,
+        cloudflare_account: str | None = None,
     ) -> None:
+        # Workers AI: eigener Pfad und eine Hülle um dieselbe System-One-Antwort
+        self.cloudflare_account = cloudflare_account
+        if cloudflare_account:
+            base_url = CLOUDFLARE_URL
         self._http = httpx.AsyncClient(
             base_url=(base_url or BASE_URL).rstrip("/"),
             headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
@@ -54,7 +64,7 @@ class JevClient:
         self.base_url = (base_url or BASE_URL).rstrip("/")
         self.adaptive = False  # max_choices erst nach einer Ablehnung durch den Server
         self.keep_alive = keep_alive
-        self.name = "Ollama" if base_url else "TypeSafe"
+        self.name = "Cloudflare" if cloudflare_account else "Ollama" if base_url else "TypeSafe"
 
     async def __aenter__(self) -> JevClient:
         return self
@@ -142,16 +152,20 @@ class JevClient:
         payload: dict[str, Any] = {"state": state, "model": model, "questions": questions}
         if self.keep_alive:
             payload["keep_alive"] = self.keep_alive
+        path = "/v1/systemone"
+        if self.cloudflare_account:
+            path = f"/client/v4/accounts/{self.cloudflare_account}/ai/run"
+            payload = {"model": model, "input": {"state": state, "questions": questions}}
         delay = 1.0
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
-                resp = await self._http.post("/v1/systemone", json=payload)
+                resp = await self._http.post(path, json=payload)
             except httpx.HTTPError as e:
                 if attempt == MAX_ATTEMPTS:
                     raise JevError(f"{self.name} nicht erreichbar: {e}") from e
             else:
                 if resp.status_code < 400:
-                    return resp.json()
+                    return self._cloudflare_result(resp.json(), questions) if self.cloudflare_account else resp.json()
                 if resp.status_code == 400 and "candidates" in resp.text:
                     raise TooManyCandidates(f"{self.name} HTTP 400: {resp.text[:500]}")
                 if resp.status_code not in RETRY_STATUS or attempt == MAX_ATTEMPTS:
@@ -163,7 +177,27 @@ class JevClient:
             delay = min(delay * 2, 30)
         raise JevError(f"{self.name}: keine Antwort")
 
+    @staticmethod
+    def _cloudflare_result(data: dict[str, Any], questions: dict[str, dict[str, Any]]) -> dict[str, Any]:
+        """Workers-AI-Hülle auspacken; unvollständige Antworten dürfen kein Dokument abschliessen."""
+        if data.get("success") is False:
+            raise JevError(f"Cloudflare: {data.get('errors')}")
+        data = data.get("result", data)
+        if data.get("state") == "Completed":
+            data = data.get("result", {})
+        answers = data.get("answers", {})
+        if set(answers) != set(questions):
+            raise JevError("Cloudflare: unvollständige Antwort")
+        for key, question in questions.items():
+            if question["type"] == "noul":
+                value = answers[key].get("noul")
+                if not isinstance(value, (int, float)) or not 0 <= value <= 1:
+                    raise JevError("Cloudflare: ungültige Tag-Wahrscheinlichkeit")
+        return data
+
     async def models(self) -> list[str]:
+        if self.cloudflare_account:
+            return [CLOUDFLARE_MODEL]
         resp = await self._http.get("/v1/models")
         if resp.status_code >= 400:
             raise JevError(f"TypeSafe HTTP {resp.status_code}: {resp.text[:300]}")
@@ -178,11 +212,31 @@ def classifier(cfg: dict[str, Any], timeout: float | None = None) -> tuple[JevCl
                            max_questions=OLLAMA_MAX_QUESTIONS, keep_alive="30m", max_choices=OLLAMA_MAX_CHOICES)
         client.adaptive = True
         return client, cfg["classifier_model"]
+    if cfg.get("classifier") == "cloudflare":
+        account, token = cloudflare_credentials(cfg)
+        return JevClient(token, timeout=timeout or 60.0, cloudflare_account=account), CLOUDFLARE_MODEL
     return JevClient(cfg["typesafe_api_key"], timeout=timeout or 60.0), cfg["model"]
+
+
+def cloudflare_credentials(cfg: dict[str, Any]) -> tuple[str, str]:
+    """Konto und Token aus Setup; sonst aus der Umgebung (Token als Datei, z. B. ein Docker-Secret)."""
+    account = cfg.get("cloudflare_account_id") or os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
+    token = cfg.get("cloudflare_api_token") or ""
+    if not token and (path := os.environ.get("CLOUDFLARE_API_TOKEN_FILE")):
+        try:
+            token = Path(path).read_text().strip()
+        except OSError:
+            token = ""
+    return account.strip(), token
 
 
 def classifier_missing(cfg: dict[str, Any]) -> str | None:
     """Grund, warum noch nicht klassifiziert werden kann (sonst None)."""
     if cfg.get("classifier") == "ollama":
         return None if cfg.get("classifier_url") and cfg.get("classifier_model") else "Ollama-URL oder Modell fehlt"
+    if cfg.get("classifier") == "cloudflare":
+        account, token = cloudflare_credentials(cfg)
+        if not account:
+            return "Keine Cloudflare-Konto-ID konfiguriert"
+        return None if token else "Kein Cloudflare-API-Token konfiguriert"
     return None if cfg.get("typesafe_api_key") else "Kein TypeSafe-API-Key konfiguriert"

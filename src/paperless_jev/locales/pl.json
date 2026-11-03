@@ -459,5 +459,12 @@
  "Warteschlangen-Tag": "Tag kolejki",
  "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Puste: Jev sprawdza skrzynkę odbiorczą. W przeciwnym razie tylko dokumenty z tym tagiem, np. ustawionym przez wcześniejsze narzędzie; Jev usuwa go po przetworzeniu.",
  "System-Tags": "Tagi systemowe",
- "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Oddzielone przecinkami. Jev nigdy nie proponuje ani nie sprawdza tych tagów, np. tagów stanu innych narzędzi."
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Oddzielone przecinkami. Jev nigdy nie proponuje ani nie sprawdza tych tagów, np. tagów stanu innych narzędzi.",
+ "Konto-ID": "ID konta",
+ "Token mit Workers-AI-Berechtigung": "token z uprawnieniem Workers AI",
+ "Token-Datei aus der Umgebung gefunden.": "Znaleziono plik tokenu w środowisku.",
+ "Keine Cloudflare-Konto-ID konfiguriert": "Nie skonfigurowano ID konta Cloudflare",
+ "Kein Cloudflare-API-Token konfiguriert": "Nie skonfigurowano tokenu API Cloudflare",
+ "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "ten sam Jev przez własne konto Cloudflare, opłacany środkami w AI Gateway",
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare wybiera wersję, nie można jej przypiąć. Puste pola korzystają z <code>CLOUDFLARE_ACCOUNT_ID</code> i <code>CLOUDFLARE_API_TOKEN_FILE</code> ze środowiska."
 }

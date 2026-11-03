@@ -546,6 +546,14 @@ EN: dict[str, str] = {
         "The model must support the /v1/systemone endpoint (capability \"decision\"). Local models report different confidence values than Jev – check the thresholds under Rules.",
     "Ollama-URL oder Modell fehlt": "Ollama URL or model missing",
     "optional, wird als Bearer-Token gesendet": "optional, sent as a bearer token",
+    "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "the same Jev through your own Cloudflare account, paid with AI Gateway credits",
+    "Konto-ID": "Account ID",
+    "Token mit Workers-AI-Berechtigung": "token with Workers AI permission",
+    "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.":
+        "Model <code>typesafe/jev</code> – Cloudflare picks the version, it cannot be pinned. Empty fields fall back to <code>CLOUDFLARE_ACCOUNT_ID</code> and <code>CLOUDFLARE_API_TOKEN_FILE</code> from the environment.",
+    "Token-Datei aus der Umgebung gefunden.": "Token file found in the environment.",
+    "Keine Cloudflare-Konto-ID konfiguriert": "No Cloudflare account ID configured",
+    "Kein Cloudflare-API-Token konfiguriert": "No Cloudflare API token configured",
     "Warteschlangen-Tag": "Queue tag",
     "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.":
         "Empty: Jev polls the inbox. Otherwise only documents with this tag, e.g. set by an upstream tool; Jev removes it after processing.",

@@ -128,6 +128,7 @@ Alles Fachliche wird in der Web-UI eingestellt. Per Umgebung gibt es nur:
 | `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optionale Anmeldung für die Web-UI: Anmeldeseite, die mit Passwort-Managern funktioniert, bleibt bei Nutzung 30 Tage angemeldet, Abmelde-Knopf. `/hook/*` und `/health` bleiben offen; ein Basic-Auth-Header wird für Skripte weiter akzeptiert. |
 | `PJ_LOG_LEVEL` | `INFO` | Log-Level |
 | `PJ_DATA_DIR` | `/data` | Datenverzeichnis (SQLite, Schlüssel) |
+| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN_FILE` | – | Optional für Cloudflare Workers AI, wenn die Felder im Setup leer sind; das Token wird aus einer Datei gelesen, z. B. einem Docker-Secret |
 | `TZ` | `Europe/Zurich` | Zeitzone für die Anzeige |
 
 **`/data` sichern** – `paperless-jev.db` und `secret.key` gehören zusammen, sonst sind die gespeicherten Tokens nicht mehr lesbar.
@@ -157,6 +158,15 @@ wie `jev-pending` setzen und trägt diesen unter *Regeln → Tags für den Statu
 dann nur Dokumente mit diesem Tag – per Polling und per Webhook – und entfernt ihn danach. Die eigenen Tags des
 anderen Werkzeugs gehören unter *System-Tags*, damit Jev sie nie vorschlägt oder prüft.
 
+## Jev über Cloudflare Workers AI
+
+Cloudflare bietet dasselbe Jev-Modell als `typesafe/jev` an, zum gleichen Preis, abgerechnet über das eigene
+Cloudflare-Konto. Unter *Setup → Klassifizierung → Cloudflare Workers AI* Konto-ID und ein API-Token mit
+Workers-AI-Berechtigung eintragen. Jev ist ein Partnermodell: Es braucht vorausbezahltes Guthaben im **AI Gateway**
+von Cloudflare (das Gratis-Kontingent von Workers AI gilt dafür nicht). Cloudflare wählt die Jev-Version; anders als
+bei TypeSafe lässt sie sich nicht pinnen, eine neue Version kann die Confidence-Werte verschieben. Im Blindtest mit
+30 abgelegten Dokumenten lieferten beide Wege identische Antworten (Confidence im Mittel 0.01 auseinander).
+
 ## Lokale Klassifizierung mit Ollama (clef)
 
 Statt TypeSafe Jev kann ein lokales Entscheidungsmodell klassifizieren, das den Endpunkt `/v1/systemone` von
@@ -185,6 +195,7 @@ Eigene Messung: `python -m bench.run --jev --ollama http://<host>:11434` (siehe 
 
 - Der gekürzte OCR-Text und die Namen deiner Stammdaten gehen an `api.typesafe.ai`. TypeSafe trainiert laut
   Doku nicht auf Kundendaten. Dokumente mit dem Tag `ai-ignorieren` werden nie gesendet.
+- Mit Cloudflare Workers AI gehen dieselben Daten stattdessen an Cloudflare (laut Cloudflare ohne Speicherung).
 - Mit einem lokalen Modell über Ollama (z. B. clef) bleibt alles im eigenen Netz.
 - Das optionale Sprachmodell läuft bei dir (Ollama, SGLang, vLLM, LM Studio …).
 - jev-1.13 kostet 0.042 USD pro Mio. Input-Tokens. Ein Dokument liegt je nach Anzahl Tags und Beispielen
@@ -199,6 +210,8 @@ docker run --rm -it --network <paperless-netz> \
   -e PAPERLESS_URL=http://paperless:8000 -e PAPERLESS_TOKEN=... -e TYPESAFE_API_KEY=... \
   paperless-jev:latest paperless-jev-spike --sample 50 --blind
 ```
+
+Mit `--cloudflare` (und `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN_FILE`) läuft Jev über Cloudflare Workers AI.
 
 `--blind` blendet die heutige Ablage aus und vergleicht die Vorschläge damit. Beschreibungen lassen sich
 vorab mit `--descriptions` testen, Vorlage: [`beschreibungen.beispiel.json`](beschreibungen.beispiel.json).

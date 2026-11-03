@@ -25,7 +25,7 @@ from typing import Any
 
 from .classifier import build_request, excluded_tags, interpret
 from .config import DEFAULTS, SINGLE_FIELDS
-from .jev import USD_PER_MTOK, JevClient
+from .jev import CLOUDFLARE_MODEL, USD_PER_MTOK, JevClient, cloudflare_credentials
 from .paperless import Metadata, PaperlessClient, collect_examples
 
 
@@ -71,6 +71,9 @@ def blind(doc: dict[str, Any], examples: dict) -> tuple[dict[str, Any], dict]:
 async def run(args: argparse.Namespace) -> int:
     cfg = copy.deepcopy(DEFAULTS)
     cfg["model"] = args.model
+    account, token = cloudflare_credentials({}) if args.cloudflare else ("", "")
+    if args.cloudflare:
+        cfg["model"] = CLOUDFLARE_MODEL
     cfg["examples"] = args.examples
     cfg["correspondent_fallback"] = args.fallback or ""
     cfg["fields"]["storage_path"]["enabled"] = args.storage_paths
@@ -81,7 +84,7 @@ async def run(args: argparse.Namespace) -> int:
     tag_stats = {"auto_ok": 0, "auto_wrong": 0, "sugg_ok": 0, "sugg_wrong": 0, "missed": 0, "actual": 0}
     async with (
         PaperlessClient(args.url, args.token, host=args.host) as pl,
-        JevClient(args.api_key) as jev,
+        (JevClient(token, cloudflare_account=account) if args.cloudflare else JevClient(args.api_key)) as jev,
     ):
         meta = await pl.metadata()
         descriptions = load_descriptions(args.descriptions, meta)
@@ -175,6 +178,8 @@ def main() -> None:
                    help="öffentlicher Hostname als Host-Header (bei Zugriff über den Containernamen)")
     p.add_argument("--api-key", default=os.environ.get("TYPESAFE_API_KEY"), help="TypeSafe-API-Key")
     p.add_argument("--model", default="jev-latest")
+    p.add_argument("--cloudflare", action="store_true",
+                   help="Jev über Cloudflare Workers AI (CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN_FILE)")
     p.add_argument("--limit", type=int, default=20, help="max. Dokumente aus dem Posteingang")
     p.add_argument("--doc", type=int, action="append", help="bestimmte Dokument-ID(s) statt Posteingang")
     p.add_argument("--sample", type=int, help="N zufällige, bereits abgelegte Dokumente statt Posteingang")
@@ -189,7 +194,11 @@ def main() -> None:
     p.add_argument("--storage-paths", action="store_true", help="auch Speicherpfade bestimmen")
     p.add_argument("--json", help="Ergebnisse inkl. gestellter Fragen als JSON speichern")
     args = p.parse_args()
-    missing = [n for n in ("url", "token", "api_key") if not getattr(args, n)]
+    missing = [n for n in ("url", "token") if not getattr(args, n)]
+    if args.cloudflare:
+        missing += [n for n, v in zip(("CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN_FILE"), cloudflare_credentials({})) if not v]
+    elif not args.api_key:
+        missing.append("api_key")
     if missing:
         p.error("fehlt: " + ", ".join(missing))
     sys.exit(asyncio.run(run(args)))

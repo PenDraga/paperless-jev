@@ -459,5 +459,12 @@
  "Warteschlangen-Tag": "Wachtrij-tag",
  "Leer: Jev fragt den Posteingang ab. Sonst nur Dokumente mit diesem Tag, z. B. von einem vorgelagerten Werkzeug gesetzt; Jev entfernt ihn nach der Bearbeitung.": "Leeg: Jev controleert de inbox. Anders alleen documenten met deze tag, bijv. gezet door een tool ervoor; Jev verwijdert hem na verwerking.",
  "System-Tags": "Systeemtags",
- "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Kommagescheiden. Jev stelt deze tags nooit voor en controleert ze niet, bijv. statustags van andere tools."
+ "Kommagetrennt. Jev schlägt diese Tags nie vor und prüft sie nicht, z. B. Status-Tags anderer Werkzeuge.": "Kommagescheiden. Jev stelt deze tags nooit voor en controleert ze niet, bijv. statustags van andere tools.",
+ "Konto-ID": "Account-ID",
+ "Token mit Workers-AI-Berechtigung": "token met Workers AI-rechten",
+ "Token-Datei aus der Umgebung gefunden.": "Tokenbestand gevonden in de omgeving.",
+ "Keine Cloudflare-Konto-ID konfiguriert": "Geen Cloudflare-account-ID ingesteld",
+ "Kein Cloudflare-API-Token konfiguriert": "Geen Cloudflare API-token ingesteld",
+ "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "dezelfde Jev via je eigen Cloudflare-account, betaald met tegoed in AI Gateway",
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare kiest de versie, die kan niet worden vastgezet. Lege velden vallen terug op <code>CLOUDFLARE_ACCOUNT_ID</code> en <code>CLOUDFLARE_API_TOKEN_FILE</code> uit de omgeving."
 }
