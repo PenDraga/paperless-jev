@@ -113,7 +113,7 @@ docker compose up -d --build
 ```
 
 1. **Einstellungen → Verbindungen** – TypeSafe-API-Key eintragen, Paperless-Instanz mit URL und API-Token anlegen, „Verbindung testen“.
-2. **Einstellungen → Regeln** – im Modus *Probelauf* starten, Felder und Schwellwerte wählen, optional ein Sprachmodell einrichten.
+2. **Einstellungen → Regeln** – im Modus *Probelauf* starten, Felder und Schwellwerte wählen. Ein Sprachmodell für Titel und Beschreibungen ist optional und wird unter *Verbindungen* eingerichtet.
 3. **Einstellungen → Beschreibungen** – für Dokumenttypen und Tags ein paar Stichworte hinterlegen, vor allem zur Abgrenzung
    ähnlicher Kategorien („… – nicht: …“).
 4. **Übersicht → Posteingang jetzt verarbeiten** und im Protokoll prüfen, wie gut die Vorschläge sind.

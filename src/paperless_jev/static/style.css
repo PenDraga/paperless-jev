@@ -659,3 +659,4 @@ form:has(input[name=classifier_kind][value=typesafe]:checked) .clf-typesafe, for
 .settings-nav { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: .2rem 1.4rem; margin: .4rem 0 1rem; border-bottom: 1px solid var(--pj-line); }
 .settings-nav a { padding: .45rem 0; margin-bottom: -1px; color: var(--pj-muted); text-decoration: none; border-bottom: 3px solid transparent; }
 .settings-nav a[aria-current] { color: var(--pj-accent-text); font-weight: 600; border-bottom-color: var(--pj-accent-text); }
+#language-model { scroll-margin-top: 5.5rem; }

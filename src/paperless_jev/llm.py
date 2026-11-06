@@ -49,14 +49,34 @@ class LLM:
         return {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
 
 
+# Denkt ein Modell trotzdem (Gateway ignoriert "Denkmodus aus"), reicht das knappe Limit nicht
+REASONING_BUDGET = 1024
+
+
 def strip_thinking(text: str) -> str:
-    return re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL).strip()
+    text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL)
+    # abgeschnittenes Nachdenken ohne </think> ist keine Antwort
+    return re.sub(r"^\s*<think>.*", "", text, flags=re.DOTALL).strip()
 
 
 async def complete(
     llm: LLM, prompt: str, max_tokens: int, temperature: float = 0.2, timeout: float = 180.0
 ) -> str:
-    """Ein Prompt, eine Antwort - ohne Denkmodus, wo das Modell ihn kennt."""
+    """Ein Prompt, eine Antwort - ohne Denkmodus, wo das Modell ihn kennt.
+
+    Hat ein Modell das Limit fürs Nachdenken verbraucht und nichts geantwortet,
+    wird einmal mit grösserem Limit nachgefragt.
+    """
+    text, cut_off = await _complete_once(llm, prompt, max_tokens, temperature, timeout)
+    if not text and cut_off:
+        text, _ = await _complete_once(llm, prompt, max(REASONING_BUDGET, max_tokens * 8), temperature, timeout)
+    return text
+
+
+async def _complete_once(
+    llm: LLM, prompt: str, max_tokens: int, temperature: float, timeout: float
+) -> tuple[str, bool]:
+    """Antworttext und ob das Token-Limit erreicht wurde."""
     async with httpx.AsyncClient(timeout=timeout, headers=llm._headers()) as http:
         try:
             if llm.provider == "openai":
@@ -89,11 +109,13 @@ async def complete(
         raise LLMError(f"Sprachmodell HTTP {resp.status_code}: {resp.text[:200]}", public_message=f"HTTP {resp.status_code}")
     data = resp.json()
     if llm.provider == "openai":
-        choices = data.get("choices") or [{}]
-        text = (choices[0].get("message") or {}).get("content") or ""
+        choice = (data.get("choices") or [{}])[0]
+        text = (choice.get("message") or {}).get("content") or ""
+        cut_off = choice.get("finish_reason") == "length"
     else:
         text = data.get("response", "")
-    return strip_thinking(text)
+        cut_off = data.get("done_reason") == "length"
+    return strip_thinking(text), cut_off
 
 
 async def list_models(llm: LLM) -> list[str]:

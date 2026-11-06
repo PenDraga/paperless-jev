@@ -113,7 +113,7 @@ docker compose up -d --build
 ```
 
 1. **Settings → Connections** – enter your TypeSafe API key, add a Paperless instance with URL and API token, "Test connection".
-2. **Settings → Rules** – start in *dry run* mode, choose fields and thresholds, optionally set up a language model.
+2. **Settings → Rules** – start in *dry run* mode, choose fields and thresholds. A language model for titles and descriptions is optional and set up under *Connections*.
 3. **Settings → Descriptions** – add a few keywords for document types and tags, especially to separate similar
    categories ("… – not: …").
 4. **Overview → Process inbox now** and check the log to see how good the suggestions are.

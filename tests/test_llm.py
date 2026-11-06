@@ -1,8 +1,10 @@
+import json
+
 import httpx
 import pytest
 
 from paperless_jev import llm as llm_module
-from paperless_jev.llm import LLM, complete, list_models
+from paperless_jev.llm import LLM, REASONING_BUDGET, complete, list_models
 
 
 def _patch(monkeypatch, handler):
@@ -53,3 +55,36 @@ async def test_ollama_and_model_lists(monkeypatch):
 def test_from_config_requires_url_and_model():
     assert LLM.from_config({"llm_url": "", "llm_model": "x"}) is None
     assert LLM.from_config({"llm_provider": "openai", "llm_url": "http://s", "llm_model": "m"}).provider == "openai"
+
+
+@pytest.mark.parametrize("provider, cut, ok", [
+    ("openai", {"choices": [{"message": {"content": ""}, "finish_reason": "length"}]},
+     {"choices": [{"message": {"content": "Kurzer Titel"}, "finish_reason": "stop"}]}),
+    ("openai", {"choices": [{"message": {"content": "<think>Hmm, mal sehen"}, "finish_reason": "length"}]},
+     {"choices": [{"message": {"content": "Kurzer Titel"}, "finish_reason": "stop"}]}),
+    ("ollama", {"response": "", "done_reason": "length"}, {"response": "Kurzer Titel", "done_reason": "stop"}),
+])
+async def test_reasoning_model_gets_a_larger_budget_once(monkeypatch, provider, cut, ok):
+    budgets = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        budgets.append(body.get("max_tokens") or body["options"]["num_predict"])
+        return httpx.Response(200, json=cut if len(budgets) == 1 else ok)
+
+    _patch(monkeypatch, handler)
+    llm = LLM(provider, "http://model:8000", "m")
+    assert await complete(llm, "Titel?", max_tokens=60) == "Kurzer Titel"
+    assert budgets == [60, REASONING_BUDGET]
+
+
+async def test_empty_answer_without_cut_off_is_not_repeated(monkeypatch):
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(200, json={"choices": [{"message": {"content": ""}, "finish_reason": "stop"}]})
+
+    _patch(monkeypatch, handler)
+    assert await complete(LLM("openai", "http://model:8000", "m"), "Titel?", max_tokens=60) == ""
+    assert len(calls) == 1
