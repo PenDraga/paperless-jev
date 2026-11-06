@@ -98,6 +98,7 @@ Ready-made image (amd64 and arm64):
 
 ```bash
 docker run -d --name paperless-jev -p 8090:8000 -v paperless-jev-data:/data \
+  -e PJ_ADMIN_PASSWORD='choose-a-password' \
   ghcr.io/pendraga/paperless-jev:latest
 # → http://localhost:8090
 ```
@@ -107,7 +108,7 @@ Or build it yourself:
 ```bash
 git clone https://github.com/PenDraga/paperless-jev.git
 cd paperless-jev
-cp .env.example .env
+cp .env.example .env   # set PJ_ADMIN_PASSWORD
 docker compose up -d --build
 ```
 
@@ -125,7 +126,9 @@ Everything else is configured in the web UI. The environment only covers:
 | Variable | Default | Purpose |
 |---|---|---|
 | `PJ_SECRET_KEY` | – | Key for encrypting stored tokens. If unset, `/data/secret.key` is created. |
-| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Optional login for the web UI: sign-in page that works with password managers, stays signed in for 30 days of use, sign-out button. `/hook/*` and `/health` stay open; a basic-auth header is still accepted for scripts. |
+| `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Login for the web UI: sign-in page that works with password managers, stays signed in for 30 days of use (90 days at most after signing in), sign-out button that also ends copies of the session. `/hook/*` and `/health` stay open; a basic-auth header is still accepted for scripts. **Without a password the web UI is locked** (HTTP 503) unless `PJ_ALLOW_NO_LOGIN` is set. |
+| `PJ_ALLOW_NO_LOGIN` | `false` | `true` opens the web UI without a password. Only for setups where a login in front of it (e.g. Authentik) protects every request and the container can't be reached any other way. |
+| `PJ_TRUSTED_PROXIES` | `127.0.0.1` | Addresses or networks (comma-separated, e.g. `172.19.0.0/16`) allowed to set `X-Forwarded-For`/`-Proto`. Behind a reverse proxy, enter its network, otherwise the login lockout applies to the proxy instead of the client and the session cookie lacks the `Secure` flag. |
 | `PJ_LOG_LEVEL` | `INFO` | Log level |
 | `PJ_DATA_DIR` | `/data` | Data directory (SQLite, key) |
 | `TZ` | `Europe/Zurich` | Time zone for display |
@@ -138,7 +141,7 @@ Everything else is configured in the web UI. The environment only covers:
 Example: [`deploy/compose.yaml`](deploy/compose.yaml) – in the same network as Paperless, web UI reachable
 from the internal network only (IP allowlist). Note: a headers middleware with `frameDeny: true`
 (`X-Frame-Options: DENY`) blocks the document viewer. paperless-jev sends
-`X-Frame-Options: SAMEORIGIN` itself, so a middleware without `frameDeny` is enough. For scanning, a `Permissions-Policy` header must not block the camera (`camera=(self)` instead of `camera=()`), and the page must be served over HTTPS.
+`X-Frame-Options: SAMEORIGIN` itself, so a middleware without `frameDeny` is enough. Set `PJ_TRUSTED_PROXIES` to the Traefik network. For scanning, a `Permissions-Policy` header must not block the camera (`camera=(self)` instead of `camera=()`), and the page must be served over HTTPS.
 
 ### Webhook in Paperless
 

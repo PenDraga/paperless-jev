@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS descriptions (
     active      INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (instance_id, kind, object_id)
 );
+CREATE TABLE IF NOT EXISTS revoked_sessions (
+    sid   TEXT PRIMARY KEY,
+    until REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS jobs (
     id           INTEGER PRIMARY KEY,
     instance_id  INTEGER NOT NULL,

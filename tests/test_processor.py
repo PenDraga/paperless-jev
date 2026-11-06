@@ -131,6 +131,7 @@ class FakeJev:
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(app_module, "ALLOW_NO_LOGIN", True)  # wie hinter einem vorgeschalteten Login
     monkeypatch.setattr(processor_module, "PaperlessClient", FakePaperless)
     monkeypatch.setattr(processor_module, "classifier", lambda cfg, timeout=None: (FakeJev(), cfg["model"]))
     FakePaperless.docs = {42: make_doc()}

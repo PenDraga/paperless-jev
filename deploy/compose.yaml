@@ -7,8 +7,9 @@
 #   Dokument-Viewer. paperless-jev setzt selbst X-Frame-Options: SAMEORIGIN.
 # - Scannen braucht die Kamera: ein Permissions-Policy-Header darf "camera" nicht sperren
 #   (camera=(self) statt camera=()).
-# - Die Web-UI hat kein eigenes Login: per IP-Allowlist, Authentik o. ä. schützen
-#   oder PJ_ADMIN_PASSWORD setzen.
+# - Anmeldung: PJ_ADMIN_PASSWORD setzen. Schützt stattdessen Authentik o. ä. jede Anfrage,
+#   PJ_ALLOW_NO_LOGIN=true setzen; ohne beides ist die Web-UI gesperrt.
+# - PJ_TRUSTED_PROXIES: Netz des Traefik-Netzwerks (docker network inspect traefik).
 services:
   paperless-jev:
     image: ghcr.io/pendraga/paperless-jev:latest
@@ -16,6 +17,8 @@ services:
     restart: unless-stopped
     environment:
       - PJ_LOG_LEVEL=INFO
+      - PJ_ADMIN_PASSWORD=${PJ_ADMIN_PASSWORD:?Passwort setzen}
+      - PJ_TRUSTED_PROXIES=172.18.0.0/16  # Traefik-Netz
       - TZ=Europe/Zurich
     volumes:
       - paperless-jev-data:/data

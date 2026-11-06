@@ -14,13 +14,14 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import uvicorn
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
 from .auth import COOKIE as SESSION_COOKIE, MAX_AGE as SESSION_MAX_AGE, Auth
@@ -44,6 +45,10 @@ mimetypes.add_type("text/javascript", ".mjs")
 DATA_DIR = Path(os.environ.get("PJ_DATA_DIR", "/data"))
 ADMIN_USER = os.environ.get("PJ_ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("PJ_ADMIN_PASSWORD", "")
+# Ohne Passwort bleibt die Oberfläche gesperrt, ausser ein vorgeschalteter Login (z. B. Authentik) schützt sie
+ALLOW_NO_LOGIN = os.environ.get("PJ_ALLOW_NO_LOGIN", "").strip().lower() in ("1", "true", "yes")
+# Nur diese Absender dürfen X-Forwarded-For/-Proto setzen (IPs oder Netze, kommagetrennt)
+TRUSTED_PROXIES = os.environ.get("PJ_TRUSTED_PROXIES", "127.0.0.1")
 # OpenCV.js (10 MB, nur für den Scanner) liefert das Docker-Image mit; sonst vom CDN
 CV_URL = (
     "/static/vendor/opencv.js" if (HERE / "static" / "vendor" / "opencv.js").exists()
@@ -83,7 +88,9 @@ async def lifespan(app: FastAPI):
     vault = Vault(DATA_DIR)
     config = Config(db, vault)
     processor = Processor(db, config)
-    app.state.auth = Auth(ADMIN_USER, ADMIN_PASSWORD, vault.derive("session"))
+    app.state.auth = Auth(ADMIN_USER, ADMIN_PASSWORD, vault.derive("session"), db)
+    if not ADMIN_PASSWORD and not ALLOW_NO_LOGIN:
+        log.warning("Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)")
     app.state.db, app.state.config, app.state.processor = db, config, processor
     await processor.start()
     yield
@@ -154,10 +161,17 @@ async def set_language(code: str, next: str = "/"):
 
 @app.middleware("http")
 async def require_login(request: Request, call_next):
-    """Optionaler Passwortschutz (PJ_ADMIN_PASSWORD); hinter Traefik + Authentik meist nicht nötig."""
+    """Passwortschutz (PJ_ADMIN_PASSWORD); ohne Passwort nur mit ausdrücklichem PJ_ALLOW_NO_LOGIN."""
     auth: Auth = request.app.state.auth
     token = request.cookies.get(SESSION_COOKIE)
-    if auth.enabled and not request.url.path.startswith(PUBLIC_PATHS):
+    public = request.url.path.startswith(PUBLIC_PATHS)
+    if not auth.enabled and not ALLOW_NO_LOGIN and not public:
+        return Response(
+            "paperless-jev: no admin password is configured. Set PJ_ADMIN_PASSWORD, or set "
+            "PJ_ALLOW_NO_LOGIN=true if a login in front of it (e.g. Authentik) protects every request.\n",
+            status_code=503, media_type="text/plain",
+        )
+    if auth.enabled and not public:
         if not (auth.valid(token) or auth.basic_ok(request.headers.get("authorization", ""))):
             target = _local_path(request.url.path + (f"?{request.url.query}" if request.url.query else ""), "/")
             login = "/login" + (f"?{urlencode({'next': target})}" if target != "/" else "")
@@ -168,13 +182,40 @@ async def require_login(request: Request, call_next):
             return Response(status_code=401)
     response = await call_next(request)
     if auth.enabled and auth.needs_renewal(token):
-        _set_session(request, response, auth)
+        _set_session(request, response, auth, token)
     return response
 
 
-def _set_session(request: Request, response: Response, auth: Auth) -> None:
-    secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
-    response.set_cookie(SESSION_COOKIE, auth.issue(), max_age=SESSION_MAX_AGE, httponly=True, samesite="lax", secure=secure)
+@app.middleware("http")
+async def same_origin_only(request: Request, call_next):
+    """Schutz vor fremden Seiten (CSRF): ändernde Browser-Anfragen nur von hier.
+
+    Browser senden Sec-Fetch-Site oder wenigstens Origin. Skripte mit Basic-Auth
+    senden keines von beiden und bleiben erlaubt; Webhooks prüfen ihr eigenes Token.
+    """
+    if request.method not in ("GET", "HEAD", "OPTIONS") and not request.url.path.startswith("/hook/"):
+        site = request.headers.get("sec-fetch-site")
+        origin = request.headers.get("origin")
+        if site is not None:
+            allowed = site in ("same-origin", "none")
+        elif origin is not None:
+            allowed = urlsplit(origin).netloc.lower() == request.headers.get("host", "").lower()
+        else:
+            allowed = True
+        if not allowed:
+            log.warning("Anfrage einer fremden Seite abgewiesen: %s %s (Origin %s)", request.method, request.url.path, origin)
+            return Response("Cross-origin request rejected\n", status_code=403, media_type="text/plain")
+    return await call_next(request)
+
+
+# Äusserste Schicht: Client-Adresse und Schema nur von vertrauenswürdigen Proxys
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=TRUSTED_PROXIES)
+
+
+def _set_session(request: Request, response: Response, auth: Auth, token: str | None = None) -> None:
+    # Schema nur aus der Verbindung selbst oder von einem vertrauenswürdigen Proxy
+    secure = request.url.scheme == "https"
+    response.set_cookie(SESSION_COOKIE, auth.issue(token), max_age=SESSION_MAX_AGE, httponly=True, samesite="lax", secure=secure)
 
 
 def _client_ip(request: Request) -> str:
@@ -210,7 +251,8 @@ async def login(request: Request, username: str = Form(""), password: str = Form
 
 
 @app.post("/logout")
-async def logout():
+async def logout(request: Request):
+    request.app.state.auth.revoke(request.cookies.get(SESSION_COOKIE))
     resp = _redirect("/login", msg=_("Abgemeldet"))
     resp.delete_cookie(SESSION_COOKIE)
     return resp
@@ -1406,8 +1448,7 @@ def main() -> None:
         "paperless_jev.app:app",
         host=os.environ.get("PJ_HOST", "0.0.0.0"),
         port=int(os.environ.get("PJ_PORT", "8000")),
-        proxy_headers=True,
-        forwarded_allow_ips="*",
+        proxy_headers=False,  # übernimmt ProxyHeadersMiddleware mit PJ_TRUSTED_PROXIES
     )
 
 
