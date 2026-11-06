@@ -44,6 +44,28 @@
   </form>
 </article>
 
+<article id="language-model">
+  <header><strong>{{ _("Sprachmodell") }}</strong> <small class="muted">{{ _("für Titel und für Beschreibungen aus Stichworten") }}</small></header>
+  <form method="post" action="/setup/llm">
+    <label>{{ _("Schnittstelle") }}
+      <select name="llm_provider">
+        {% for key, label in providers.items() %}<option value="{{ key }}" {% if cfg.llm_provider == key %}selected{% endif %}>{{ _(label) }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="grid">
+      <label>{{ _("URL") }} <input name="llm_url" value="{{ cfg.llm_url }}" inputmode="url" placeholder="Ollama: http://ollama:11434 · SGLang: http://sglang:8000"></label>
+      <label>{{ _("Modell") }} <input name="llm_model" value="{{ cfg.llm_model }}" placeholder="qwen3:8b · qwen3.8-flash-next"></label>
+    </div>
+    <label>{{ _("API-Key") }} <small class="muted">{{ _("(nur OpenAI-kompatibel und nur falls nötig – gespeichert, leer lassen zum Behalten)") if cfg.llm_api_key else _("(nur OpenAI-kompatibel und nur falls nötig)") }}</small>
+      <input type="password" name="llm_api_key" autocomplete="off"></label>
+    <div class="grid">
+      <button type="submit">{{ _("Speichern") }}</button>
+      <button type="button" class="secondary" hx-post="/setup/llm/test" hx-target="#llm-test">{{ _("Verbindung testen") }}</button>
+    </div>
+    <p id="llm-test"></p>
+  </form>
+</article>
+
 <article>
   <header><strong>{{ _("Paperless-Instanzen") }}</strong></header>
   {% for i in instances %}

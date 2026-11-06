@@ -457,8 +457,8 @@ EN: dict[str, str] = {
         "Jev picks from your Paperless master data. A short description per entry noticeably improves accuracy. Write it like a rule: what belongs and what explicitly does not, e.g. document type “Bank statement”: <em>Bank documents about account movements: statements, credit and debit advices. No annual or tax certificates.</em>",
     "Es genügen <strong>Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer ganzen Beschreibung aus – in der Sprache der Oberfläche – und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.":
         "<strong>Keywords</strong> are enough, e.g. <em>bank documents, credit, debit – not: tax certificate</em>. On save, the language model turns changed entries into a full description – in the interface language – also using the titles of documents already filed. The result is shown below the field – if it does not fit, add keywords and save again.",
-    "Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.":
-        "Write in the interface language. With a language model under <a href=\"/rules\">Rules</a>, keywords are enough – it writes them out.",
+    "Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a> reichen auch Stichworte – es formuliert sie aus.":
+        "Write in the interface language. With a language model under <a href=\"/setup#language-model\">Connections</a>, keywords are enough – it writes them out.",
     "Deaktivierte Einträge schlägt Jev nie vor.": "Jev never suggests disabled entries.",
     "Zuerst unter <a href=\"/setup\">Einstellungen</a> eine Instanz anlegen.": "First create an instance under <a href=\"/setup\">Settings</a>.",
     "Beschreibung für Jev": "Description for Jev",

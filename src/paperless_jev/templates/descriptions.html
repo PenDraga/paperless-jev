@@ -4,7 +4,7 @@
 <h2>{{ _("Beschreibungen") }}</h2>
 <p><small>{{ _("Jev wählt aus deinen Paperless-Stammdaten. Eine kurze Beschreibung pro Eintrag verbessert die Treffsicherheit deutlich. Schreib wie eine Regel: was dazugehört und was ausdrücklich nicht, z. B. Dokumenttyp „Kontoauszug“: <em>Bankbelege zu Kontobewegungen: Kontoauszüge, Gutschrifts- und Belastungsanzeigen. Keine Jahres- oder Steuerbescheinigungen.</em>")|safe }}
   {% if can_translate %}{{ _("Es genügen <strong>Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer ganzen Beschreibung aus – in der Sprache der Oberfläche – und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.")|safe }}
-  {% else %}{{ _("Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.")|safe }}{% endif %}
+  {% else %}{{ _("Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a> reichen auch Stichworte – es formuliert sie aus.")|safe }}{% endif %}
   {{ _("Deaktivierte Einträge schlägt Jev nie vor.") }}</small></p>
 {% if not instances %}<p class="bad">{{ _("Zuerst unter <a href=\"/setup\">Einstellungen</a> eine Instanz anlegen.")|safe }}</p>{% else %}
 <form method="get" action="/descriptions" class="grid">

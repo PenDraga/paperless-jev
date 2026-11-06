@@ -52,11 +52,34 @@ def test_llm_test_uses_unsaved_form_values(client, monkeypatch):  # noqa: F811
         return ["qwen3:8b"]
 
     monkeypatch.setattr(app_module, "list_models", fake_models)
-    r = client.post("/rules/llm/test", data={"llm_provider": "ollama", "llm_url": "http://ollama:11434", "llm_model": "qwen3:8b"})
+    r = client.post("/setup/llm/test", data={"llm_provider": "ollama", "llm_url": "http://ollama:11434", "llm_model": "qwen3:8b"})
     assert 'class="good"' in r.text
     assert (seen.calls[0].url, seen.calls[0].model) == ("http://ollama:11434", "qwen3:8b")
     assert client.app.state.config.all()["llm_url"] == ""
-    assert "URL und Modell eintragen" in client.post("/rules/llm/test", data={"llm_url": ""}).text
+    assert "URL und Modell eintragen" in client.post("/setup/llm/test", data={"llm_url": ""}).text
+
+
+def test_language_model_connection_is_saved_separately_from_rules(client):  # noqa: F811
+    cfg = client.app.state.config
+    form = {"llm_provider": "openai", "llm_url": " https://model.example/v1/ ",
+            "llm_model": " description-model ", "llm_api_key": "private-key"}
+    response = client.post("/setup/llm", data=form, follow_redirects=False)
+    assert response.status_code == 303 and response.headers["location"].startswith("/setup")
+    saved = {key: cfg.all()[key] for key in form}
+    assert saved == form | {"llm_url": "https://model.example/v1", "llm_model": "description-model"}
+    client.post("/setup/llm", data=form | {"llm_api_key": ""})
+    assert cfg.all()["llm_api_key"] == "private-key"
+    client.post("/rules", data={"title_mode": "llm", "title_language": "en", "title_instructions": "Short titles"})
+    assert {key: cfg.all()[key] for key in form} == saved
+    assert cfg.all()["title_mode"] == "llm" and cfg.all()["title_instructions"] == "Short titles"
+    setup, rules = client.get("/setup").text, client.get("/rules").text
+    for key in form:
+        assert f'name="{key}"' in setup and f'name="{key}"' not in rules
+    assert 'hx-post="/setup/llm/test"' in setup
+    assert 'href="/setup#language-model"' in rules
+    assert "private-key" not in setup + rules
+    cfg.update({"llm_url": "", "llm_model": ""})
+    assert 'href="/setup#language-model"' in client.get("/descriptions").text
 
 
 def test_instance_test_uses_form_and_keeps_saved_token(client, monkeypatch):  # noqa: F811

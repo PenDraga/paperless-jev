@@ -911,6 +911,7 @@ async def setup_page(request: Request):
         request,
         "setup.html",
         cfg=cfg,
+        providers=PROVIDERS,
         has_key=bool(cfg["typesafe_api_key"]),
         has_classifier_key=bool(cfg["classifier_api_key"]),
         has_cloudflare_token=bool(cfg["cloudflare_api_token"]),
@@ -941,7 +942,7 @@ def _classifier_form(form: Any) -> dict[str, Any]:
 
 
 def _llm_form(form: Any) -> dict[str, Any]:
-    """Sprachmodell-Felder aus dem Regeln-Formular; ein leerer API-Key behält den gespeicherten."""
+    """Sprachmodell-Verbindung; ein leerer API-Key behält den gespeicherten."""
     values = {
         "llm_provider": provider if (provider := str(form.get("llm_provider", "ollama"))) in PROVIDERS else "ollama",
         "llm_url": str(form.get("llm_url") or "").strip().rstrip("/"),
@@ -950,6 +951,29 @@ def _llm_form(form: Any) -> dict[str, Any]:
     if key := str(form.get("llm_api_key") or "").strip():
         values["llm_api_key"] = key
     return values
+
+
+@app.post("/setup/llm")
+async def save_llm(request: Request):
+    _cfg(request).update(_llm_form(await request.form()))
+    return _redirect("/setup", msg=_("Sprachmodell") + ": " + _("gespeichert"))
+
+
+@app.post("/setup/llm/test", response_class=HTMLResponse)
+async def test_llm(request: Request):
+    # testet die Werte im Formular, ohne sie zu speichern
+    llm = LLM.from_config({**_cfg(request).all(), **_llm_form(await request.form())})
+    if not llm:
+        return HTMLResponse(f'<span class="bad">{_("URL und Modell eintragen, dann testen")}</span>')
+    try:
+        models = await list_models(llm)
+    except LLMError as e:
+        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
+    if llm.model not in models:
+        return HTMLResponse(
+            f'<span class="bad">{_("Modell {model} fehlt. Vorhanden: {available}", model=llm.model, available=", ".join(models) or "–")}</span>'
+        )
+    return HTMLResponse(f'<span class="good">{_("OK - {model} verfügbar", model=llm.label)}</span>')
 
 
 @app.post("/setup/typesafe")
@@ -1040,7 +1064,7 @@ async def test_instance(request: Request, instance_id: int):
 
 @app.get("/rules", response_class=HTMLResponse)
 async def rules_page(request: Request):
-    return _render(request, "rules.html", cfg=_cfg(request).all(), providers=PROVIDERS)
+    return _render(request, "rules.html", cfg=_cfg(request).all())
 
 
 @app.post("/rules")
@@ -1091,29 +1115,11 @@ async def save_rules(request: Request):
             "title_template": str(form.get("title_template") or cfg["title_template"]),
             "title_instructions": str(form.get("title_instructions") or "").strip(),
             "title_language": lang if (lang := str(form.get("title_language") or cfg["title_language"])) in TITLE_LANGUAGES else "de",
-            **_llm_form(form),
             "fields": fields,
         }
     )
     _proc(request).forget_metadata()
     return _redirect("/rules", msg=_("Regeln gespeichert"))
-
-
-@app.post("/rules/llm/test", response_class=HTMLResponse)
-async def test_llm(request: Request):
-    # testet die Werte im Formular, ohne sie zu speichern
-    llm = LLM.from_config({**_cfg(request).all(), **_llm_form(await request.form())})
-    if not llm:
-        return HTMLResponse(f'<span class="bad">{_("URL und Modell eintragen, dann testen")}</span>')
-    try:
-        models = await list_models(llm)
-    except LLMError as e:
-        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
-    if llm.model not in models:
-        return HTMLResponse(
-            f'<span class="bad">{_("Modell {model} fehlt. Vorhanden: {available}", model=llm.model, available=", ".join(models) or "–")}</span>'
-        )
-    return HTMLResponse(f'<span class="good">{_("OK - {model} verfügbar", model=llm.label)}</span>')
 
 
 # --- Beschreibungen ------------------------------------------------------

@@ -749,7 +749,8 @@ def test_saved_title_instructions_reach_generation(client, monkeypatch, valid, l
     original = FakePaperless.docs[42]["title"]
     FakeJev.response["answers"]["correspondent"]["confidence"] = 0.95
     FakeJev.response["answers"]["tag:101"]["noul"] = 0.97
-    form = {"mode": "auto", "title_mode": "llm", "llm_url": "http://ollama:11434", "llm_model": "qwen3:8b",
+    client.post("/setup/llm", data={"llm_url": "http://ollama:11434", "llm_model": "qwen3:8b"})
+    form = {"mode": "auto", "title_mode": "llm",
             "title_instructions": "  Write English titles. Include {sender}.  ", "title_language": language}
     for name, spec in client.app.state.config.all()["fields"].items():
         if spec["enabled"]:
