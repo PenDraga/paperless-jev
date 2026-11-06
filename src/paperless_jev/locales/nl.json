@@ -1,4 +1,8 @@
 {
+ "Sprachmodell-Anfrage fehlgeschlagen": "Aanvraag aan het taalmodel mislukt",
+ "Zeitüberschreitung beim Sprachmodell": "Time-out bij de aanvraag aan het taalmodel",
+ "Sprachmodell nicht erreichbar": "Het taalmodel is niet bereikbaar",
+ "Sprachmodell lieferte keine Beschreibung": "Het taalmodel heeft geen beschrijving teruggegeven",
  "Automatisch setzen ≥": "Automatisch toepassen ≥",
  "Zur Prüfung vorschlagen ≥": "Voorstellen voor controle ≥",
  "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Alleen voorstellen: alle documenten vereisen goedkeuring, ook zekere waarden. Automatisch: past zekere waarden direct toe; ontbrekende waarden of conflicten kunnen nog controle vereisen. Zekere waarden kunnen dan al toegepast zijn. Proefrun: geen wijzigingen in Paperless.",

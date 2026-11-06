@@ -177,7 +177,7 @@ async def describe_category(
     raw = re.sub(r"^(beschreibung|description|english|deutsch)\s*:\s*", "", raw, flags=re.IGNORECASE).strip().strip('"').strip()
     raw = strip_invented_exclusions(raw, notes)
     if not raw:
-        raise LLMError("Sprachmodell lieferte keine Beschreibung")
+        raise LLMError("Sprachmodell lieferte keine Beschreibung", public_message="Sprachmodell lieferte keine Beschreibung")
     return raw
 
 

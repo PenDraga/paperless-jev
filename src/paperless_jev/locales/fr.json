@@ -1,4 +1,8 @@
 {
+ "Sprachmodell-Anfrage fehlgeschlagen": "La requête au modèle de langage a échoué",
+ "Zeitüberschreitung beim Sprachmodell": "La requête au modèle de langage a expiré",
+ "Sprachmodell nicht erreichbar": "Le modèle de langage est inaccessible",
+ "Sprachmodell lieferte keine Beschreibung": "Le modèle de langage n’a renvoyé aucune description",
  "Automatisch setzen ≥": "Appliquer automatiquement ≥",
  "Zur Prüfung vorschlagen ≥": "Proposer pour vérification ≥",
  "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Suggestions uniquement : tous les documents nécessitent une validation, même les valeurs fiables. Automatique : applique immédiatement les valeurs fiables ; des valeurs manquantes ou des conflits peuvent nécessiter une vérification. Les valeurs fiables peuvent déjà avoir été appliquées. Simulation : aucun changement dans Paperless.",

@@ -1,4 +1,8 @@
 {
+ "Sprachmodell-Anfrage fehlgeschlagen": "Żądanie do modelu językowego nie powiodło się",
+ "Zeitüberschreitung beim Sprachmodell": "Przekroczono limit czasu żądania do modelu językowego",
+ "Sprachmodell nicht erreichbar": "Model językowy jest nieosiągalny",
+ "Sprachmodell lieferte keine Beschreibung": "Model językowy nie zwrócił opisu",
  "Automatisch setzen ≥": "Zastosuj automatycznie ≥",
  "Zur Prüfung vorschlagen ≥": "Zaproponuj do weryfikacji ≥",
  "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Tylko sugestie: wszystkie dokumenty wymagają zatwierdzenia, także pewne wartości. Automatycznie: od razu stosuje pewne wartości; brakujące wartości lub konflikty mogą wymagać weryfikacji. Pewne wartości mogą już być zastosowane. Przebieg próbny: bez zmian w Paperless.",

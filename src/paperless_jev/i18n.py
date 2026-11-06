@@ -491,6 +491,10 @@ EN: dict[str, str] = {
     ", {n} vom Sprachmodell ausformuliert": ", {n} written out by the language model",
     "Sprachmodell fehlgeschlagen für: {names} – Eingabe wurde unverändert übernommen":
         "Language model failed for: {names} – input was saved unchanged",
+    "Sprachmodell-Anfrage fehlgeschlagen": "Language model request failed",
+    "Zeitüberschreitung beim Sprachmodell": "Language model request timed out",
+    "Sprachmodell nicht erreichbar": "Language model is unreachable",
+    "Sprachmodell lieferte keine Beschreibung": "Language model returned no description",
     # Ober-/Untertags
     "Ein Tag kann nicht unter sich selbst oder einen eigenen Untertag gehängt werden":
         "A tag cannot be placed under itself or one of its own child tags",

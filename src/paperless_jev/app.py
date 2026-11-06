@@ -1408,8 +1408,8 @@ async def save_descriptions(request: Request):
         active = f"active_{oid}" in form
         old = stored.get((kind, oid), {"text": "", "source": ""})
         text = old["text"]
-        if source != old["source"]:
-            # Nur geänderte Einträge ausformulieren
+        if source != old["source"] or (expand and source and text == source):
+            # Auch unveränderte, bisher nicht ausformulierte Eingaben erneut versuchen.
             text = source
             if source and expand and inst:
                 name = str(form.get(f"name_{oid}", ""))
@@ -1421,8 +1421,10 @@ async def save_descriptions(request: Request):
                 try:
                     text = await describe_category(llm, kind, name, source, examples, lang=i18n.current.get())
                     expanded += 1
-                except LLMError:
-                    failed.append(name or str(oid))
+                except LLMError as e:
+                    log.warning("Description expansion failed (instance=%s, kind=%s, id=%s): %s",
+                                instance_id, kind, oid, e.public_message)
+                    failed.append(f"{name or oid} ({_(e.public_message)})")
         _cfg(request).save_description(instance_id, kind, oid, text, active, source=source)
     msg = _("Beschreibungen gespeichert") + (_(", {n} vom Sprachmodell ausformuliert", n=expanded) if expanded else "")
     err = _("Sprachmodell fehlgeschlagen für: {names} – Eingabe wurde unverändert übernommen", names=", ".join(failed)) if failed else None

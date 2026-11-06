@@ -1,4 +1,8 @@
 {
+ "Sprachmodell-Anfrage fehlgeschlagen": "La richiesta al modello linguistico non è riuscita",
+ "Zeitüberschreitung beim Sprachmodell": "La richiesta al modello linguistico è scaduta",
+ "Sprachmodell nicht erreichbar": "Il modello linguistico non è raggiungibile",
+ "Sprachmodell lieferte keine Beschreibung": "Il modello linguistico non ha restituito alcuna descrizione",
  "Automatisch setzen ≥": "Applica automaticamente ≥",
  "Zur Prüfung vorschlagen ≥": "Suggerisci per revisione ≥",
  "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Solo suggerimenti: tutti i documenti richiedono approvazione, anche i valori sicuri. Automatico: applica subito i valori sicuri; valori mancanti o conflitti possono richiedere revisione. I valori sicuri potrebbero essere già stati applicati. Simulazione: nessuna modifica in Paperless.",

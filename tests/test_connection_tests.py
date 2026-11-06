@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import httpx
+import pytest
+
 from paperless_jev import app as app_module
 from paperless_jev.paperless import Metadata
 
+from .test_llm import _patch
 from .test_processor import client  # noqa: F401
 
 
@@ -86,3 +90,53 @@ def test_instance_test_uses_form_and_keeps_saved_token(client, monkeypatch):  # 
     assert seen.calls[-1] == ("http://other:8000", "t2", "docs.example")
     assert "API-Token eintragen" in client.post("/setup/instances/0/test", data={"url": "http://other:8000"}).text
     assert len(client.app.state.config.instances()) == 1
+
+
+@pytest.mark.parametrize("failure, detail", [
+    ("http", "HTTP 401"),
+    ("empty", "Sprachmodell lieferte keine Beschreibung"),
+    ("timeout", "Zeitüberschreitung beim Sprachmodell"),
+])
+def test_description_failure_is_safe_and_retryable(client, monkeypatch, caplog, failure, detail):  # noqa: F811
+    cfg = client.app.state.config
+    cfg.update({"llm_provider": "openai", "llm_url": "https://model.example/v1",
+                "llm_model": "description-model", "llm_api_key": "private-api-key"})
+    recovered = False
+
+    def handler(request):
+        assert str(request.url) == "https://model.example/v1/chat/completions"
+        assert request.headers["authorization"] == "Bearer private-api-key"
+        if recovered:
+            return httpx.Response(200, json={"choices": [{"message": {"content": "Expanded certificate description"}}]})
+        if failure == "timeout":
+            raise httpx.ReadTimeout("private-api-key private-provider-detail", request=request)
+        if failure == "http":
+            return httpx.Response(401, text="private-api-key private-provider-detail")
+        return httpx.Response(200, json={"choices": [{"message": {"content": ""}}]})
+
+    _patch(monkeypatch, handler)
+    form = {"instance_id": "1", "kind": "document_type", "ids": "10",
+            "name_10": "Certificate", "text_10": "qualification, education",
+            "active_10": "on", "expand": "on"}
+    response = client.post("/descriptions", data=form)
+    assert cfg.descriptions(1)[("document_type", 10)]["text"] == "qualification, education"
+    assert detail in response.text
+    assert detail in caplog.text
+    assert "private-api-key" not in response.text + caplog.text
+    assert "private-provider-detail" not in response.text + caplog.text
+
+    recovered = True
+    response = client.post("/descriptions", data=form)
+    assert cfg.descriptions(1)[("document_type", 10)]["text"] == "Expanded certificate description"
+    assert "Expanded certificate description" in response.text
+
+
+def test_description_can_expand_previously_saved_plain_input(client, monkeypatch):  # noqa: F811
+    cfg = client.app.state.config
+    cfg.update({"llm_url": "http://ollama:11434", "llm_model": "m"})
+    _patch(monkeypatch, lambda request: httpx.Response(200, json={"response": "Expanded notes"}))
+    form = {"instance_id": "1", "kind": "tag", "ids": "101", "text_101": "notes", "active_101": "on"}
+    client.post("/descriptions", data=form)
+    assert cfg.descriptions(1)[("tag", 101)]["text"] == "notes"
+    client.post("/descriptions", data=form | {"expand": "on"})
+    assert cfg.descriptions(1)[("tag", 101)]["text"] == "Expanded notes"

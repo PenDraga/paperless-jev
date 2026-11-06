@@ -18,7 +18,10 @@ PROVIDERS = {"ollama": "Ollama", "openai": "OpenAI-kompatibel (SGLang, vLLM, LM 
 
 
 class LLMError(Exception):
-    pass
+    def __init__(self, message: str, *, public_message: str = "Sprachmodell-Anfrage fehlgeschlagen"):
+        super().__init__(message)
+        # Nur kontrollierte Diagnosen, keine URLs, Provider-Antworten oder Zugangsdaten.
+        self.public_message = public_message
 
 
 @dataclass(frozen=True)
@@ -80,9 +83,10 @@ async def complete(
                 }
                 resp = await http.post(f"{llm.url.rstrip('/')}/api/generate", json=payload)
         except httpx.HTTPError as e:
-            raise LLMError(f"Sprachmodell nicht erreichbar ({llm.url}): {e}") from e
+            reason = "Zeitüberschreitung beim Sprachmodell" if isinstance(e, httpx.TimeoutException) else "Sprachmodell nicht erreichbar"
+            raise LLMError(f"Sprachmodell nicht erreichbar ({llm.url}): {e}", public_message=reason) from e
     if resp.status_code >= 400:
-        raise LLMError(f"Sprachmodell HTTP {resp.status_code}: {resp.text[:200]}")
+        raise LLMError(f"Sprachmodell HTTP {resp.status_code}: {resp.text[:200]}", public_message=f"HTTP {resp.status_code}")
     data = resp.json()
     if llm.provider == "openai":
         choices = data.get("choices") or [{}]

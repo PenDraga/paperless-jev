@@ -1,4 +1,8 @@
 {
+ "Sprachmodell-Anfrage fehlgeschlagen": "La solicitud al modelo de lenguaje falló",
+ "Zeitüberschreitung beim Sprachmodell": "La solicitud al modelo de lenguaje agotó el tiempo de espera",
+ "Sprachmodell nicht erreichbar": "No se puede conectar con el modelo de lenguaje",
+ "Sprachmodell lieferte keine Beschreibung": "El modelo de lenguaje no devolvió ninguna descripción",
  "Automatisch setzen ≥": "Aplicar automáticamente ≥",
  "Zur Prüfung vorschlagen ≥": "Sugerir para revisión ≥",
  "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Solo sugerencias: todos los documentos requieren aprobación, incluso los valores seguros. Automático: aplica los valores seguros de inmediato; los valores ausentes o los conflictos pueden requerir revisión. Los valores seguros pueden haberse aplicado ya. Simulación: sin cambios en Paperless.",
