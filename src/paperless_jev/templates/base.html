@@ -17,8 +17,10 @@
 {% set path = request.url.path %}
 {% set login_enabled = request.app.state.auth.enabled %}
 {% set here = request.url.path ~ ("?" ~ request.url.query if request.url.query else "") %}
-{% set nav = [("/", "Übersicht", "dashboard"), ("/review", "Review", "inbox"), ("/scan", "Scannen", "camera"), ("/log", "Protokoll", "list"), ("/rules", "Regeln", "filter"), ("/descriptions", "Beschreibungen", "file"), ("/setup", "Setup", "settings")] %}
-{% macro current(href) %}{% if path == href or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
+{% set settings = [("/setup", "Verbindungen"), ("/rules", "Regeln"), ("/descriptions", "Beschreibungen")] %}
+{% set in_settings = path.startswith(("/setup", "/rules", "/descriptions")) %}
+{% set nav = [("/", "Übersicht", "dashboard"), ("/review", "Review", "inbox"), ("/scan", "Scannen", "camera"), ("/log", "Protokoll", "list"), ("/setup", "Einstellungen", "settings")] %}
+{% macro current(href) %}{% if path == href or (href == "/setup" and in_settings) or (href != "/" and path.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
 {% macro badge(href) %}{% if href == "/review" and review_count %}<span class="count">{{ review_count }}</span>{% endif %}{% endmacro %}
 <header class="appbar">
   <div class="container appbar-inner">
@@ -36,17 +38,16 @@
   </div>
 </header>
 {% if not bare %}<nav class="bottom-nav" aria-label="{{ _('Navigation') }}">
-  {% for href, label, ic in nav[:4] %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}{{ badge(href) }}</a>{% endfor %}
-  <details{% if current("/rules") or current("/descriptions") or current("/setup") %} class="current"{% endif %}>
-    <summary>{{ icon("more") }}{{ _("Mehr") }}</summary>
-    <div class="more-menu">{% for href, label, ic in nav[4:] %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}</a>{% endfor %}</div>
-  </details>
+  {% for href, label, ic in nav %}<a href="{{ href }}"{{ current(href) }}>{{ icon(ic) }}{{ _(label) }}{{ badge(href) }}</a>{% endfor %}
 </nav>{% endif %}
 {% if msg or err %}<div class="toasts" aria-live="polite">
   {% if msg %}<div class="toast good" role="status"><span class="ti">{{ icon("check") }}</span><span class="msg">{{ msg }}</span><button type="button" data-close-toast aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</button></div>{% endif %}
   {% if err %}<div class="toast bad" role="alert"><span class="ti">{{ icon("alert") }}</span><span class="msg">{{ err }}</span><button type="button" data-close-toast aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</button></div>{% endif %}
 </div>{% endif %}
 <main class="container">
+  {% if in_settings and not bare %}<nav class="settings-nav" aria-label="{{ _('Einstellungen') }}">
+    {% for href, label in settings %}<a href="{{ href }}"{% if path.startswith(href) %} aria-current="page"{% endif %}>{{ _(label) }}</a>{% endfor %}
+  </nav>{% endif %}
   {% block content %}{% endblock %}
 </main>
 <dialog id="doc-viewer" class="doc-viewer">

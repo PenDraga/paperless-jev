@@ -54,6 +54,8 @@ EN: dict[str, str] = {
     "Regeln": "Rules",
     "Beschreibungen": "Descriptions",
     "Setup": "Setup",
+    "Einstellungen": "Settings",
+    "Verbindungen": "Connections",
     "Klassifizierung mit TypeSafe Jev": "Classification with TypeSafe Jev",
     "Sprache": "Language",
     "Navigation": "Navigation",
@@ -96,8 +98,8 @@ EN: dict[str, str] = {
     "Keine Fragen - alle Felder deaktiviert?": "No questions - are all fields disabled?",
     "Instanz existiert nicht mehr": "Instance no longer exists",
     # --- Übersicht ------------------------------------------------------------
-    "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.":
-        "No Paperless instance yet – please add one under <a href=\"/setup\">Setup</a>.",
+    "Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Einstellungen</a> eine hinterlegen.":
+        "No Paperless instance yet – please add one under <a href=\"/setup\">Settings</a>.",
     "Modus": "Mode",
     "Probelauf – schreibt nichts": "Dry run – writes nothing",
     "Nur Vorschläge (Review)": "Suggestions only (review)",
@@ -458,7 +460,7 @@ EN: dict[str, str] = {
     "Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.":
         "Write in the interface language. With a language model under <a href=\"/rules\">Rules</a>, keywords are enough – it writes them out.",
     "Deaktivierte Einträge schlägt Jev nie vor.": "Jev never suggests disabled entries.",
-    "Zuerst unter <a href=\"/setup\">Setup</a> eine Instanz anlegen.": "First create an instance under <a href=\"/setup\">Setup</a>.",
+    "Zuerst unter <a href=\"/setup\">Einstellungen</a> eine Instanz anlegen.": "First create an instance under <a href=\"/setup\">Settings</a>.",
     "Beschreibung für Jev": "Description for Jev",
     "Stichworte, optional": "keywords, optional",
     "optional": "optional",

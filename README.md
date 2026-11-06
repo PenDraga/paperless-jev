@@ -43,7 +43,7 @@ issue date and tags – or locally with [clef](https://ollama.com/library/clef) 
   turns your keywords into a full description in the interface language (German or English; English for all other languages).
 - **Scan documents** with your phone: edges detected and straightened automatically, several pages into one PDF,
   straight to Paperless (see below).
-- **Titles** optionally by language model (in the style of documents already filed, checked and shortened if
+- **Titles** optionally by language model (in the style of documents already filed, with your own instructions and language, checked and shortened if
   needed) or by template – created during analysis and pre-filled in review.
 - **Manage metadata** without opening Paperless: create document types, correspondents and tags (also right in
   review), tag colours, delete with an assistant – move documents to another entry or just remove it.
@@ -112,9 +112,9 @@ cp .env.example .env   # set PJ_ADMIN_PASSWORD
 docker compose up -d --build
 ```
 
-1. **Setup** – enter your TypeSafe API key, add a Paperless instance with URL and API token, "Test connection".
-2. **Rules** – start in *dry run* mode, choose fields and thresholds, optionally set up a language model.
-3. **Descriptions** – add a few keywords for document types and tags, especially to separate similar
+1. **Settings → Connections** – enter your TypeSafe API key, add a Paperless instance with URL and API token, "Test connection".
+2. **Settings → Rules** – start in *dry run* mode, choose fields and thresholds, optionally set up a language model.
+3. **Settings → Descriptions** – add a few keywords for document types and tags, especially to separate similar
    categories ("… – not: …").
 4. **Overview → Process inbox now** and check the log to see how good the suggestions are.
 5. Then switch to *automatic* mode and create the webhook in Paperless (see below).
@@ -132,7 +132,7 @@ Everything else is configured in the web UI. The environment only covers:
 | `PJ_LOG_LEVEL` | `INFO` | Log level |
 | `PJ_DATA_DIR` | `/data` | Data directory (SQLite, key) |
 | `TZ` | `Europe/Zurich` | Time zone for display |
-| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN_FILE` | – | Optional for Cloudflare Workers AI when the Setup fields are empty; the token is read from a file, e.g. a Docker secret |
+| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN_FILE` | – | Optional for Cloudflare Workers AI when the fields under Connections are empty; the token is read from a file, e.g. a Docker secret |
 
 **Back up `/data`** – `paperless-jev.db` and `secret.key` belong together, otherwise the stored tokens can no longer be read.
 
@@ -148,7 +148,7 @@ from the internal network only (IP allowlist). Note: a headers middleware with `
 Paperless (≥ 2.14) → *Workflows* → new workflow:
 
 - Trigger *Document added*
-- Action *Webhook*: `http://paperless-jev:8000/hook/<instance name>?token=<secret>` (secret on the setup page),
+- Action *Webhook*: `http://paperless-jev:8000/hook/<instance name>?token=<secret>` (secret under Settings → Connections),
   *Use webhook parameters* enabled, parameter `doc_id` = `{{ doc_id }}`
 
 Polling (every 5 minutes by default) stays active as a fallback and only processes inbox documents that
@@ -157,14 +157,14 @@ have never been evaluated.
 ### Handing off from another tool
 
 To let another tool (e.g. paperless-gpt for OCR and titles) finish first, have it add a tag such as
-`jev-pending` and enter that as the *queue tag* under *Rules → Status tags*. Jev then only takes documents
+`jev-pending` and enter that as the *queue tag* under *Settings → Rules → Status tags*. Jev then only takes documents
 with that tag – by polling and by webhook – and removes it afterwards. List the other tool's own tags under
 *system tags* so Jev never suggests or checks them.
 
 ## Jev via Cloudflare Workers AI
 
 Cloudflare serves the same Jev model as `typesafe/jev`, at the same price, billed to your Cloudflare account.
-Choose *Setup → Classification → Cloudflare Workers AI* and enter the account ID and an API token with Workers AI
+Choose *Settings → Connections → Classification → Cloudflare Workers AI* and enter the account ID and an API token with Workers AI
 permission. Jev is a partner model: it needs prepaid credits in Cloudflare's **AI Gateway** (the free Workers AI
 allowance does not cover it). Cloudflare picks the Jev version; unlike TypeSafe it cannot be pinned, so a new
 version can shift the confidence values. In a blind test on 30 filed documents both routes gave identical answers
@@ -174,7 +174,7 @@ version can shift the confidence values. In a blind test on 30 filed documents b
 
 Instead of TypeSafe Jev, a local decision model that supports Ollama's `/v1/systemone` endpoint (capability
 "decision") can classify, e.g. [clef](https://ollama.com/library/clef) by Cloudflare (27B, Apache 2.0, ~18 GB).
-Set it up under *Setup → Classification → Local via Ollama* with URL and model. Documents then never leave your network.
+Set it up under *Settings → Connections → Classification → Local via Ollama* with URL and model. Documents then never leave your network.
 If the server requires authentication, enter an API key; it is sent as a bearer token.
 
 paperless-jev handles clef's limits automatically: at most 64 questions per request (split up) and 26 candidates per

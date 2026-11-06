@@ -9,10 +9,10 @@
   <span class="chip">{{ icon("layers") }}{{ _("Warteschlange") }} <b>{{ queue_size }}</b></span>
 </div>
 {% if classifier_error %}
-<p class="flash bad">{{ _(classifier_error) }} · <a href="/setup">{{ _("Setup") }}</a></p>
+<p class="flash bad">{{ _(classifier_error) }} · <a href="/setup">{{ _("Verbindungen") }}</a></p>
 {% endif %}
 {% if not instances %}
-<p class="flash bad">{{ _("Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Setup</a> eine hinterlegen.")|safe }}</p>
+<p class="flash bad">{{ _("Noch keine Paperless-Instanz – bitte unter <a href=\"/setup\">Einstellungen</a> eine hinterlegen.")|safe }}</p>
 {% endif %}
 
 {% set n_review, n_done, n_dry, n_err = counts.get("review", 0), counts.get("done", 0), counts.get("dry_run", 0), counts.get("error", 0) %}

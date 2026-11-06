@@ -6,7 +6,7 @@
   {% if can_translate %}{{ _("Es genügen <strong>Stichworte</strong>, z. B. <em>Bankbelege, Gutschrift, Belastung – nicht: Steuerbescheinigung</em>. Beim Speichern formuliert das Sprachmodell geänderte Einträge zu einer ganzen Beschreibung aus – in der Sprache der Oberfläche – und nutzt dafür auch die Titel bereits abgelegter Dokumente. Das Ergebnis steht unter dem Feld – passt es nicht, Stichworte ergänzen und erneut speichern.")|safe }}
   {% else %}{{ _("Schreib in der Sprache der Oberfläche. Mit einem Sprachmodell unter <a href=\"/rules\">Regeln</a> reichen auch Stichworte – es formuliert sie aus.")|safe }}{% endif %}
   {{ _("Deaktivierte Einträge schlägt Jev nie vor.") }}</small></p>
-{% if not instances %}<p class="bad">{{ _("Zuerst unter <a href=\"/setup\">Setup</a> eine Instanz anlegen.")|safe }}</p>{% else %}
+{% if not instances %}<p class="bad">{{ _("Zuerst unter <a href=\"/setup\">Einstellungen</a> eine Instanz anlegen.")|safe }}</p>{% else %}
 <form method="get" action="/descriptions" class="grid">
   <select name="instance_id" onchange="this.form.submit()">
     {% for i in instances %}<option value="{{ i.id }}" {% if inst and i.id == inst.id %}selected{% endif %}>{{ i.name }}</option>{% endfor %}

@@ -654,3 +654,8 @@ form:has(input[name=classifier_kind][value=typesafe]:checked) .clf-typesafe, for
 .logout-form { margin: 0 0 0 -.8rem; flex: none; }
 .appbar .logout-btn { display: grid; place-items: center; width: 2rem; min-width: 2rem; height: 1.9rem; padding: 0; margin: 0; border: 0; border-radius: .45rem; background: rgba(255, 255, 255, .15); color: #fff; box-shadow: none; }
 .appbar .logout-btn:hover { background: rgba(255, 255, 255, .28); }
+
+/* Einstellungen: Reiter für Verbindungen, Regeln und Beschreibungen */
+.settings-nav { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: .2rem 1.4rem; margin: .4rem 0 1rem; border-bottom: 1px solid var(--pj-line); }
+.settings-nav a { padding: .45rem 0; margin-bottom: -1px; color: var(--pj-muted); text-decoration: none; border-bottom: 3px solid transparent; }
+.settings-nav a[aria-current] { color: var(--pj-accent-text); font-weight: 600; border-bottom-color: var(--pj-accent-text); }
