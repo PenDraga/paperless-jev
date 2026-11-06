@@ -1,4 +1,11 @@
 {
+ "Automatisch setzen ≥": "Appliquer automatiquement ≥",
+ "Zur Prüfung vorschlagen ≥": "Proposer pour vérification ≥",
+ "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Suggestions uniquement : tous les documents nécessitent une validation, même les valeurs fiables. Automatique : applique immédiatement les valeurs fiables ; des valeurs manquantes ou des conflits peuvent nécessiter une vérification. Les valeurs fiables peuvent déjà avoir été appliquées. Simulation : aucun changement dans Paperless.",
+ "Titelanweisungen": "Instructions de titre",
+ "Sprache der Titel": "Langue des titres",
+ "Schreibe einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen). Orientiere dich am Archivstil und benenne den konkreten Inhalt, nicht nur die Dokumentart. Kein Datum, keine Jahreszahl und keine Personennamen, ausser Monat oder Jahr kommen in den Beispieltiteln vor. Antworte nur mit dem Titel, ohne Anführungszeichen oder Erklärung.": "Rédige un titre court et pertinent en français (60 caractères maximum). Respecte le style des archives et décris le sujet précis, pas seulement le type de document. Pas de dates, d'années ni de noms de personnes, sauf si les exemples contiennent un mois ou une année. Renvoie uniquement le titre, sans guillemets ni explication.",
+ "Nur für Sprachmodell-Titel: Sprache, Stil oder Inhalt vorgeben. Diese Vorgaben haben Vorrang vor dem Archivstil. Leer lassen für das bisherige Verhalten. Es bleibt bei einem kurzen Titel ohne Erklärung.": "Pour les titres du modèle de langage uniquement : précisez la langue, le style ou le contenu. Ces instructions priment sur le style des archives. Laissez vide pour conserver le comportement actuel. Le résultat reste un titre court sans explication.",
  "Übersicht": "Aperçu",
  "Review": "Vérification",
  "Protokoll": "Journal",

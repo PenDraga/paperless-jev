@@ -1,4 +1,11 @@
 {
+ "Automatisch setzen ≥": "Zastosuj automatycznie ≥",
+ "Zur Prüfung vorschlagen ≥": "Zaproponuj do weryfikacji ≥",
+ "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Tylko sugestie: wszystkie dokumenty wymagają zatwierdzenia, także pewne wartości. Automatycznie: od razu stosuje pewne wartości; brakujące wartości lub konflikty mogą wymagać weryfikacji. Pewne wartości mogą już być zastosowane. Przebieg próbny: bez zmian w Paperless.",
+ "Titelanweisungen": "Instrukcje tytułów",
+ "Sprache der Titel": "Język tytułów",
+ "Schreibe einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen). Orientiere dich am Archivstil und benenne den konkreten Inhalt, nicht nur die Dokumentart. Kein Datum, keine Jahreszahl und keine Personennamen, ausser Monat oder Jahr kommen in den Beispieltiteln vor. Antworte nur mit dem Titel, ohne Anführungszeichen oder Erklärung.": "Napisz krótki, trafny tytuł po polsku (maksymalnie 60 znaków). Zachowaj styl archiwum i opisz konkretny temat, nie tylko typ dokumentu. Bez dat, lat ani nazwisk, chyba że przykładowe tytuły zawierają miesiąc lub rok. Zwróć tylko tytuł, bez cudzysłowu ani wyjaśnienia.",
+ "Nur für Sprachmodell-Titel: Sprache, Stil oder Inhalt vorgeben. Diese Vorgaben haben Vorrang vor dem Archivstil. Leer lassen für das bisherige Verhalten. Es bleibt bei einem kurzen Titel ohne Erklärung.": "Tylko dla tytułów z modelu językowego: określ język, styl lub treść. Te instrukcje mają pierwszeństwo przed stylem archiwum. Pozostaw puste, aby zachować dotychczasowe działanie. Wynikiem pozostaje krótki tytuł bez wyjaśnienia.",
  "Übersicht": "Przegląd",
  "Review": "Weryfikacja",
  "Protokoll": "Dziennik",

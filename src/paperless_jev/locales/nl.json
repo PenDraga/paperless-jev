@@ -1,4 +1,11 @@
 {
+ "Automatisch setzen ≥": "Automatisch toepassen ≥",
+ "Zur Prüfung vorschlagen ≥": "Voorstellen voor controle ≥",
+ "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Alleen voorstellen: alle documenten vereisen goedkeuring, ook zekere waarden. Automatisch: past zekere waarden direct toe; ontbrekende waarden of conflicten kunnen nog controle vereisen. Zekere waarden kunnen dan al toegepast zijn. Proefrun: geen wijzigingen in Paperless.",
+ "Titelanweisungen": "Titelinstructies",
+ "Sprache der Titel": "Taal van de titels",
+ "Schreibe einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen). Orientiere dich am Archivstil und benenne den konkreten Inhalt, nicht nur die Dokumentart. Kein Datum, keine Jahreszahl und keine Personennamen, ausser Monat oder Jahr kommen in den Beispieltiteln vor. Antworte nur mit dem Titel, ohne Anführungszeichen oder Erklärung.": "Schrijf een korte, duidelijke Nederlandse titel (maximaal 60 tekens). Volg de archiefstijl en beschrijf het specifieke onderwerp, niet alleen het documenttype. Geen datums, jaartallen of persoonsnamen, tenzij de voorbeeldtitels een maand of jaar bevatten. Geef alleen de titel, zonder aanhalingstekens of uitleg.",
+ "Nur für Sprachmodell-Titel: Sprache, Stil oder Inhalt vorgeben. Diese Vorgaben haben Vorrang vor dem Archivstil. Leer lassen für das bisherige Verhalten. Es bleibt bei einem kurzen Titel ohne Erklärung.": "Alleen voor titels van het taalmodel: geef taal, stijl of inhoud op. Deze instructies gaan boven de archiefstijl. Laat leeg om het bestaande gedrag te behouden. Het resultaat blijft een korte titel zonder uitleg.",
  "Übersicht": "Overzicht",
  "Review": "Controle",
  "Protokoll": "Logboek",

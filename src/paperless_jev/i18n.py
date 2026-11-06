@@ -400,6 +400,16 @@ EN: dict[str, str] = {
         "Jev returns a calibrated <em>confidence</em> per answer (for tags the probability of “yes”). From <em>Auto</em> the value is set, from <em>Review</em> it is suggested, below that it is ignored.",
     "Auto ≥": "Auto ≥",
     "Review ≥": "Review ≥",
+    "Automatisch setzen ≥": "Apply automatically ≥",
+    "Zur Prüfung vorschlagen ≥": "Suggest for review ≥",
+    "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.":
+        "Suggestions only: all documents need approval, including confident values. Automatic: apply confident values immediately; missing values or conflicts can still require review. Confident values may already have been applied. Dry run: no changes in Paperless.",
+    "Titelanweisungen": "Title instructions",
+    "Sprache der Titel": "Title language",
+    "Schreibe einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen). Orientiere dich am Archivstil und benenne den konkreten Inhalt, nicht nur die Dokumentart. Kein Datum, keine Jahreszahl und keine Personennamen, ausser Monat oder Jahr kommen in den Beispieltiteln vor. Antworte nur mit dem Titel, ohne Anführungszeichen oder Erklärung.":
+        "Write a short, meaningful English title (at most 60 characters). Follow the archive style and describe the specific subject, not just the document type. No dates, years or personal names, unless the example titles include a month or year. Return only the title, without quotation marks or explanation.",
+    "Nur für Sprachmodell-Titel: Sprache, Stil oder Inhalt vorgeben. Diese Vorgaben haben Vorrang vor dem Archivstil. Leer lassen für das bisherige Verhalten. Es bleibt bei einem kurzen Titel ohne Erklärung.":
+        "For language-model titles only: specify language, style or content. These instructions take priority over the archive style. Leave blank to keep the existing behavior. Output remains a short title without explanation.",
     "bereits gesetzte Werte überschreiben (z. B. aus dem Paperless-eigenen Matching)":
         "overwrite values that are already set (e.g. from Paperless' own matching)",
     "Sammel-Korrespondent, wenn keiner passt": "Catch-all correspondent if none fits",

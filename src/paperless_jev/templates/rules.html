@@ -13,18 +13,19 @@
 
 <article>
   <header><strong>{{ _("Felder und Schwellwerte") }}</strong></header>
+  <p><small>{{ _("Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.") }}</small></p>
   <p><small>{{ _("Jev liefert pro Antwort eine kalibrierte <em>Confidence</em> (bei Tags die Wahrscheinlichkeit für „ja“). Ab <em>Auto</em> wird der Wert gesetzt, ab <em>Review</em> vorgeschlagen, darunter ignoriert.")|safe }}</small></p>
   {% if cfg.classifier == "ollama" %}<p class="flash info"><small>{{ _("Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.", model=cfg.classifier_model) }}</small></p>{% endif %}
   <div class="overflow-auto">
   <table class="thresholds cards">
-    <thead><tr><th>{{ _("Feld") }}</th><th>{{ _("aktiv") }}</th><th>{{ _("Auto ≥") }}</th><th>{{ _("Review ≥") }}</th></tr></thead>
+    <thead><tr><th>{{ _("Feld") }}</th><th>{{ _("aktiv") }}</th><th>{{ _("Automatisch setzen ≥") }}</th><th>{{ _("Zur Prüfung vorschlagen ≥") }}</th></tr></thead>
     <tbody>
     {% for name, spec in cfg.fields.items() %}
       <tr>
         <td class="card-title">{{ _(FIELD_LABELS[name]) }}</td>
         <td data-label="{{ _('aktiv') }}"><input type="checkbox" name="{{ name }}_enabled" {% if spec.enabled %}checked{% endif %}></td>
-        <td data-label="{{ _('Auto ≥') }}"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
-        <td data-label="{{ _('Review ≥') }}"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
+        <td data-label="{{ _('Automatisch setzen ≥') }}"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_auto" value="{{ spec.auto }}"></td>
+        <td data-label="{{ _('Zur Prüfung vorschlagen ≥') }}"><input type="number" inputmode="decimal" step="0.01" min="0" max="1" name="{{ name }}_review" value="{{ spec.review }}"></td>
       </tr>
     {% endfor %}
     </tbody>
@@ -63,7 +64,14 @@
     <label><input type="radio" name="title_mode" value="llm" {% if cfg.title_mode == "llm" %}checked{% endif %}> {{ _("<strong>Titel vom Sprachmodell formulieren</strong> – Stil nach Titeln bereits abgelegter Dokumente desselben Korrespondenten")|safe }}</label>
     <label><input type="radio" name="title_mode" value="template" {% if cfg.title_mode == "template" %}checked{% endif %}> {{ _("Titel aus Vorlage") }}</label>
   </fieldset>
-  <label>{{ _("Vorlage") }} <input name="title_template" value="{{ cfg.title_template }}">
+  <div id="title-llm-fields"{% if cfg.title_mode != "llm" %} hidden{% endif %}>
+  <label>{{ _("Sprache der Titel") }}
+    <select name="title_language">{% for code, name in LANGUAGES.items() %}<option value="{{ code }}"{% if code == cfg.title_language %} selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
+  <label>{{ _("Titelanweisungen") }}
+    <textarea name="title_instructions" rows="10" aria-describedby="title-instructions-help" placeholder="{{ _('Schreibe einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen). Orientiere dich am Archivstil und benenne den konkreten Inhalt, nicht nur die Dokumentart. Kein Datum, keine Jahreszahl und keine Personennamen, ausser Monat oder Jahr kommen in den Beispieltiteln vor. Antworte nur mit dem Titel, ohne Anführungszeichen oder Erklärung.') }}">{{ cfg.title_instructions }}</textarea>
+    <small id="title-instructions-help">{{ _("Nur für Sprachmodell-Titel: Sprache, Stil oder Inhalt vorgeben. Diese Vorgaben haben Vorrang vor dem Archivstil. Leer lassen für das bisherige Verhalten. Es bleibt bei einem kurzen Titel ohne Erklärung.") }}</small></label>
+  </div>
+  <label id="title-template-field"{% if cfg.title_mode != "template" %} hidden{% endif %}>{{ _("Vorlage") }} <input name="title_template" value="{{ cfg.title_template }}">
     <small>{{ _("Platzhalter") }}: <code>{document_type}</code> <code>{correspondent}</code> <code>{storage_path}</code> <code>{title}</code> <code>{created:%Y-%m-%d}</code>. {{ _("Fehlt ein Wert, bleibt der Titel unverändert.") }}</small></label>
 </article>
 
@@ -95,4 +103,12 @@
 </article>
 <div class="sticky-actions"><button type="submit">{{ _("Speichern") }}</button></div>
 </form>
+<script>
+document.querySelectorAll('input[name="title_mode"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    document.getElementById("title-llm-fields").hidden = radio.value !== "llm";
+    document.getElementById("title-template-field").hidden = radio.value !== "template";
+  });
+});
+</script>
 {% endblock %}

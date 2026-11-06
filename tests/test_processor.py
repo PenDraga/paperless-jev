@@ -226,7 +226,7 @@ def test_pages_render(client, path):
 def test_ollama_title_and_manual_title(client, monkeypatch):
     calls = []
 
-    async def fake_title(llm, text, facts, examples):
+    async def fake_title(llm, text, facts, examples, instructions, language):
         calls.append((llm.url, llm.model, facts["Absender"], examples))
         return "Swisscom - Rechnung Mobile"
 
@@ -364,7 +364,7 @@ def test_log_cleanup_and_delete(client):
 
 
 def test_suggest_title_writes_nothing(client, monkeypatch):
-    async def fake_title(llm, text, facts, examples):
+    async def fake_title(llm, text, facts, examples, instructions, language):
         return "Swisscom - Rechnung Mobile"
 
     monkeypatch.setattr(processor_module, "generate_title", fake_title)
@@ -730,6 +730,51 @@ def test_log_shows_title_written_to_paperless(client):
     db.update_job(job, doc_title="scan-202610011250", status="running")
     db.update_job(job, status="done", applied={"title": "OBI Quittung Gartenmaterial", "tags": []})
     assert db.job(job)["doc_title"] == "OBI Quittung Gartenmaterial"
+
+
+@pytest.mark.parametrize("valid", [True, False])
+@pytest.mark.parametrize("language", ["en", "de"])
+def test_saved_title_instructions_reach_generation(client, monkeypatch, valid, language):
+    from paperless_jev import titles
+
+    prompts = []
+
+    async def complete(llm, prompt, max_tokens):
+        prompts.append(prompt)
+        assert "Write English titles. Include {sender}." in prompt
+        assert ("englischen Titel" if language == "en" else "deutschen Titel") in prompt
+        return "Mobile phone invoice" if valid else "Could you clarify?"
+
+    monkeypatch.setattr(titles, "complete", complete)
+    original = FakePaperless.docs[42]["title"]
+    FakeJev.response["answers"]["correspondent"]["confidence"] = 0.95
+    FakeJev.response["answers"]["tag:101"]["noul"] = 0.97
+    form = {"mode": "auto", "title_mode": "llm", "llm_url": "http://ollama:11434", "llm_model": "qwen3:8b",
+            "title_instructions": "  Write English titles. Include {sender}.  ", "title_language": language}
+    for name, spec in client.app.state.config.all()["fields"].items():
+        if spec["enabled"]:
+            form[f"{name}_enabled"] = "on"
+    assert client.post("/rules", data=form, headers={"Accept-Language": language}).status_code == 200
+    assert client.app.state.config.all()["title_language"] == language
+    assert "Write English titles. Include {sender}." in client.get("/rules").text
+    client.post("/run", data={"instance_id": "0"})
+    _wait(client)
+    job = client.app.state.db.job(1)
+    assert job["status"] == "done", job["error"]
+    assert FakePaperless.docs[42]["title"] == ("Mobile phone invoice" if valid else original)
+    assert len(prompts) == (1 if valid else 2)
+    form["title_instructions"] = ""
+    client.post("/rules", data=form)
+    assert client.app.state.config.all()["title_instructions"] == ""
+
+
+def test_title_instructions_placeholder_is_localized_not_saved(client):
+    page = client.get("/rules", headers={"Accept-Language": "en"}).text
+    assert "Title instructions" in page
+    assert 'placeholder="Write a short, meaningful English title' in page
+    page = client.get("/rules", headers={"Accept-Language": "de"}).text
+    assert 'placeholder="Schreibe einen kurzen, aussagekräftigen deutschen Titel' in page
+    assert client.app.state.config.all()["title_instructions"] == ""
 
 
 def test_title_generated_with_analysis(client):

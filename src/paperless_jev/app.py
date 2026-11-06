@@ -34,7 +34,7 @@ from .jev import CLASSIFIERS, USD_PER_MTOK, JevError, classifier, classifier_mis
 from .paperless import TAG_SEP, DocumentMissing, Metadata, PaperlessClient, PaperlessError
 from .processor import DOC_MISSING, TAG_TEST, TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
-from .titles import describe_category
+from .titles import TITLE_LANGUAGES, describe_category
 from .vault import Vault
 
 log = logging.getLogger("paperless_jev")
@@ -1067,6 +1067,8 @@ async def save_rules(request: Request):
             "system_tags": list(dict.fromkeys(t.strip() for t in str(form.get("system_tags") or "").split(",") if t.strip())),
             "title_mode": mode_title if (mode_title := str(form.get("title_mode", "off"))) in ("off", "template", "llm") else "off",
             "title_template": str(form.get("title_template") or cfg["title_template"]),
+            "title_instructions": str(form.get("title_instructions") or "").strip(),
+            "title_language": lang if (lang := str(form.get("title_language") or cfg["title_language"])) in TITLE_LANGUAGES else "de",
             "llm_provider": provider if (provider := str(form.get("llm_provider", "ollama"))) in PROVIDERS else "ollama",
             "llm_url": str(form.get("llm_url") or "").strip().rstrip("/"),
             "llm_model": str(form.get("llm_model") or "").strip(),

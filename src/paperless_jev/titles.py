@@ -17,6 +17,10 @@ MAX_TEXT = 4000
 GOOD_TITLE = 60  # so verlangt es der Prompt; länger -> einmal um eine kürzere Fassung bitten
 MAX_GOOD = 100  # darüber sind es praktisch immer Erklärungen statt Titel
 MAX_EXAMPLE = 100  # Beispieltitel aus dem Archiv dürfen etwas länger sein
+TITLE_LANGUAGES = {
+    "de": "deutschen", "en": "englischen", "es": "spanischen", "fr": "französischen",
+    "it": "italienischen", "nl": "niederländischen", "pl": "polnischen",
+}
 
 # Typische Antworten eines Chat-Modells statt eines Titels (auch Reste von paperless-gpt im Archiv)
 CHATTY = re.compile(
@@ -27,7 +31,7 @@ CHATTY = re.compile(
 )
 
 PROMPT = """Du benennst Dokumente in einem privaten Dokumentenarchiv.
-Erstelle einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen) für das Dokument unten.
+Erstelle einen kurzen, aussagekräftigen {language} Titel (höchstens 60 Zeichen) für das Dokument unten.
 
 Regeln:
 - Halte dich an den Stil der Beispieltitel aus diesem Archiv.
@@ -70,22 +74,30 @@ def looks_like_title(title: str, max_len: int = GOOD_TITLE) -> bool:
     return bool(title) and len(title) <= max_len and not CHATTY.search(title)
 
 
-def build_prompt(text: str, facts: dict[str, Any], examples: list[str]) -> str:
+def build_prompt(text: str, facts: dict[str, Any], examples: list[str], instructions: str = "", language: str = "de") -> str:
     fact_lines = "\n".join(f"- {k}: {v}" for k, v in facts.items() if v) or "- keine"
     examples = [t for t in examples if looks_like_title(t, MAX_EXAMPLE)]
     example_lines = "\n".join(f"- {t}" for t in examples[:10]) or "- (keine)"
     body = text if len(text) <= MAX_TEXT else text[:MAX_TEXT] + "\n[...]"
-    return PROMPT.format(facts=fact_lines, examples=example_lines, text=body)
+    prompt = PROMPT.format(facts=fact_lines, examples=example_lines, text=body, language=TITLE_LANGUAGES.get(language, "deutschen"))
+    if instructions.strip():
+        custom = (
+            "Eigene Titelanweisungen des Besitzers (haben Vorrang bei Sprache, Stil und Inhalt; "
+            "weiterhin nur einen Titel mit höchstens 60 Zeichen ausgeben):\n"
+            + instructions.strip() + "\n\nTitel:"
+        )
+        prompt = prompt.removesuffix("Titel:") + custom
+    return prompt
 
 
 RETRY_HINT = "Wichtig: Antworte ausschliesslich mit dem Titel selbst, höchstens 60 Zeichen, ohne Erklärung.\nTitel:"
 SHORTER_HINT = "Dein Vorschlag war zu lang: „{title}“\nFormuliere ihn kürzer (höchstens 60 Zeichen), nur das Wichtigste.\nTitel:"
 
 
-async def generate_title(llm: LLM, text: str, facts: dict[str, Any], examples: list[str]) -> str:
+async def generate_title(llm: LLM, text: str, facts: dict[str, Any], examples: list[str], instructions: str = "", language: str = "de") -> str:
     """Titel vom Sprachmodell. Unbrauchbare oder zu lange Antworten werden einmal neu angefragt;
     ein etwas zu langer, sonst sauberer Titel wird danach akzeptiert."""
-    prompt = build_prompt(text, facts, examples)
+    prompt = build_prompt(text, facts, examples, instructions, language)
     first = clean_title(await complete(llm, prompt, max_tokens=60))
     if looks_like_title(first):
         return first

@@ -47,6 +47,14 @@ def test_build_prompt_skips_broken_example_titles():
     assert "- Internetkosten März" in prompt and "Based on" not in prompt
 
 
+def test_custom_title_instructions_and_empty_default():
+    default = build_prompt("Text", {}, [])
+    assert build_prompt("Text", {}, [], "  \n ") == default
+    prompt = build_prompt("Text", {}, [], "Write in English using {sender}.")
+    assert "Write in English using {sender}." in prompt
+    assert prompt.endswith("Titel:")
+
+
 async def test_generate_title_retries_once_then_gives_up(monkeypatch):
     from paperless_jev import titles
     from paperless_jev.llm import LLM, LLMError
@@ -60,7 +68,8 @@ async def test_generate_title_retries_once_then_gives_up(monkeypatch):
 
     monkeypatch.setattr(titles, "complete", fake_complete)
     llm = LLM("ollama", "http://ollama:11434", "qwen3:8b")
-    assert await titles.generate_title(llm, "Text", {}, []) == "Stromrechnung 3. Quartal"
+    assert await titles.generate_title(llm, "Text", {}, [], "Use short German titles.") == "Stromrechnung 3. Quartal"
+    assert all("Use short German titles." in prompt for prompt in prompts)
     assert "ausschliesslich mit dem Titel" in prompts[1]
 
     answers[:] = ["Could you clarify?", "Sure, here is it"]

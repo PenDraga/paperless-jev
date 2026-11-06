@@ -1,4 +1,11 @@
 {
+ "Automatisch setzen ≥": "Aplicar automáticamente ≥",
+ "Zur Prüfung vorschlagen ≥": "Sugerir para revisión ≥",
+ "Nur Vorschläge: alle Dokumente zur Freigabe, auch sichere Werte. Automatisch: sichere Werte sofort setzen; fehlt etwas oder gibt es Konflikte, folgt Review. Sichere Werte können dann bereits gesetzt sein. Probelauf: keine Änderungen in Paperless.": "Solo sugerencias: todos los documentos requieren aprobación, incluso los valores seguros. Automático: aplica los valores seguros de inmediato; los valores ausentes o los conflictos pueden requerir revisión. Los valores seguros pueden haberse aplicado ya. Simulación: sin cambios en Paperless.",
+ "Titelanweisungen": "Instrucciones de título",
+ "Sprache der Titel": "Idioma de los títulos",
+ "Schreibe einen kurzen, aussagekräftigen deutschen Titel (höchstens 60 Zeichen). Orientiere dich am Archivstil und benenne den konkreten Inhalt, nicht nur die Dokumentart. Kein Datum, keine Jahreszahl und keine Personennamen, ausser Monat oder Jahr kommen in den Beispieltiteln vor. Antworte nur mit dem Titel, ohne Anführungszeichen oder Erklärung.": "Escribe un título breve y significativo en español (máximo 60 caracteres). Sigue el estilo del archivo y describe el tema concreto, no solo el tipo de documento. Sin fechas, años ni nombres personales, salvo si los títulos de ejemplo incluyen un mes o año. Devuelve solo el título, sin comillas ni explicación.",
+ "Nur für Sprachmodell-Titel: Sprache, Stil oder Inhalt vorgeben. Diese Vorgaben haben Vorrang vor dem Archivstil. Leer lassen für das bisherige Verhalten. Es bleibt bei einem kurzen Titel ohne Erklärung.": "Solo para títulos del modelo de lenguaje: especifique idioma, estilo o contenido. Estas instrucciones tienen prioridad sobre el estilo del archivo. Déjelo vacío para mantener el comportamiento actual. El resultado sigue siendo un título breve sin explicación.",
  "Übersicht": "Resumen",
  "Review": "Revisión",
  "Protokoll": "Registro",

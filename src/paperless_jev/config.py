@@ -77,6 +77,8 @@ DEFAULTS: dict[str, Any] = {
     # off: Titel bleibt | template: aus Vorlage | llm: vom Sprachmodell formuliert
     "title_mode": "off",
     "title_template": "{document_type} {correspondent} {created:%Y-%m}",
+    "title_instructions": "",
+    "title_language": "de",  # Sprache der Sprachmodell-Titel
     # Generatives Sprachmodell für Titel und Beschreibungen
     "llm_provider": "ollama",  # ollama | openai (OpenAI-kompatibel: SGLang, vLLM, …)
     "llm_url": "",

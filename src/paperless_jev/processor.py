@@ -298,7 +298,7 @@ class Processor:
                     self.db.update_job(job_id, status="review", applied=applied)
                     self._supersede(job)
                 else:
-                    updates = {**decision["updates"], **({"title": result["title"]} if result.get("title") else {})}
+                    updates = {**decision["updates"], **({"title": result["title"]} if "title" in result else {})}
                     applied = await self.apply(inst, pl, meta, doc, updates, cfg, finished=True)
                     self.db.update_job(job_id, status="done", applied=applied)
                     self._supersede(job)
@@ -355,7 +355,8 @@ class Processor:
             tags.add(await self._tag(inst, pl, meta, cfg["tag_done"]))
             if cfg["remove_inbox"]:
                 tags -= meta.inbox_tags
-            title = updates.get("title") or await self.make_title(pl, meta, doc, {**doc, **data}, cfg)
+            # Ein vorhandener Titel-Schlüssel mit None bedeutet: bereits versucht, bisherigen Titel behalten.
+            title = updates["title"] if "title" in updates else await self.make_title(pl, meta, doc, {**doc, **data}, cfg)
             if title and title != doc.get("title"):
                 data["title"] = title
         else:
@@ -405,7 +406,7 @@ class Processor:
             "Dateiname": doc.get("original_file_name"),
         }
         try:
-            return await generate_title(llm, doc.get("content", ""), facts, examples)
+            return await generate_title(llm, doc.get("content", ""), facts, examples, cfg["title_instructions"], cfg["title_language"])
         except LLMError as e:
             if strict:
                 raise
