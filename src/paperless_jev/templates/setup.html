@@ -95,7 +95,11 @@
           <small>{{ _("In Paperless: Profil → „API-Auth-Token“") }}</small></label>
       </div>
       <label><input type="checkbox" name="enabled" value="true" checked> {{ _("aktiv") }}</label>
-      <button type="submit">{{ _("Hinzufügen") }}</button>
+      <div class="grid">
+        <button type="submit">{{ _("Hinzufügen") }}</button>
+        <button type="button" class="secondary" hx-post="/setup/instances/0/test" hx-target="#test-new">{{ _("Verbindung testen") }}</button>
+      </div>
+      <p id="test-new"></p>
     </form>
   </details>
 </article>

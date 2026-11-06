@@ -440,8 +440,7 @@ EN: dict[str, str] = {
     "(nur OpenAI-kompatibel und nur falls nötig)": "(OpenAI-compatible only, and only if required)",
     "(nur OpenAI-kompatibel und nur falls nötig – gespeichert, leer lassen zum Behalten)":
         "(OpenAI-compatible only, and only if required – saved, leave empty to keep)",
-    "Erst speichern, dann testen. Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.":
-        "Save first, then test. Paperless workflows that set a title on “Document Updated” have the last word afterwards.",
+    "Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.": "Paperless workflows that set a title on “Document Updated” have the last word afterwards.",
     "Verarbeitung": "Processing",
     "Polling-Intervall (Minuten, 0 = aus)": "Polling interval (minutes, 0 = off)",
     "Max. Zeichen Dokumenttext": "Max. characters of document text",
@@ -482,7 +481,8 @@ EN: dict[str, str] = {
     "OK - {inbox} im Posteingang, {types} Typen, {correspondents} Korrespondenten, {tags} Tags":
         "OK - {inbox} in inbox, {types} types, {correspondents} correspondents, {tags} tags",
     "Regeln gespeichert": "Rules saved",
-    "URL und Modell speichern, dann testen": "Save URL and model, then test",
+    "URL und Modell eintragen, dann testen": "Enter URL and model, then test",
+    "API-URL und API-Token eintragen": "Enter API URL and API token",
     "Modell {model} fehlt. Vorhanden: {available}": "Model {model} is missing. Available: {available}",
     "OK - {model} verfügbar": "OK - {model} available",
     "Beschreibungen gespeichert": "Descriptions saved",

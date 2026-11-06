@@ -89,7 +89,7 @@
   <label>{{ _("API-Key") }} <small class="muted">{{ _("(nur OpenAI-kompatibel und nur falls nötig – gespeichert, leer lassen zum Behalten)") if cfg.llm_api_key else _("(nur OpenAI-kompatibel und nur falls nötig)") }}</small>
     <input type="password" name="llm_api_key" autocomplete="off"></label>
   <p><button type="button" class="secondary" hx-post="/rules/llm/test" hx-target="#llm-test">{{ _("Verbindung testen") }}</button> <span id="llm-test"></span>
-    <br><small class="muted">{{ _("Erst speichern, dann testen. Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.") }}</small></p>
+    <br><small class="muted">{{ _("Paperless-Workflows, die bei „Dokument aktualisiert“ einen Titel setzen, haben danach das letzte Wort.") }}</small></p>
 </article>
 
 <article>

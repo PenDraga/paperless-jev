@@ -26,7 +26,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from . import __version__
 from .auth import COOKIE as SESSION_COOKIE, MAX_AGE as SESSION_MAX_AGE, Auth
 from .classifier import excluded_tags
-from .config import FIELD_LABELS, SINGLE_FIELDS, Config
+from .config import FIELD_LABELS, SINGLE_FIELDS, Config, Instance
 from .db import Database
 from . import i18n
 from .i18n import gettext as _
@@ -923,31 +923,45 @@ async def setup_page(request: Request):
     )
 
 
-@app.post("/setup/typesafe")
-async def save_typesafe(
-    request: Request, api_key: str = Form(""), model: str = Form("jev-latest"), classifier_kind: str = Form("typesafe"),
-    classifier_url: str = Form(""), classifier_model: str = Form(""), classifier_api_key: str = Form(""),
-    cloudflare_account_id: str = Form(""), cloudflare_api_token: str = Form(""),
-):
+def _classifier_form(form: Any) -> dict[str, Any]:
+    """Klassifizierer-Felder aus dem Setup-Formular; leere Passwortfelder behalten den gespeicherten Wert."""
+    get = lambda key, default="": str(form.get(key) or default).strip()  # noqa: E731
     values: dict[str, Any] = {
-        "model": model.strip() or "jev-latest",
-        "classifier": classifier_kind if classifier_kind in CLASSIFIERS else "typesafe",
-        "classifier_url": classifier_url.strip().rstrip("/"),
-        "classifier_model": classifier_model.strip() or "clef",
+        "model": get("model") or "jev-latest",
+        "classifier": kind if (kind := get("classifier_kind", "typesafe")) in CLASSIFIERS else "typesafe",
+        "classifier_url": get("classifier_url").rstrip("/"),
+        "classifier_model": get("classifier_model") or "clef",
+        "cloudflare_account_id": get("cloudflare_account_id"),
     }
-    # leere Passwortfelder behalten den gespeicherten Wert
-    values["cloudflare_account_id"] = cloudflare_account_id.strip()
-    for key, value in (("typesafe_api_key", api_key), ("classifier_api_key", classifier_api_key),
-                       ("cloudflare_api_token", cloudflare_api_token)):
-        if value.strip():
-            values[key] = value.strip()
-    _cfg(request).update(values)
+    for key, field in (("typesafe_api_key", "api_key"), ("classifier_api_key", "classifier_api_key"),
+                       ("cloudflare_api_token", "cloudflare_api_token")):
+        if get(field):
+            values[key] = get(field)
+    return values
+
+
+def _llm_form(form: Any) -> dict[str, Any]:
+    """Sprachmodell-Felder aus dem Regeln-Formular; ein leerer API-Key behält den gespeicherten."""
+    values = {
+        "llm_provider": provider if (provider := str(form.get("llm_provider", "ollama"))) in PROVIDERS else "ollama",
+        "llm_url": str(form.get("llm_url") or "").strip().rstrip("/"),
+        "llm_model": str(form.get("llm_model") or "").strip(),
+    }
+    if key := str(form.get("llm_api_key") or "").strip():
+        values["llm_api_key"] = key
+    return values
+
+
+@app.post("/setup/typesafe")
+async def save_typesafe(request: Request):
+    _cfg(request).update(_classifier_form(await request.form()))
     return _redirect("/setup", msg=_("TypeSafe-Einstellungen gespeichert"))
 
 
 @app.post("/setup/typesafe/test", response_class=HTMLResponse)
 async def test_typesafe(request: Request):
-    cfg = _cfg(request).all()
+    # testet die Werte im Formular, ohne sie zu speichern
+    cfg = {**_cfg(request).all(), **_classifier_form(await request.form())}
     if missing := classifier_missing(cfg):
         return HTMLResponse(f'<span class="bad">{html.escape(_(missing))}</span>')
     client, model = classifier(cfg, timeout=20 if cfg["classifier"] != "ollama" else 600)
@@ -960,7 +974,7 @@ async def test_typesafe(request: Request):
                 model,
             )
     except JevError as e:
-        return HTMLResponse(f'<span class="bad">{e}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
     ans = resp["answers"]["t"]
     return HTMLResponse(
         '<span class="good">'
@@ -996,15 +1010,23 @@ async def delete_instance(request: Request, instance_id: int):
 
 @app.post("/setup/instances/{instance_id}/test", response_class=HTMLResponse)
 async def test_instance(request: Request, instance_id: int):
-    inst = _cfg(request).instance(instance_id)
-    if not inst:
+    # testet URL und Token aus dem Formular, ohne sie zu speichern; ein leerer Token behält den gespeicherten
+    form = await request.form()
+    saved = _cfg(request).instance(instance_id) if instance_id else None
+    if instance_id and not saved:
         return HTMLResponse(f'<span class="bad">{_("Unbekannte Instanz")}</span>')
+    url = str(form.get("url") or (saved.url if saved else "")).strip()
+    token = str(form.get("token") or "").strip() or (saved.token if saved else "")
+    if not url or not token:
+        return HTMLResponse(f'<span class="bad">{_("API-URL und API-Token eintragen")}</span>')
+    public_url = str(form.get("public_url", saved.public_url if saved else "")).strip()
+    inst = Instance(instance_id, "test", url, public_url, token, True)
     try:
         async with PaperlessClient(inst.url, inst.token, timeout=10, host=inst.host_header) as pl:
             inbox = await pl.ping()
             meta = await pl.metadata()
     except PaperlessError as e:
-        return HTMLResponse(f'<span class="bad">{e}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
     return HTMLResponse(
         '<span class="good">'
         + _("OK - {inbox} im Posteingang, {types} Typen, {correspondents} Korrespondenten, {tags} Tags",
@@ -1069,10 +1091,7 @@ async def save_rules(request: Request):
             "title_template": str(form.get("title_template") or cfg["title_template"]),
             "title_instructions": str(form.get("title_instructions") or "").strip(),
             "title_language": lang if (lang := str(form.get("title_language") or cfg["title_language"])) in TITLE_LANGUAGES else "de",
-            "llm_provider": provider if (provider := str(form.get("llm_provider", "ollama"))) in PROVIDERS else "ollama",
-            "llm_url": str(form.get("llm_url") or "").strip().rstrip("/"),
-            "llm_model": str(form.get("llm_model") or "").strip(),
-            **({"llm_api_key": key} if (key := str(form.get("llm_api_key") or "").strip()) else {}),
+            **_llm_form(form),
             "fields": fields,
         }
     )
@@ -1082,13 +1101,14 @@ async def save_rules(request: Request):
 
 @app.post("/rules/llm/test", response_class=HTMLResponse)
 async def test_llm(request: Request):
-    llm = LLM.from_config(_cfg(request).all())
+    # testet die Werte im Formular, ohne sie zu speichern
+    llm = LLM.from_config({**_cfg(request).all(), **_llm_form(await request.form())})
     if not llm:
-        return HTMLResponse(f'<span class="bad">{_("URL und Modell speichern, dann testen")}</span>')
+        return HTMLResponse(f'<span class="bad">{_("URL und Modell eintragen, dann testen")}</span>')
     try:
         models = await list_models(llm)
     except LLMError as e:
-        return HTMLResponse(f'<span class="bad">{e}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
     if llm.model not in models:
         return HTMLResponse(
             f'<span class="bad">{_("Modell {model} fehlt. Vorhanden: {available}", model=llm.model, available=", ".join(models) or "–")}</span>'
