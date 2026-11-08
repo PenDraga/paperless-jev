@@ -256,7 +256,6 @@
  "zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts": "pokazuje tytuł, który powstałby po zastosowaniu – nic nie zapisuje",
  "ins Titelfeld": "użyj jako tytułu",
  "Titel sind unter Regeln ausgeschaltet": "Tytuły są wyłączone w Regułach",
- "Kein Titel erzeugt – Sprachmodell unter Regeln prüfen": "Nie utworzono tytułu – sprawdź model językowy w Regułach",
  "Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben": "przekazuj Jev reguły dopasowania z Paperless (wyszukiwane frazy, np. numery polis lub kont) jako wskazówkę",
  "Zuweisungsregel aus Paperless – geht als Hinweis an Jev": "Reguła dopasowania z Paperless – przekazywana Jev jako wskazówka",
  "beliebiges Wort": "dowolne słowo",
@@ -480,5 +479,19 @@
  "Keine Cloudflare-Konto-ID konfiguriert": "Nie skonfigurowano ID konta Cloudflare",
  "Kein Cloudflare-API-Token konfiguriert": "Nie skonfigurowano tokenu API Cloudflare",
  "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "ten sam Jev przez własne konto Cloudflare, opłacany środkami w AI Gateway",
- "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare wybiera wersję, nie można jej przypiąć. Puste pola korzystają z <code>CLOUDFLARE_ACCOUNT_ID</code> i <code>CLOUDFLARE_API_TOKEN_FILE</code> ze środowiska."
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare wybiera wersję, nie można jej przypiąć. Puste pola korzystają z <code>CLOUDFLARE_ACCOUNT_ID</code> i <code>CLOUDFLARE_API_TOKEN_FILE</code> ze środowiska.",
+ "Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen": "Nie utworzono tytułu – sprawdź model językowy w Połączeniach",
+ "Sprachmodell lieferte keinen brauchbaren Titel: {detail}": "Model językowy nie zwrócił użytecznego tytułu: {detail}",
+ "Sprachmodell nicht erreichbar ({url}): {detail}": "Model językowy jest nieosiągalny ({url}): {detail}",
+ "Sprachmodell HTTP {status}: {detail}": "Model językowy HTTP {status}: {detail}",
+ "Paperless-Verarbeitung fehlgeschlagen: {detail}": "Przetwarzanie w Paperless nie powiodło się: {detail}",
+ "{service} nicht erreichbar: {detail}": "Usługa {service} jest nieosiągalna: {detail}",
+ "{service}: keine Antwort": "{service}: brak odpowiedzi",
+ "Sprachmodell lieferte keinen brauchbaren Titel": "Model językowy nie zwrócił użytecznego tytułu",
+ "Instanz nicht gefunden": "Nie znaleziono instancji",
+ "Job oder Instanz nicht gefunden": "Nie znaleziono zadania lub instancji",
+ "Cloudflare: unvollständige Antwort": "Cloudflare: niepełna odpowiedź",
+ "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: nieprawidłowe prawdopodobieństwo tagu",
+ "Anfrage einer fremden Seite abgewiesen": "Odrzucono żądanie z innego źródła",
+ "Anfrage fehlgeschlagen": "Żądanie nie powiodło się"
 }

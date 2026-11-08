@@ -305,7 +305,7 @@ EN: dict[str, str] = {
     "zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts": "shows the title that applying would create – writes nothing",
     "ins Titelfeld": "use as title",
     "Titel sind unter Regeln ausgeschaltet": "Titles are switched off under Rules",
-    "Kein Titel erzeugt – Sprachmodell unter Regeln prüfen": "No title created – check the language model under Rules",
+    "Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen": "No title created – check the language model under Connections",
     "Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben":
         "pass Paperless matching rules (search terms like policy or account numbers) to Jev as a hint",
     "Zuweisungsregel aus Paperless – geht als Hinweis an Jev": "Matching rule from Paperless – passed to Jev as a hint",
@@ -589,6 +589,20 @@ EN: dict[str, str] = {
     "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)": "The document no longer exists in Paperless (deleted or in the trash)",
     "Das Dokument wurde in Paperless gelöscht (Papierkorb). Dieser Eintrag ist nur noch Protokoll – in Paperless lässt es sich aus dem Papierkorb wiederherstellen.":
         "The document was deleted in Paperless (trash). This entry is only a record now – in Paperless it can be restored from the trash.",
+    # Fehlermeldungen (diagnostics.py)
+    "Sprachmodell lieferte keinen brauchbaren Titel: {detail}": "Language model returned no usable title: {detail}",
+    "Sprachmodell nicht erreichbar ({url}): {detail}": "Language model unreachable ({url}): {detail}",
+    "Sprachmodell HTTP {status}: {detail}": "Language model HTTP {status}: {detail}",
+    "Paperless-Verarbeitung fehlgeschlagen: {detail}": "Paperless processing failed: {detail}",
+    "{service} nicht erreichbar: {detail}": "{service} unreachable: {detail}",
+    "{service}: keine Antwort": "{service}: no response",
+    "Sprachmodell lieferte keinen brauchbaren Titel": "Language model returned no usable title",
+    "Instanz nicht gefunden": "Instance not found",
+    "Job oder Instanz nicht gefunden": "Job or instance not found",
+    "Cloudflare: unvollständige Antwort": "Cloudflare: incomplete response",
+    "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: invalid tag probability",
+    "Anfrage einer fremden Seite abgewiesen": "Cross-origin request rejected",
+    "Anfrage fehlgeschlagen": "Request failed",
 }
 
 LOCALES = Path(__file__).parent / "locales"

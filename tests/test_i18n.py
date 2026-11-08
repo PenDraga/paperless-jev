@@ -4,10 +4,16 @@ import re
 import string
 from pathlib import Path
 
-from paperless_jev import i18n
+import httpx
+import pytest
+
+from paperless_jev import diagnostics, i18n
 from paperless_jev.app import MODE_LABELS, STATUS_LABELS
 from paperless_jev.config import FIELD_LABELS
 from paperless_jev.llm import PROVIDERS
+
+from .test_llm import _patch
+from .test_processor import client  # noqa: F401
 
 SRC = Path(__file__).parent.parent / "src" / "paperless_jev"
 CALL = re.compile(r"""\b_\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""")
@@ -21,6 +27,7 @@ def _strings() -> set[str]:
             found.add(raw.encode().decode("unicode_escape").encode("latin-1").decode("utf-8"))
     found |= {*STATUS_LABELS.values(), *MODE_LABELS.values(), *FIELD_LABELS.values(), *PROVIDERS.values()}
     found |= {"Dokumenttypen", "Korrespondenten", "Tags", "Speicherpfade"}
+    found |= {*diagnostics.TEMPLATES, *diagnostics.MESSAGES}
     return found
 
 
@@ -72,3 +79,53 @@ def test_pick_language():
     assert i18n.pick(None, "pt-BR,pt;q=0.9") == "en"
     assert i18n.pick(None, "de-CH,de;q=0.9,en;q=0.8") == "de"
     assert i18n.pick("xx", None) == "en"
+
+
+# Fehlermeldungen in der Sprache der Oberfläche (nach #2)
+
+@pytest.mark.parametrize("lang", ["en", "de", "fr", "pl"])
+def test_title_failure_uses_selected_language(client, monkeypatch, lang):  # noqa: F811
+    expected = i18n.TRANSLATIONS.get(lang, {}).get("Sprachmodell lieferte keinen brauchbaren Titel",
+                                                   "Sprachmodell lieferte keinen brauchbaren Titel")
+    client.cookies.set("lang", lang)
+    client.app.state.config.update({"title_mode": "llm", "llm_url": "http://model.example", "llm_model": "m"})
+    job_id = client.app.state.db.create_job(1, 42, "test")
+    _patch(monkeypatch, lambda request: httpx.Response(200, json={"response": ""}))
+    for suffix in ("?format=json", ""):
+        r = client.post(f"/jobs/{job_id}/title{suffix}")
+        message = r.json()["error"] if suffix else r.text
+        assert expected in message and "''" not in message
+
+
+def test_saved_errors_follow_language_when_reopened(client):  # noqa: F811
+    db = client.app.state.db
+    job_id = db.create_job(1, 42, "test")
+    db.update_job(job_id, status="error", error="Ollama nicht erreichbar: connection refused")
+    for lang, expected in (("en", "Ollama unreachable: connection refused"),
+                           ("de", "Ollama nicht erreichbar: connection refused")):
+        client.cookies.set("lang", lang)
+        for path in ("/log", f"/jobs/{job_id}"):
+            assert expected in client.get(path).text
+    assert db.job(job_id)["error"] == "Ollama nicht erreichbar: connection refused"
+
+
+def test_unknown_errors_stay_verbatim():
+    token = i18n.current.set("en")
+    try:
+        assert diagnostics.diagnostic("Paperless GET /api/x: HTTP 500 boom") == "Paperless GET /api/x: HTTP 500 boom"
+        assert diagnostics.diagnostic("Instanz nicht gefunden") == "Instance not found"
+    finally:
+        i18n.current.reset(token)
+
+
+def test_connection_test_failure_is_translated_without_provider_body(client, monkeypatch):  # noqa: F811
+    client.cookies.set("lang", "en")
+    _patch(monkeypatch, lambda request: httpx.Response(401, text="private-provider-detail"))
+    r = client.post("/setup/llm/test", data={"llm_url": "http://model.example", "llm_model": "m"})
+    assert "HTTP 401" in r.text and "Sprachmodell" not in r.text and "private-provider-detail" not in r.text
+
+
+def test_cross_origin_rejection_uses_cookie_language(client):  # noqa: F811
+    client.cookies.set("lang", "fr")
+    r = client.post("/run", headers={"Origin": "https://other.example"})
+    assert r.status_code == 403 and r.text.strip() == i18n.TRANSLATIONS["fr"]["Anfrage einer fremden Seite abgewiesen"]

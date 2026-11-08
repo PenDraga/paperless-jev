@@ -156,7 +156,7 @@
   "levels": fields.values()|selectattr("value")|map(attribute="level")|list,
   "t": {"now": _("heute in Paperless"), "empty": _("– leer lassen –"), "all": _("alle"), "suggestions": _("Vorschläge von Jev"),
         "page": _("Seite {n} / {total}"), "create": _("«{name}» neu in Paperless anlegen"), "keywords": _("Stichworte für Jev, optional"),
-        "createBtn": _("Anlegen"), "created": _("«{name}» in Paperless angelegt"), "loading": _("Titel wird erzeugt …"), "failed": _("Dokument konnte nicht angezeigt werden."), "open": _("In neuem Tab öffnen"), "exitfs": _("Schliessen")}
+        "createBtn": _("Anlegen"), "created": _("«{name}» in Paperless angelegt"), "loading": _("Titel wird erzeugt …"), "requestFailed": _("Anfrage fehlgeschlagen"), "failed": _("Dokument konnte nicht angezeigt werden."), "open": _("In neuem Tab öffnen"), "exitfs": _("Schliessen")}
 }|tojson }}</script>
 <script type="module" src="/static/review.js?v={{ asset_v }}"></script>
 {% endif %}

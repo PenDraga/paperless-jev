@@ -28,6 +28,7 @@ from .auth import COOKIE as SESSION_COOKIE, MAX_AGE as SESSION_MAX_AGE, Auth
 from .classifier import excluded_tags
 from .config import FIELD_LABELS, SINGLE_FIELDS, Config, Instance
 from .db import Database
+from .diagnostics import diagnostic
 from . import i18n
 from .i18n import gettext as _
 from .jev import CLASSIFIERS, USD_PER_MTOK, JevError, classifier, classifier_missing
@@ -130,6 +131,7 @@ templates.env.globals.update(
     version=__version__,
     asset_v=int((HERE / "static" / "style.css").stat().st_mtime),
     _=_,
+    diagnostic=diagnostic,
     current_lang=i18n.current.get,
 )
 
@@ -141,13 +143,6 @@ async def frame_options(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Content-Security-Policy", "frame-ancestors 'self'")
     return response
-
-
-@app.middleware("http")
-async def language(request: Request, call_next):
-    """Sprache für diesen Request: Cookie, sonst Browser-Einstellung."""
-    i18n.current.set(i18n.pick(request.cookies.get(i18n.COOKIE), request.headers.get("accept-language")))
-    return await call_next(request)
 
 
 @app.get("/lang/{code}")
@@ -204,8 +199,21 @@ async def same_origin_only(request: Request, call_next):
             allowed = True
         if not allowed:
             log.warning("Anfrage einer fremden Seite abgewiesen: %s %s (Origin %s)", request.method, request.url.path, origin)
-            return Response("Cross-origin request rejected\n", status_code=403, media_type="text/plain")
+            return Response(_("Anfrage einer fremden Seite abgewiesen") + "\n", status_code=403, media_type="text/plain")
     return await call_next(request)
+
+
+@app.middleware("http")
+async def language(request: Request, call_next):
+    """Sprache für diesen Request: Cookie, sonst Browser-Einstellung.
+
+    Nach Login und Fremdseiten-Schutz registriert, damit es aussen liegt und auch deren Meldungen übersetzt.
+    """
+    token = i18n.current.set(i18n.pick(request.cookies.get(i18n.COOKIE), request.headers.get("accept-language")))
+    try:
+        return await call_next(request)
+    finally:
+        i18n.current.reset(token)
 
 
 # Äusserste Schicht: Client-Adresse und Schema nur von vertrauenswürdigen Proxys
@@ -533,7 +541,7 @@ async def run_tag(request: Request, target: str = Form(""), dry_run: bool = Form
     try:
         count = await _proc(request).enqueue_tag(int(inst_id), int(tag_id), dry_run, titles)
     except PaperlessError as e:
-        return _redirect("/", err=str(e))
+        return _redirect("/", err=diagnostic(e))
     msg = _("{n} Dokument(e) zur Prüfung eingereiht", n=count) + (" – " + _("Probelauf, schreibt nichts") if dry_run else "")
     return _redirect("/log?status=all", msg=msg)
 
@@ -583,16 +591,16 @@ async def suggest_title(request: Request, job_id: int, format: str = "html"):
         try:
             title = await _proc(request).suggest_title(job_id, overrides)
         except (LLMError, PaperlessError) as e:
-            return JSONResponse({"error": str(e)})
-        return JSONResponse({"title": title} if title else {"error": _("Kein Titel erzeugt – Sprachmodell unter Regeln prüfen")})
+            return JSONResponse({"error": diagnostic(e)})
+        return JSONResponse({"title": title} if title else {"error": _("Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen")})
     if _cfg(request).all()["title_mode"] == "off":
         return HTMLResponse(f'<span class="muted">{html.escape(_("Titel sind unter Regeln ausgeschaltet"))}</span>')
     try:
         title = await _proc(request).suggest_title(job_id)
     except (LLMError, PaperlessError) as e:
-        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(diagnostic(e))}</span>')
     if not title:
-        return HTMLResponse(f'<span class="bad">{html.escape(_("Kein Titel erzeugt – Sprachmodell unter Regeln prüfen"))}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(_("Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen"))}</span>')
     t = html.escape(title, quote=True)
     return HTMLResponse(
         f'<span class="title-suggestion"><strong>{t}</strong> '
@@ -609,7 +617,7 @@ async def delete_document(request: Request, job_id: int):
     try:
         await _proc(request).delete_document(job_id)
     except PaperlessError as e:
-        return _redirect(f"/jobs/{job_id}", err=str(e))
+        return _redirect(f"/jobs/{job_id}", err=diagnostic(e))
     return _redirect(back, msg=_("Dokument in Paperless gelöscht (Papierkorb)"))
 
 
@@ -671,7 +679,7 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
         async with _proc(request).client(inst) as pl:
             meta = await _proc(request).metadata(inst, pl)
     except PaperlessError as e:
-        return {"meta": None, "meta_error": str(e)}
+        return {"meta": None, "meta_error": diagnostic(e)}
     hidden = excluded_tags(meta, _cfg(request).all())
     return {
         "meta": meta,
@@ -781,7 +789,7 @@ async def scan_upload(request: Request):
         async with _proc(request).client(inst) as pl:
             task_id = await pl.post_document(content, upload.filename or "scan.pdf", ctype, title, tags)
     except PaperlessError as e:
-        return JSONResponse({"error": str(e)}, status_code=502)
+        return JSONResponse({"error": diagnostic(e)}, status_code=502)
     return JSONResponse({"task_id": task_id, "instance_id": inst.id, "size": len(content)})
 
 
@@ -795,11 +803,11 @@ async def scan_status(request: Request, instance_id: int, task_id: str):
         async with _proc(request).client(inst) as pl:
             task = await pl.task(task_id)
     except PaperlessError as e:
-        return JSONResponse({"state": "error", "error": str(e)})
+        return JSONResponse({"state": "error", "error": diagnostic(e)})
     if not task:
         return JSONResponse({"state": "queued"})
     if task["status"] in ("FAILURE", "REVOKED"):
-        return JSONResponse({"state": "error", "error": task["error"][:300]})
+        return JSONResponse({"state": "error", "error": _("Paperless-Verarbeitung fehlgeschlagen: {detail}", detail=task["error"][:300])})
     doc_id = task["document_id"]
     if task["status"] != "SUCCESS" or not doc_id:
         return JSONResponse({"state": "processing"})
@@ -866,7 +874,7 @@ async def apply_job(request: Request, job_id: int):
         _proc(request).mark_deleted(job["instance_id"], job["doc_id"])
         return _redirect(f"/jobs/{job_id}", err=_(DOC_MISSING))
     except PaperlessError as e:
-        return _redirect(f"/jobs/{job_id}", err=str(e))
+        return _redirect(f"/jobs/{job_id}", err=diagnostic(e))
     return _redirect(_local_path(str(form.get("back") or ""), "/review"), msg=_("Übernommen"))
 
 
@@ -968,7 +976,7 @@ async def test_llm(request: Request):
     try:
         models = await list_models(llm)
     except LLMError as e:
-        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(diagnostic(e))}</span>')
     if llm.model not in models:
         return HTMLResponse(
             f'<span class="bad">{_("Modell {model} fehlt. Vorhanden: {available}", model=llm.model, available=", ".join(models) or "–")}</span>'
@@ -998,7 +1006,7 @@ async def test_typesafe(request: Request):
                 model,
             )
     except JevError as e:
-        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(diagnostic(e))}</span>')
     ans = resp["answers"]["t"]
     return HTMLResponse(
         '<span class="good">'
@@ -1050,7 +1058,7 @@ async def test_instance(request: Request, instance_id: int):
             inbox = await pl.ping()
             meta = await pl.metadata()
     except PaperlessError as e:
-        return HTMLResponse(f'<span class="bad">{html.escape(str(e))}</span>')
+        return HTMLResponse(f'<span class="bad">{html.escape(diagnostic(e))}</span>')
     return HTMLResponse(
         '<span class="good">'
         + _("OK - {inbox} im Posteingang, {types} Typen, {correspondents} Korrespondenten, {tags} Tags",
@@ -1163,7 +1171,7 @@ async def descriptions_page(request: Request, instance_id: int = 0, kind: str = 
                              # mögliche Obertags: nicht sich selbst und keine eigenen Untertags (Zyklus)
                              "no_parent": ({oid} | meta.tag_descendants(oid)) if kind == "tag" else set(), **d})
         except PaperlessError as e:
-            error = str(e)
+            error = diagnostic(e)
     return _render(
         request, "descriptions.html",
         instances=instances, inst=inst, kind=kind, kinds=KINDS, rows=rows, meta_error=error, creatable=kind in CREATABLE,
@@ -1212,7 +1220,7 @@ async def create_meta(request: Request):
             parent = parent if kind == "tag" and parent in meta.tags else None
             oid = await pl.create_object(kind, name, color, parent)
     except PaperlessError as e:
-        return fail(str(e))
+        return fail(diagnostic(e))
     keywords = str(form.get("keywords") or "").strip()
     if keywords:
         # Stichworte sofort speichern, ausformulieren im Hintergrund (Sprachmodell kann langsam sein)
@@ -1246,7 +1254,7 @@ async def tag_color(request: Request):
         async with _proc(request).client(inst) as pl:
             await pl.update_object("tag", oid, {"color": color.lower()})
     except PaperlessError as e:
-        return _redirect(back, err=str(e))
+        return _redirect(back, err=diagnostic(e))
     _proc(request).forget_metadata(inst.id)
     return _redirect(back, msg=_("Farbe gespeichert"))
 
@@ -1270,7 +1278,7 @@ async def tag_parent(request: Request):
             if parent is not None:
                 await pl.add_tag_to_tagged(parent, [oid])
     except PaperlessError as e:
-        return _redirect(back, err=str(e))
+        return _redirect(back, err=diagnostic(e))
     _proc(request).forget_metadata(inst.id)
     name = meta.tags.get(oid, f"#{oid}")
     if parent is None:
@@ -1316,7 +1324,7 @@ async def nest_tags(request: Request):
                 renamed += "name" in data
             await pl.add_tag_to_tagged(parent, list(items))
     except PaperlessError as e:
-        return _redirect(back, err=str(e))
+        return _redirect(back, err=diagnostic(e))
     _proc(request).forget_metadata(inst.id)
     msg = _("{moved} Tag(s) unter «{parent}» gehängt, {renamed} umbenannt", moved=moved, parent=parent_name, renamed=renamed)
     return _redirect(back, msg=msg, err="; ".join(failed)[:500] or None)
@@ -1336,7 +1344,7 @@ async def delete_assistant(request: Request, instance_id: int, kind: str, id: in
                 return _redirect(back, err=_("Eintrag fehlt"))
             count, sample = await pl.documents_with(kind, id)
     except PaperlessError as e:
-        return _redirect(back, err=str(e))
+        return _redirect(back, err=diagnostic(e))
     hidden = excluded_tags(meta, _cfg(request).all()) if kind == "tag" else set()
     if kind == "tag":
         if id in hidden:
@@ -1388,7 +1396,7 @@ async def delete_meta(request: Request):
                     await pl.update_object("tag", child, {"parent": meta.tag_parents.get(oid)})
             await pl.delete_object(kind, oid)
     except PaperlessError as e:
-        return _redirect(back, err=str(e))
+        return _redirect(back, err=diagnostic(e))
     _cfg(request).db.execute("DELETE FROM descriptions WHERE instance_id = ? AND kind = ? AND object_id = ?", (inst.id, kind, oid))
     _proc(request).forget_metadata(inst.id)
     if target is not None:
@@ -1430,7 +1438,7 @@ async def save_descriptions(request: Request):
                 except LLMError as e:
                     log.warning("Description expansion failed (instance=%s, kind=%s, id=%s): %s",
                                 instance_id, kind, oid, e.public_message)
-                    failed.append(f"{name or oid} ({_(e.public_message)})")
+                    failed.append(f"{name or oid} ({diagnostic(e)})")
         _cfg(request).save_description(instance_id, kind, oid, text, active, source=source)
     msg = _("Beschreibungen gespeichert") + (_(", {n} vom Sprachmodell ausformuliert", n=expanded) if expanded else "")
     err = _("Sprachmodell fehlgeschlagen für: {names} – Eingabe wurde unverändert übernommen", names=", ".join(failed)) if failed else None

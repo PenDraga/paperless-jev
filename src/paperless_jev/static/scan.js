@@ -587,9 +587,9 @@ async function upload(blob, name) {
   const title = $("sc-title").value.trim();
   if (title) fd.append("title", title);
   document.querySelectorAll("#sc-tags input:checked").forEach((c) => fd.append("tags", c.value));
-  const r = await fetch("/scan/upload", { method: "POST", body: fd });
-  const j = await r.json().catch(() => ({ error: r.statusText }));
-  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  const r = await fetch("/scan/upload", { method: "POST", body: fd }).catch(() => { throw new Error(T.requestFailed); });
+  const j = await r.json().catch(() => ({ error: T.requestFailed }));
+  if (!r.ok || j.error) throw new Error(j.error || T.requestFailed);
   return j;
 }
 

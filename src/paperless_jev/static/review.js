@@ -248,9 +248,9 @@ async function createObject(kind, name, keywords, color, parent) {
   if (keywords) fd.append("keywords", keywords);
   if (color) fd.append("color", color);
   if (parent) fd.append("parent", parent);
-  const r = await fetch("/meta/create", { method: "POST", body: fd });
-  const j = await r.json().catch(() => ({ error: r.statusText }));
-  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  const r = await fetch("/meta/create", { method: "POST", body: fd }).catch(() => { throw new Error(T.requestFailed); });
+  const j = await r.json().catch(() => ({ error: T.requestFailed }));
+  if (!r.ok || j.error) throw new Error(j.error || T.requestFailed);
   return j;
 }
 
@@ -342,8 +342,8 @@ suggestBtn?.addEventListener("click", async () => {
   try {
     const r = await (await fetch(suggestBtn.dataset.url, { method: "POST", body: new FormData(document.getElementById("rv-form")) })).json();
     if (r.title) { document.getElementById("rv-title").value = r.title; note.textContent = before; }
-    else note.textContent = r.error || before;
-  } catch { note.textContent = before; }
+    else note.textContent = r.error || T.requestFailed;
+  } catch { note.textContent = T.requestFailed; }
   suggestBtn.removeAttribute("aria-busy");
 });
 

@@ -107,7 +107,8 @@ async def generate_title(llm: LLM, text: str, facts: dict[str, Any], examples: l
     usable = [t for t in (second, first if too_long else "") if looks_like_title(t, MAX_GOOD)]
     if usable:
         return min(usable, key=len)
-    raise LLMError(f"Sprachmodell lieferte keinen brauchbaren Titel: {(second or first)[:80]!r}")
+    raise LLMError(f"Sprachmodell lieferte keinen brauchbaren Titel: {(second or first)[:80]!r}",
+                   public_message="Sprachmodell lieferte keinen brauchbaren Titel")
 
 
 DESCRIBE_PROMPT_DE = """Du formulierst kurze Kategorie-Beschreibungen für einen Dokument-Klassifizierer in einem privaten Schweizer Haushaltsarchiv.

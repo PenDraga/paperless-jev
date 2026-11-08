@@ -256,7 +256,6 @@
  "zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts": "toont de titel die toepassen zou maken – schrijft niets",
  "ins Titelfeld": "als titel gebruiken",
  "Titel sind unter Regeln ausgeschaltet": "Titels zijn uitgeschakeld onder Regels",
- "Kein Titel erzeugt – Sprachmodell unter Regeln prüfen": "Geen titel gemaakt – controleer het taalmodel onder Regels",
  "Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben": "Paperless-matchingregels (zoektermen zoals polis- of rekeningnummers) als hint aan Jev doorgeven",
  "Zuweisungsregel aus Paperless – geht als Hinweis an Jev": "Matchingregel uit Paperless – als hint aan Jev doorgegeven",
  "beliebiges Wort": "elk woord",
@@ -480,5 +479,19 @@
  "Keine Cloudflare-Konto-ID konfiguriert": "Geen Cloudflare-account-ID ingesteld",
  "Kein Cloudflare-API-Token konfiguriert": "Geen Cloudflare API-token ingesteld",
  "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "dezelfde Jev via je eigen Cloudflare-account, betaald met tegoed in AI Gateway",
- "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare kiest de versie, die kan niet worden vastgezet. Lege velden vallen terug op <code>CLOUDFLARE_ACCOUNT_ID</code> en <code>CLOUDFLARE_API_TOKEN_FILE</code> uit de omgeving."
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare kiest de versie, die kan niet worden vastgezet. Lege velden vallen terug op <code>CLOUDFLARE_ACCOUNT_ID</code> en <code>CLOUDFLARE_API_TOKEN_FILE</code> uit de omgeving.",
+ "Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen": "Geen titel gemaakt – controleer het taalmodel onder Verbindingen",
+ "Sprachmodell lieferte keinen brauchbaren Titel: {detail}": "Taalmodel heeft geen bruikbare titel teruggegeven: {detail}",
+ "Sprachmodell nicht erreichbar ({url}): {detail}": "Taalmodel niet bereikbaar ({url}): {detail}",
+ "Sprachmodell HTTP {status}: {detail}": "Taalmodel HTTP {status}: {detail}",
+ "Paperless-Verarbeitung fehlgeschlagen: {detail}": "Paperless-verwerking mislukt: {detail}",
+ "{service} nicht erreichbar: {detail}": "{service} niet bereikbaar: {detail}",
+ "{service}: keine Antwort": "{service}: geen antwoord",
+ "Sprachmodell lieferte keinen brauchbaren Titel": "Taalmodel heeft geen bruikbare titel teruggegeven",
+ "Instanz nicht gefunden": "Instantie niet gevonden",
+ "Job oder Instanz nicht gefunden": "Taak of instantie niet gevonden",
+ "Cloudflare: unvollständige Antwort": "Cloudflare: onvolledig antwoord",
+ "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: ongeldige tagwaarschijnlijkheid",
+ "Anfrage einer fremden Seite abgewiesen": "Verzoek van een andere oorsprong geweigerd",
+ "Anfrage fehlgeschlagen": "Verzoek mislukt"
 }

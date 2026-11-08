@@ -256,7 +256,6 @@
  "zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts": "muestra el título que se crearía al aplicar – no escribe nada",
  "ins Titelfeld": "usar como título",
  "Titel sind unter Regeln ausgeschaltet": "Los títulos están desactivados en Reglas",
- "Kein Titel erzeugt – Sprachmodell unter Regeln prüfen": "No se creó ningún título – comprueba el modelo de lenguaje en Reglas",
  "Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben": "pasar a Jev las reglas de asignación de Paperless (términos de búsqueda como números de póliza o de cuenta) como pista",
  "Zuweisungsregel aus Paperless – geht als Hinweis an Jev": "Regla de asignación de Paperless – se pasa a Jev como pista",
  "beliebiges Wort": "cualquier palabra",
@@ -480,5 +479,19 @@
  "Keine Cloudflare-Konto-ID konfiguriert": "No hay ningún ID de cuenta de Cloudflare configurado",
  "Kein Cloudflare-API-Token konfiguriert": "No hay ningún token de API de Cloudflare configurado",
  "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "el mismo Jev a través de tu propia cuenta de Cloudflare, pagado con saldo de AI Gateway",
- "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Modelo <code>typesafe/jev</code> – Cloudflare elige la versión, no se puede fijar. Los campos vacíos recurren a <code>CLOUDFLARE_ACCOUNT_ID</code> y <code>CLOUDFLARE_API_TOKEN_FILE</code> del entorno."
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Modelo <code>typesafe/jev</code> – Cloudflare elige la versión, no se puede fijar. Los campos vacíos recurren a <code>CLOUDFLARE_ACCOUNT_ID</code> y <code>CLOUDFLARE_API_TOKEN_FILE</code> del entorno.",
+ "Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen": "No se creó ningún título – comprueba el modelo de lenguaje en Conexiones",
+ "Sprachmodell lieferte keinen brauchbaren Titel: {detail}": "El modelo de lenguaje no devolvió ningún título utilizable: {detail}",
+ "Sprachmodell nicht erreichbar ({url}): {detail}": "No se puede acceder al modelo de lenguaje ({url}): {detail}",
+ "Sprachmodell HTTP {status}: {detail}": "Modelo de lenguaje HTTP {status}: {detail}",
+ "Paperless-Verarbeitung fehlgeschlagen: {detail}": "El procesamiento de Paperless ha fallado: {detail}",
+ "{service} nicht erreichbar: {detail}": "No se puede acceder a {service}: {detail}",
+ "{service}: keine Antwort": "{service}: sin respuesta",
+ "Sprachmodell lieferte keinen brauchbaren Titel": "El modelo de lenguaje no devolvió ningún título utilizable",
+ "Instanz nicht gefunden": "Instancia no encontrada",
+ "Job oder Instanz nicht gefunden": "Tarea o instancia no encontrada",
+ "Cloudflare: unvollständige Antwort": "Cloudflare: respuesta incompleta",
+ "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: probabilidad de etiqueta no válida",
+ "Anfrage einer fremden Seite abgewiesen": "Solicitud de origen cruzado rechazada",
+ "Anfrage fehlgeschlagen": "La solicitud ha fallado"
 }

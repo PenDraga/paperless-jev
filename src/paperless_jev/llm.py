@@ -126,9 +126,10 @@ async def list_models(llm: LLM) -> list[str]:
             else:
                 resp = await http.get(f"{llm.url.rstrip('/')}/api/tags")
     except httpx.HTTPError as e:
-        raise LLMError(f"Sprachmodell nicht erreichbar ({llm.url}): {e}") from e
+        reason = "Zeitüberschreitung beim Sprachmodell" if isinstance(e, httpx.TimeoutException) else "Sprachmodell nicht erreichbar"
+        raise LLMError(f"Sprachmodell nicht erreichbar ({llm.url}): {e}", public_message=reason) from e
     if resp.status_code >= 400:
-        raise LLMError(f"Sprachmodell HTTP {resp.status_code}: {resp.text[:200]}")
+        raise LLMError(f"Sprachmodell HTTP {resp.status_code}: {resp.text[:200]}", public_message=f"HTTP {resp.status_code}")
     data = resp.json()
     if llm.provider == "openai":
         return [m["id"] for m in data.get("data", [])]

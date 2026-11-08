@@ -256,7 +256,6 @@
  "zeigt den Titel, der beim Übernehmen entstehen würde – schreibt nichts": "affiche le titre que l’application créerait – n’écrit rien",
  "ins Titelfeld": "utiliser comme titre",
  "Titel sind unter Regeln ausgeschaltet": "Les titres sont désactivés sous Règles",
- "Kein Titel erzeugt – Sprachmodell unter Regeln prüfen": "Aucun titre créé – vérifiez le modèle de langage sous Règles",
  "Zuweisungsregeln aus Paperless (Suchbegriffe wie Policen- oder Kontonummern) als Hinweis an Jev mitgeben": "transmettre à Jev les règles de rapprochement de Paperless (termes comme numéros de contrat ou de compte) comme indice",
  "Zuweisungsregel aus Paperless – geht als Hinweis an Jev": "Règle de rapprochement de Paperless – transmise à Jev comme indice",
  "beliebiges Wort": "n’importe quel mot",
@@ -480,5 +479,19 @@
  "Keine Cloudflare-Konto-ID konfiguriert": "Aucun ID de compte Cloudflare configuré",
  "Kein Cloudflare-API-Token konfiguriert": "Aucun jeton d’API Cloudflare configuré",
  "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "le même Jev via votre propre compte Cloudflare, payé avec du crédit AI Gateway",
- "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Modèle <code>typesafe/jev</code> – Cloudflare choisit la version, elle ne peut pas être figée. Les champs vides se rabattent sur <code>CLOUDFLARE_ACCOUNT_ID</code> et <code>CLOUDFLARE_API_TOKEN_FILE</code> de l’environnement."
+ "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Modèle <code>typesafe/jev</code> – Cloudflare choisit la version, elle ne peut pas être figée. Les champs vides se rabattent sur <code>CLOUDFLARE_ACCOUNT_ID</code> et <code>CLOUDFLARE_API_TOKEN_FILE</code> de l’environnement.",
+ "Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen": "Aucun titre créé – vérifiez le modèle de langage sous Connexions",
+ "Sprachmodell lieferte keinen brauchbaren Titel: {detail}": "Le modèle de langage n’a renvoyé aucun titre utilisable : {detail}",
+ "Sprachmodell nicht erreichbar ({url}): {detail}": "Le modèle de langage est inaccessible ({url}) : {detail}",
+ "Sprachmodell HTTP {status}: {detail}": "Modèle de langage HTTP {status} : {detail}",
+ "Paperless-Verarbeitung fehlgeschlagen: {detail}": "Le traitement Paperless a échoué : {detail}",
+ "{service} nicht erreichbar: {detail}": "{service} est inaccessible : {detail}",
+ "{service}: keine Antwort": "{service} : aucune réponse",
+ "Sprachmodell lieferte keinen brauchbaren Titel": "Le modèle de langage n’a renvoyé aucun titre utilisable",
+ "Instanz nicht gefunden": "Instance introuvable",
+ "Job oder Instanz nicht gefunden": "Tâche ou instance introuvable",
+ "Cloudflare: unvollständige Antwort": "Cloudflare : réponse incomplète",
+ "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare : probabilité d’étiquette invalide",
+ "Anfrage einer fremden Seite abgewiesen": "Requête d’origine croisée rejetée",
+ "Anfrage fehlgeschlagen": "La requête a échoué"
 }

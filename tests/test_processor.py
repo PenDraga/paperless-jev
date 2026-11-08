@@ -519,7 +519,7 @@ def test_scan_upload_and_status(client):
     s = client.get("/scan/status/1/task-1").json()
     assert s["state"] == "done" and s["doc_id"] == 42 and s["fields"] and s["browse_url"].endswith("/documents/42/details")
     FakePaperless.tasks = {"task-1": {"status": "FAILURE", "document_id": None, "error": "kaputt"}}
-    assert client.get("/scan/status/1/task-1").json() == {"state": "error", "error": "kaputt"}
+    assert client.get("/scan/status/1/task-1").json() == {"state": "error", "error": "Paperless-Verarbeitung fehlgeschlagen: kaputt"}
 
 
 async def test_task_status_paperless_2_and_3():

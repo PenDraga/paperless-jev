@@ -27,7 +27,7 @@
         <a href="/doc/{{ j.instance_id }}/{{ j.doc_id }}" target="_blank" class="eye" title="{{ _('Dokument ansehen') }}" aria-label="{{ _('Dokument ansehen') }}" data-viewer="{{ j.doc_title or '#' ~ j.doc_id }}">{{ icon("eye") }}</a>
       </div></td>
       <td class="col-status" data-label="{{ _('Status') }}"><div><span class="badge {{ j.status }}">{{ _(STATUS_LABELS.get(j.status, j.status)) }}</span>
-        {% if j.error %}<br><small class="bad">{{ _(j.error)[:120] }}</small>{% endif %}
+        {% if j.error %}<br><small class="bad">{{ diagnostic(j.error)[:120] }}</small>{% endif %}
         <br><small class="muted">{{ j.updated_at|localtime }}</small></div></td>
       <td data-label="{{ _('Dokumenttyp') }}"><div>{{ cell(j.view.document_type, 'document_type') }}</div></td>
       <td data-label="{{ _('Korrespondent') }}"><div>{{ cell(j.view.correspondent, 'correspondent') }}</div></td>
