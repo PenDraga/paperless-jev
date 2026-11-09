@@ -16,12 +16,12 @@ from .test_llm import _patch
 from .test_processor import client  # noqa: F401
 
 SRC = Path(__file__).parent.parent / "src" / "paperless_jev"
-CALL = re.compile(r"""\b_\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""")
+CALL = re.compile(r"""\b(?:_|log_text)\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""")
 
 
 def _strings() -> set[str]:
     found: set[str] = set()
-    for path in [*SRC.glob("templates/*.html"), SRC / "app.py"]:
+    for path in [*SRC.glob("templates/*.html"), SRC / "app.py", SRC / "processor.py"]:
         for m in CALL.finditer(path.read_text(encoding="utf-8")):
             raw = m.group(1) if m.group(1) is not None else m.group(2)
             found.add(raw.encode().decode("unicode_escape").encode("latin-1").decode("utf-8"))
@@ -129,3 +129,19 @@ def test_cross_origin_rejection_uses_cookie_language(client):  # noqa: F811
     client.cookies.set("lang", "fr")
     r = client.post("/run", headers={"Origin": "https://other.example"})
     assert r.status_code == 403 and r.text.strip() == i18n.TRANSLATIONS["fr"]["Anfrage einer fremden Seite abgewiesen"]
+
+
+def test_logs_and_webhook_use_central_language_not_visitor_language(client, monkeypatch, caplog):  # noqa: F811
+    monkeypatch.setattr(i18n, "LOG_LANGUAGE", "en")
+    client.cookies.set("lang", "fr")
+    assert client.post("/hook/home?token=wrong").json()["detail"] == "Invalid token"
+    client.post("/run", headers={"Origin": "https://other.example"})
+    assert "Cross-origin request rejected: POST /run (Origin https://other.example)" in caplog.text
+    monkeypatch.setattr(i18n, "LOG_LANGUAGE", "de")
+    assert client.post("/hook/home?token=wrong").json()["detail"] == "Ungültiges Token"
+
+
+def test_log_detail_translates_own_wording_and_keeps_provider_text(monkeypatch):
+    monkeypatch.setattr(i18n, "LOG_LANGUAGE", "en")
+    assert diagnostics.log_detail("Paperless nicht erreichbar: connection refused") == "Paperless unreachable: connection refused"
+    assert diagnostics.log_detail("Paperless GET /api/x: HTTP 500 boom") == "Paperless GET /api/x: HTTP 500 boom"

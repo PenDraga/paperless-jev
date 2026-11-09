@@ -493,5 +493,21 @@
  "Cloudflare: unvollständige Antwort": "Cloudflare: niepełna odpowiedź",
  "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: nieprawidłowe prawdopodobieństwo tagu",
  "Anfrage einer fremden Seite abgewiesen": "Odrzucono żądanie z innego źródła",
- "Anfrage fehlgeschlagen": "Żądanie nie powiodło się"
+ "Anfrage fehlgeschlagen": "Żądanie nie powiodło się",
+ "Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)": "Nie ustawiono PJ_ADMIN_PASSWORD: interfejs zablokowany (PJ_ALLOW_NO_LOGIN=true, jeśli jest chroniony przez zewnętrzną warstwę logowania)",
+ "Anmeldung fehlgeschlagen von {ip}": "Nieudane logowanie z {ip}",
+ "Beschreibung für {name} nicht ausformuliert: {detail}": "Nie rozwinięto opisu dla {name}: {detail}",
+ "Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}": "Rozwinięcie opisu nie powiodło się (instancja={instance}, rodzaj={kind}, ID={id}): {detail}",
+ "Test von Dokument {id} fehlgeschlagen": "Test dokumentu {id} nie powiódł się",
+ "Polling {name} fehlgeschlagen: {detail}": "Cykliczne sprawdzanie {name} nie powiodło się: {detail}",
+ "Polling: {n} Dokument(e) eingereiht": "Cykliczne sprawdzanie: dodano do kolejki dokumenty w liczbie {n}",
+ "Polling fehlgeschlagen": "Cykliczne sprawdzanie nie powiodło się",
+ "Job {id} fehlgeschlagen": "Zadanie {id} nie powiodło się",
+ "Ähnliche Dokumente nicht verfügbar: {detail}": "Podobne dokumenty są niedostępne: {detail}",
+ "Titel für Dokument {id} nicht erzeugt: {detail}": "Nie wygenerowano tytułu dokumentu {id}: {detail}",
+ "Review-Tag konnte nicht entfernt werden: {detail}": "Nie udało się usunąć tagu weryfikacji: {detail}",
+ "Ungültiges Token": "Nieprawidłowy token",
+ "Unbekannte oder deaktivierte Instanz": "Nieznana lub wyłączona instancja",
+ "doc_id fehlt": "Brak doc_id",
+ "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Odrzucono żądanie z innego źródła: {method} {path} (Origin {origin})"
 }

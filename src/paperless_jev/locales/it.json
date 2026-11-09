@@ -493,5 +493,21 @@
  "Cloudflare: unvollständige Antwort": "Cloudflare: risposta incompleta",
  "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: probabilità del tag non valida",
  "Anfrage einer fremden Seite abgewiesen": "Richiesta da un’altra origine rifiutata",
- "Anfrage fehlgeschlagen": "Richiesta non riuscita"
+ "Anfrage fehlgeschlagen": "Richiesta non riuscita",
+ "Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)": "PJ_ADMIN_PASSWORD non configurata: interfaccia bloccata (PJ_ALLOW_NO_LOGIN=true se protetta da un’autenticazione a monte)",
+ "Anmeldung fehlgeschlagen von {ip}": "Accesso non riuscito da {ip}",
+ "Beschreibung für {name} nicht ausformuliert: {detail}": "Descrizione non ampliata per {name}: {detail}",
+ "Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}": "Ampliamento della descrizione non riuscito (istanza={instance}, tipo={kind}, ID={id}): {detail}",
+ "Test von Dokument {id} fehlgeschlagen": "Test del documento {id} non riuscito",
+ "Polling {name} fehlgeschlagen: {detail}": "Polling di {name} non riuscito: {detail}",
+ "Polling: {n} Dokument(e) eingereiht": "Polling: {n} documento/i in coda",
+ "Polling fehlgeschlagen": "Polling non riuscito",
+ "Job {id} fehlgeschlagen": "Attività {id} non riuscita",
+ "Ähnliche Dokumente nicht verfügbar: {detail}": "Documenti simili non disponibili: {detail}",
+ "Titel für Dokument {id} nicht erzeugt: {detail}": "Titolo non generato per il documento {id}: {detail}",
+ "Review-Tag konnte nicht entfernt werden: {detail}": "Impossibile rimuovere il tag di revisione: {detail}",
+ "Ungültiges Token": "Token non valido",
+ "Unbekannte oder deaktivierte Instanz": "Istanza sconosciuta o disattivata",
+ "doc_id fehlt": "doc_id mancante",
+ "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Richiesta da un’altra origine rifiutata: {method} {path} (Origin {origin})"
 }

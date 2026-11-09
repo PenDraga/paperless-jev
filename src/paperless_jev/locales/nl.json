@@ -493,5 +493,21 @@
  "Cloudflare: unvollständige Antwort": "Cloudflare: onvolledig antwoord",
  "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: ongeldige tagwaarschijnlijkheid",
  "Anfrage einer fremden Seite abgewiesen": "Verzoek van een andere oorsprong geweigerd",
- "Anfrage fehlgeschlagen": "Verzoek mislukt"
+ "Anfrage fehlgeschlagen": "Verzoek mislukt",
+ "Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)": "Geen PJ_ADMIN_PASSWORD ingesteld: interface vergrendeld (PJ_ALLOW_NO_LOGIN=true indien beveiligd door een voorafgaande aanmelding)",
+ "Anmeldung fehlgeschlagen von {ip}": "Aanmelden mislukt vanaf {ip}",
+ "Beschreibung für {name} nicht ausformuliert: {detail}": "Beschrijving voor {name} niet uitgewerkt: {detail}",
+ "Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}": "Uitwerken van de beschrijving mislukt (instantie={instance}, soort={kind}, ID={id}): {detail}",
+ "Test von Dokument {id} fehlgeschlagen": "Test van document {id} mislukt",
+ "Polling {name} fehlgeschlagen: {detail}": "Polling van {name} mislukt: {detail}",
+ "Polling: {n} Dokument(e) eingereiht": "Polling: {n} document(en) in de wachtrij geplaatst",
+ "Polling fehlgeschlagen": "Polling mislukt",
+ "Job {id} fehlgeschlagen": "Taak {id} mislukt",
+ "Ähnliche Dokumente nicht verfügbar: {detail}": "Vergelijkbare documenten niet beschikbaar: {detail}",
+ "Titel für Dokument {id} nicht erzeugt: {detail}": "Titel voor document {id} niet gegenereerd: {detail}",
+ "Review-Tag konnte nicht entfernt werden: {detail}": "Beoordelingstag kon niet worden verwijderd: {detail}",
+ "Ungültiges Token": "Ongeldig token",
+ "Unbekannte oder deaktivierte Instanz": "Onbekende of uitgeschakelde instantie",
+ "doc_id fehlt": "doc_id ontbreekt",
+ "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Verzoek van een andere oorsprong geweigerd: {method} {path} (Origin {origin})"
 }

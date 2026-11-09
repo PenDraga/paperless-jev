@@ -493,5 +493,21 @@
  "Cloudflare: unvollständige Antwort": "Cloudflare : réponse incomplète",
  "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare : probabilité d’étiquette invalide",
  "Anfrage einer fremden Seite abgewiesen": "Requête d’origine croisée rejetée",
- "Anfrage fehlgeschlagen": "La requête a échoué"
+ "Anfrage fehlgeschlagen": "La requête a échoué",
+ "Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)": "Aucun PJ_ADMIN_PASSWORD configuré : interface verrouillée (PJ_ALLOW_NO_LOGIN=true si une authentification en amont la protège)",
+ "Anmeldung fehlgeschlagen von {ip}": "Échec de connexion depuis {ip}",
+ "Beschreibung für {name} nicht ausformuliert: {detail}": "La description de {name} n’a pas été développée : {detail}",
+ "Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}": "Le développement de la description a échoué (instance={instance}, type={kind}, ID={id}) : {detail}",
+ "Test von Dokument {id} fehlgeschlagen": "Le test du document {id} a échoué",
+ "Polling {name} fehlgeschlagen: {detail}": "L’interrogation périodique de {name} a échoué : {detail}",
+ "Polling: {n} Dokument(e) eingereiht": "Interrogation périodique : {n} document(s) mis en file d’attente",
+ "Polling fehlgeschlagen": "L’interrogation périodique a échoué",
+ "Job {id} fehlgeschlagen": "La tâche {id} a échoué",
+ "Ähnliche Dokumente nicht verfügbar: {detail}": "Documents similaires indisponibles : {detail}",
+ "Titel für Dokument {id} nicht erzeugt: {detail}": "Le titre du document {id} n’a pas été généré : {detail}",
+ "Review-Tag konnte nicht entfernt werden: {detail}": "Impossible de supprimer l’étiquette de vérification : {detail}",
+ "Ungültiges Token": "Jeton invalide",
+ "Unbekannte oder deaktivierte Instanz": "Instance inconnue ou désactivée",
+ "doc_id fehlt": "doc_id manquant",
+ "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Requête d’origine croisée rejetée: {method} {path} (Origin {origin})"
 }

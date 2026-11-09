@@ -10,6 +10,8 @@ from typing import Any
 from .classifier import build_request, excluded_tags, interpret, plan, render_title
 from .config import SINGLE_FIELDS, Config, Instance
 from .db import Database
+from .diagnostics import log_detail
+from .i18n import log_text
 from .jev import JevError, classifier, classifier_missing
 from .paperless import DocumentMissing, Metadata, PaperlessClient, PaperlessError, collect_examples
 from .llm import LLM, LLMError
@@ -152,7 +154,7 @@ class Processor:
         try:
             await self.process(job_id)
         except Exception as e:
-            log.exception("Test von Dokument %s fehlgeschlagen", doc_id)
+            log.exception(log_text("Test von Dokument {id} fehlgeschlagen", id=doc_id))
             self.db.update_job(job_id, status="error", error=str(e))
         return job_id
 
@@ -179,7 +181,7 @@ class Processor:
                 async with self.client(inst) as pl:
                     doc_ids = await self.pending_ids(inst, pl)
             except PaperlessError as e:
-                log.warning("Polling %s fehlgeschlagen: %s", inst.name, e)
+                log.warning(log_text("Polling {name} fehlgeschlagen: {detail}", name=inst.name, detail=log_detail(e)))
                 continue
             for doc_id in doc_ids:
                 if await self.enqueue(inst.id, doc_id, "manual" if force else "poll", force=force):
@@ -208,9 +210,9 @@ class Processor:
                 try:
                     queued = await self.poll_once()
                     if queued:
-                        log.info("Polling: %d Dokument(e) eingereiht", queued)
+                        log.info(log_text("Polling: {n} Dokument(e) eingereiht", n=queued))
                 except Exception:
-                    log.exception("Polling fehlgeschlagen")
+                    log.exception(log_text("Polling fehlgeschlagen"))
             await asyncio.sleep(max(minutes, 1) * 60)
 
     async def _worker(self) -> None:
@@ -219,7 +221,7 @@ class Processor:
             try:
                 await self.process(job_id)
             except Exception as e:  # der Worker darf nie sterben
-                log.exception("Job %s fehlgeschlagen", job_id)
+                log.exception(log_text("Job {id} fehlgeschlagen", id=job_id))
                 self.db.update_job(job_id, status="error", error=str(e))
             finally:
                 self.queue.task_done()
@@ -255,7 +257,7 @@ class Processor:
                     try:
                         similar = await pl.similar_documents(doc["id"], int(cfg["similar_docs"]))
                     except PaperlessError as e:
-                        log.info("Ähnliche Dokumente nicht verfügbar: %s", e)
+                        log.info(log_text("Ähnliche Dokumente nicht verfügbar: {detail}", detail=log_detail(e)))
 
                 examples = await self.examples(inst, pl, meta, cfg)
                 req = build_request(doc, meta, self.config.descriptions(inst.id), cfg, similar, examples)
@@ -410,7 +412,7 @@ class Processor:
         except LLMError as e:
             if strict:
                 raise
-            log.warning("Titel für Dokument %s nicht erzeugt: %s", doc.get("id"), e)
+            log.warning(log_text("Titel für Dokument {id} nicht erzeugt: {detail}", id=doc.get("id"), detail=log_detail(e)))
             return None
 
     async def suggest_title(self, job_id: int, overrides: dict[str, Any] | None = None) -> str | None:
@@ -488,5 +490,5 @@ class Processor:
                     if review_tag in doc.get("tags", []):
                         await pl.patch_document(doc["id"], {"tags": [t for t in doc["tags"] if t != review_tag]})
             except PaperlessError as e:
-                log.warning("Review-Tag konnte nicht entfernt werden: %s", e)
+                log.warning(log_text("Review-Tag konnte nicht entfernt werden: {detail}", detail=log_detail(e)))
         self.db.update_job(job_id, status="dismissed")

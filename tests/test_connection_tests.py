@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from paperless_jev import app as app_module
+from paperless_jev import app as app_module, i18n
 from paperless_jev.paperless import Metadata
 
 from .test_llm import _patch
@@ -121,6 +121,7 @@ def test_instance_test_uses_form_and_keeps_saved_token(client, monkeypatch):  # 
     ("timeout", "Zeitüberschreitung beim Sprachmodell"),
 ])
 def test_description_failure_is_safe_and_retryable(client, monkeypatch, caplog, failure, detail):  # noqa: F811
+    monkeypatch.setattr(i18n, "LOG_LANGUAGE", "de")  # Log in derselben Sprache wie die Seite
     cfg = client.app.state.config
     cfg.update({"llm_provider": "openai", "llm_url": "https://model.example/v1",
                 "llm_model": "description-model", "llm_api_key": "private-api-key"})

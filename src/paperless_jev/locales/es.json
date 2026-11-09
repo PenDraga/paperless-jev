@@ -493,5 +493,21 @@
  "Cloudflare: unvollständige Antwort": "Cloudflare: respuesta incompleta",
  "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: probabilidad de etiqueta no válida",
  "Anfrage einer fremden Seite abgewiesen": "Solicitud de origen cruzado rechazada",
- "Anfrage fehlgeschlagen": "La solicitud ha fallado"
+ "Anfrage fehlgeschlagen": "La solicitud ha fallado",
+ "Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)": "No se ha configurado PJ_ADMIN_PASSWORD: interfaz bloqueada (PJ_ALLOW_NO_LOGIN=true si está protegida por una autenticación previa)",
+ "Anmeldung fehlgeschlagen von {ip}": "Intento de inicio de sesión fallido desde {ip}",
+ "Beschreibung für {name} nicht ausformuliert: {detail}": "No se ha ampliado la descripción de {name}: {detail}",
+ "Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}": "No se ha podido ampliar la descripción (instancia={instance}, tipo={kind}, ID={id}): {detail}",
+ "Test von Dokument {id} fehlgeschlagen": "La prueba del documento {id} ha fallado",
+ "Polling {name} fehlgeschlagen: {detail}": "El sondeo de {name} ha fallado: {detail}",
+ "Polling: {n} Dokument(e) eingereiht": "Sondeo: {n} documento(s) en cola",
+ "Polling fehlgeschlagen": "El sondeo ha fallado",
+ "Job {id} fehlgeschlagen": "La tarea {id} ha fallado",
+ "Ähnliche Dokumente nicht verfügbar: {detail}": "Documentos similares no disponibles: {detail}",
+ "Titel für Dokument {id} nicht erzeugt: {detail}": "No se ha generado el título del documento {id}: {detail}",
+ "Review-Tag konnte nicht entfernt werden: {detail}": "No se ha podido eliminar la etiqueta de revisión: {detail}",
+ "Ungültiges Token": "Token no válido",
+ "Unbekannte oder deaktivierte Instanz": "Instancia desconocida o desactivada",
+ "doc_id fehlt": "Falta doc_id",
+ "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Solicitud de origen cruzado rechazada: {method} {path} (Origin {origin})"
 }

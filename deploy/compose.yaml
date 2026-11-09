@@ -17,6 +17,7 @@ services:
     restart: unless-stopped
     environment:
       - PJ_LOG_LEVEL=INFO
+      - PJ_LOG_LANGUAGE=de  # Log und Webhook-Antworten
       - PJ_ADMIN_PASSWORD=${PJ_ADMIN_PASSWORD:?Passwort setzen}
       - PJ_TRUSTED_PROXIES=172.18.0.0/16  # Traefik-Netz
       - TZ=Europe/Zurich

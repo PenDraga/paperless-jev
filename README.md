@@ -129,6 +129,7 @@ Everything else is configured in the web UI. The environment only covers:
 | `PJ_ADMIN_USER` / `PJ_ADMIN_PASSWORD` | `admin` / – | Login for the web UI: sign-in page that works with password managers, stays signed in for 30 days of use (90 days at most after signing in), sign-out button that also ends copies of the session. `/hook/*` and `/health` stay open; a basic-auth header is still accepted for scripts. **Without a password the web UI is locked** (HTTP 503) unless `PJ_ALLOW_NO_LOGIN` is set. |
 | `PJ_ALLOW_NO_LOGIN` | `false` | `true` opens the web UI without a password. Only for setups where a login in front of it (e.g. Authentik) protects every request and the container can't be reached any other way. |
 | `PJ_TRUSTED_PROXIES` | `127.0.0.1` | Addresses or networks (comma-separated, e.g. `172.19.0.0/16`) allowed to set `X-Forwarded-For`/`-Proto`. Behind a reverse proxy, enter its network, otherwise the login lockout applies to the proxy instead of the client and the session cookie lacks the `Secure` flag. |
+| `PJ_LOG_LANGUAGE` | `en` | Language of log messages and webhook error replies (`en`, `de`, `es`, `fr`, `it`, `nl`, `pl`). Set once for the whole installation; the web UI language is chosen per browser. Replies from Paperless or the language model and Python tracebacks stay as they are. |
 | `PJ_LOG_LEVEL` | `INFO` | Log level |
 | `PJ_DATA_DIR` | `/data` | Data directory (SQLite, key) |
 | `TZ` | `Europe/Zurich` | Time zone for display |

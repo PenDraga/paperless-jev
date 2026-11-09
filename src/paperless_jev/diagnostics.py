@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from string import Formatter
 
-from .i18n import gettext
+from . import i18n
 
 TEMPLATES = (
     "Sprachmodell lieferte keinen brauchbaren Titel: {detail}",
@@ -33,10 +33,18 @@ _PATTERNS = [
 ]
 
 
-def diagnostic(value: str | Exception) -> str:
-    """Meldung in der Sprache der Oberfläche; bei Sprachmodell-Fehlern die öffentliche Kurzform."""
-    text = getattr(value, "public_message", None) or str(value)
+def _translate(lang: str, text: str) -> str:
     for template, pattern in _PATTERNS:
         if m := pattern.fullmatch(text):
-            return gettext(template, **m.groupdict())
-    return gettext(text)
+            return i18n.translate(lang, template, **m.groupdict())
+    return i18n.translate(lang, text)
+
+
+def diagnostic(value: str | Exception) -> str:
+    """Meldung in der Sprache der Oberfläche; bei Sprachmodell-Fehlern die öffentliche Kurzform."""
+    return _translate(i18n.current.get(), getattr(value, "public_message", None) or str(value))
+
+
+def log_detail(value: str | Exception) -> str:
+    """Vollständige Meldung fürs Log, in der zentral eingestellten Log-Sprache."""
+    return _translate(i18n.LOG_LANGUAGE, str(value))

@@ -28,9 +28,9 @@ from .auth import COOKIE as SESSION_COOKIE, MAX_AGE as SESSION_MAX_AGE, Auth
 from .classifier import excluded_tags
 from .config import FIELD_LABELS, SINGLE_FIELDS, Config, Instance
 from .db import Database
-from .diagnostics import diagnostic
+from .diagnostics import diagnostic, log_detail
 from . import i18n
-from .i18n import gettext as _
+from .i18n import gettext as _, log_text
 from .jev import CLASSIFIERS, USD_PER_MTOK, JevError, classifier, classifier_missing
 from .paperless import TAG_SEP, DocumentMissing, Metadata, PaperlessClient, PaperlessError
 from .processor import DOC_MISSING, TAG_TEST, TEST, Processor
@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI):
     processor = Processor(db, config)
     app.state.auth = Auth(ADMIN_USER, ADMIN_PASSWORD, vault.derive("session"), db)
     if not ADMIN_PASSWORD and not ALLOW_NO_LOGIN:
-        log.warning("Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)")
+        log.warning(log_text("Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)"))
     app.state.db, app.state.config, app.state.processor = db, config, processor
     await processor.start()
     yield
@@ -198,7 +198,8 @@ async def same_origin_only(request: Request, call_next):
         else:
             allowed = True
         if not allowed:
-            log.warning("Anfrage einer fremden Seite abgewiesen: %s %s (Origin %s)", request.method, request.url.path, origin)
+            log.warning(log_text("Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})",
+                                 method=request.method, path=request.url.path, origin=origin))
             return Response(_("Anfrage einer fremden Seite abgewiesen") + "\n", status_code=403, media_type="text/plain")
     return await call_next(request)
 
@@ -249,7 +250,7 @@ async def login(request: Request, username: str = Form(""), password: str = Form
         return _redirect(back, err=_("Zu viele Fehlversuche – bitte eine Minute warten"))
     if not auth.check(username, password):
         auth.failed(ip)
-        log.warning("Anmeldung fehlgeschlagen von %s", ip)
+        log.warning(log_text("Anmeldung fehlgeschlagen von {ip}", ip=ip))
         await asyncio.sleep(0.5)
         return _redirect(back, err=_("Benutzer oder Passwort falsch"))
     auth.succeeded(ip)
@@ -1188,7 +1189,7 @@ async def _expand_later(cfg: Config, llm: LLM, instance_id: int, kind: str, oid:
     try:
         text = await describe_category(llm, kind, name, keywords, [], lang=lang)
     except LLMError as e:
-        log.info("Beschreibung für %s nicht ausformuliert: %s", name, e)
+        log.info(log_text("Beschreibung für {name} nicht ausformuliert: {detail}", name=name, detail=log_detail(e)))
         return
     current = cfg.descriptions(instance_id).get((kind, oid))
     if current and current["source"] == keywords:  # inzwischen nicht von Hand geändert
@@ -1436,8 +1437,8 @@ async def save_descriptions(request: Request):
                     text = await describe_category(llm, kind, name, source, examples, lang=i18n.current.get())
                     expanded += 1
                 except LLMError as e:
-                    log.warning("Description expansion failed (instance=%s, kind=%s, id=%s): %s",
-                                instance_id, kind, oid, e.public_message)
+                    log.warning(log_text("Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}",
+                                         instance=instance_id, kind=kind, id=oid, detail=log_text(e.public_message)))
                     failed.append(f"{name or oid} ({diagnostic(e)})")
         _cfg(request).save_description(instance_id, kind, oid, text, active, source=source)
     msg = _("Beschreibungen gespeichert") + (_(", {n} vom Sprachmodell ausformuliert", n=expanded) if expanded else "")
@@ -1452,10 +1453,10 @@ async def save_descriptions(request: Request):
 async def webhook(request: Request, instance_name: str, token: str = ""):
     cfg = _cfg(request).all()
     if not secrets.compare_digest(token, cfg["webhook_secret"]):
-        raise HTTPException(403, "Ungültiges Token")
+        raise HTTPException(403, log_text("Ungültiges Token"))
     inst = _cfg(request).instance_by_name(instance_name)
     if not inst or not inst.enabled:
-        raise HTTPException(404, "Unbekannte oder deaktivierte Instanz")
+        raise HTTPException(404, log_text("Unbekannte oder deaktivierte Instanz"))
     doc_id: Any = None
     if "json" in request.headers.get("content-type", ""):
         body = await request.json()
@@ -1465,12 +1466,12 @@ async def webhook(request: Request, instance_name: str, token: str = ""):
     try:
         doc_id = int(str(doc_id).strip())
     except (TypeError, ValueError):
-        raise HTTPException(400, "doc_id fehlt") from None
+        raise HTTPException(400, log_text("doc_id fehlt")) from None
     try:
         if not await _proc(request).handed_over(inst, doc_id):
             return JSONResponse({"queued": False, "job_id": None, "reason": "queue tag not set"})
     except PaperlessError as e:
-        raise HTTPException(502, str(e)) from None
+        raise HTTPException(502, log_detail(e)) from None
     job_id = await _proc(request).enqueue(inst.id, doc_id, "webhook", force=True)
     return JSONResponse({"queued": job_id is not None, "job_id": job_id})
 

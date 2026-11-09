@@ -10,6 +10,7 @@ Englisch).
 from __future__ import annotations
 
 import json
+import os
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,10 @@ LANGUAGES = {
 }
 DEFAULT = "en"
 COOKIE = "lang"
+# Log und Webhook-Antworten richten sich an den Admin: eine Sprache für alle, nicht pro Besucher
+LOG_LANGUAGE = os.environ.get("PJ_LOG_LANGUAGE", DEFAULT).strip().lower()
+if LOG_LANGUAGE not in LANGUAGES:
+    LOG_LANGUAGE = DEFAULT
 
 current: ContextVar[str] = ContextVar("lang", default=DEFAULT)
 
@@ -39,11 +44,20 @@ def pick(cookie: str | None, accept_language: str | None) -> str:
     return DEFAULT
 
 
-def gettext(text: str, **kwargs: Any) -> str:
-    lang = current.get()
+def translate(lang: str, text: str, **kwargs: Any) -> str:
     if lang != "de":
         text = TRANSLATIONS.get(lang, {}).get(text) or EN.get(text, text)
     return text.format(**kwargs) if kwargs else text
+
+
+def gettext(text: str, **kwargs: Any) -> str:
+    """Text in der Sprache des aktuellen Requests."""
+    return translate(current.get(), text, **kwargs)
+
+
+def log_text(text: str, **kwargs: Any) -> str:
+    """Text in der zentral eingestellten Sprache für Log und Webhook-Antworten (PJ_LOG_LANGUAGE)."""
+    return translate(LOG_LANGUAGE, text, **kwargs)
 
 
 EN: dict[str, str] = {
@@ -603,6 +617,23 @@ EN: dict[str, str] = {
     "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: invalid tag probability",
     "Anfrage einer fremden Seite abgewiesen": "Cross-origin request rejected",
     "Anfrage fehlgeschlagen": "Request failed",
+    # Log und Webhook-Antworten (PJ_LOG_LANGUAGE)
+    "Kein PJ_ADMIN_PASSWORD gesetzt: Oberfläche gesperrt (PJ_ALLOW_NO_LOGIN=true, falls ein vorgeschalteter Login schützt)": "No PJ_ADMIN_PASSWORD configured: interface locked (PJ_ALLOW_NO_LOGIN=true if protected by an upstream login)",
+    "Anmeldung fehlgeschlagen von {ip}": "Login failed from {ip}",
+    "Beschreibung für {name} nicht ausformuliert: {detail}": "Description not expanded for {name}: {detail}",
+    "Beschreibung nicht ausformuliert (Instanz={instance}, Art={kind}, ID={id}): {detail}": "Description expansion failed (instance={instance}, kind={kind}, id={id}): {detail}",
+    "Test von Dokument {id} fehlgeschlagen": "Test of document {id} failed",
+    "Polling {name} fehlgeschlagen: {detail}": "Polling {name} failed: {detail}",
+    "Polling: {n} Dokument(e) eingereiht": "Polling: {n} document(s) queued",
+    "Polling fehlgeschlagen": "Polling failed",
+    "Job {id} fehlgeschlagen": "Job {id} failed",
+    "Ähnliche Dokumente nicht verfügbar: {detail}": "Similar documents unavailable: {detail}",
+    "Titel für Dokument {id} nicht erzeugt: {detail}": "Title not generated for document {id}: {detail}",
+    "Review-Tag konnte nicht entfernt werden: {detail}": "Could not remove review tag: {detail}",
+    "Ungültiges Token": "Invalid token",
+    "Unbekannte oder deaktivierte Instanz": "Unknown or disabled instance",
+    "doc_id fehlt": "doc_id missing",
+    "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Cross-origin request rejected: {method} {path} (Origin {origin})",
 }
 
 LOCALES = Path(__file__).parent / "locales"
