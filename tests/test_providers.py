@@ -51,6 +51,46 @@ async def test_cloudflare_request_and_unwrapped_result(wrapped):
 
 
 @pytest.mark.asyncio
+async def test_cloudflare_clef_uses_model_path_and_64_question_chunks():
+    sent = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        sent.append((request.url.path, body))
+        # so antwortet Workers AI bei Clef: Kurzname als Modell, Antwort direkt unter "result"
+        return httpx.Response(200, json={"success": True, "errors": [], "result": {
+            "model": "clef-flash", "answers": {k: {"type": "noul", "noul": 0.5} for k in body["questions"]},
+            "usage": {"input_tokens": 10, "output_tokens": 0}}})
+
+    jev, model = classifier(cloudflare_cfg(cloudflare_model="@cf/cloudflare/clef-flash"))
+    jev._http._transport = httpx.MockTransport(handler)
+    questions = {f"tag:{i}": {"type": "noul", "instructions": "?"} for i in range(70)}
+    async with jev:
+        resp = await jev.ask("Monthly server invoice", questions, model)
+    assert [path for path, _ in sent] == ["/client/v4/accounts/acct/ai/run/@cf/cloudflare/clef-flash"] * 2
+    assert [len(body["questions"]) for _, body in sent] == [64, 6]
+    assert sent[0][1]["model"] == "clef-flash" and sent[0][1]["state"] == "Monthly server invoice"
+    assert len(resp["answers"]) == 70 and resp["usage"]["input_tokens"] == 20
+    assert resp["model"] == "@cf/cloudflare/clef-flash"  # voller Name: im Protokoll von einem lokalen clef unterscheidbar
+
+
+def test_setup_saves_cloudflare_model(client):  # noqa: F811
+    form = {"classifier_kind": "cloudflare", "cloudflare_account_id": "acct"}
+    client.post("/setup/typesafe", data={**form, "cloudflare_model": "@cf/cloudflare/clef"})
+    assert client.app.state.config.all()["cloudflare_model"] == "@cf/cloudflare/clef"
+    assert '<option value="@cf/cloudflare/clef" selected>' in client.get("/setup").text
+    client.post("/setup/typesafe", data={**form, "cloudflare_model": "@cf/meta/llama-3.1-8b-instruct"})
+    assert client.app.state.config.all()["cloudflare_model"] == "typesafe/jev"
+
+
+def test_dashboard_prices_clef_on_cloudflare_separately(client):  # noqa: F811
+    db = client.app.state.db
+    for model, tokens in (("jev-1.13.0", 1_000_000), ("@cf/cloudflare/clef", 1_000_000), ("clef", 5_000_000)):
+        db.update_job(db.create_job(1, 42, "test"), status="dry_run", model=model, input_tokens=tokens)
+    assert "≈ $0.2820" in client.get("/").text  # 0.042 Jev + 0.24 Clef, lokales clef kostet nichts
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("body", [
     {"success": False, "errors": [{"message": "provider failure"}]},
     {"success": True, "result": {"state": "Queued"}},

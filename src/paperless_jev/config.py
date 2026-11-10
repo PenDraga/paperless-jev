@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from .db import Database
+from .jev import CLOUDFLARE_MODEL, SYSTEMONE_PATH, clef_like
 from .vault import Vault
 
 # Felder, die Jev per Choice bestimmt. Schwellwerte beziehen sich auf die
@@ -27,15 +28,17 @@ FIELD_LABELS = {
 DEFAULTS: dict[str, Any] = {
     "typesafe_api_key": "",
     "model": "jev-latest",
-    # Klassifizierer: "typesafe" (Jev in der Cloud), "cloudflare" (Jev über Workers AI)
+    # Klassifizierer: "typesafe" (Jev in der Cloud), "cloudflare" (Jev oder Clef über Workers AI)
     # oder "ollama" (lokales Modell, z. B. clef)
     "classifier": "typesafe",
     "classifier_url": "",
+    "classifier_path": SYSTEMONE_PATH,  # Endpunkt des eigenen Servers
     "classifier_model": "clef",
     "classifier_api_key": "",  # optional, für einen System-One-Server hinter Anmeldung
     "cloudflare_account_id": "",
     "cloudflare_api_token": "",
-    # Eigene Schwellen für lokale Modelle: clef meldet tiefere Confidence als Jev.
+    "cloudflare_model": CLOUDFLARE_MODEL,
+    # Eigene Schwellen für lokale Modelle und Clef auf Cloudflare: clef meldet tiefere Confidence als Jev.
     # Vorgaben gemessen an 43 geprüften Dokumenten (ab diesen Werten lag clef nie falsch);
     # neue Tags waren mit clef unzuverlässig -> praktisch nur noch Vorschläge.
     "local_thresholds": {
@@ -150,8 +153,8 @@ class Config:
         cfg.pop("ollama_model", None)
         if cfg["title_mode"] == "ollama":
             cfg["title_mode"] = "llm"
-        if cfg["classifier"] == "ollama":
-            # aktive Schwellen = die des lokalen Modells; "fields" behält die von Jev
+        if clef_like(cfg):
+            # aktive Schwellen = die des lokalen Modells bzw. von Clef; "fields" behält die von Jev
             cfg["jev_thresholds"] = {n: {k: s[k] for k in ("auto", "review")} for n, s in cfg["fields"].items()}
             for name, spec in cfg["local_thresholds"].items():
                 cfg["fields"].setdefault(name, {}).update(spec)

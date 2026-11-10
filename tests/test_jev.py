@@ -79,6 +79,22 @@ async def test_server_without_candidate_limit_gets_no_tournament():
     assert resp["answers"]["document_type"]["choice"] == "opt 7"
 
 
+@pytest.mark.asyncio
+async def test_custom_endpoint_path():
+    paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paths.append(request.url.path)
+        return httpx.Response(200, json={"answers": {"t": {"type": "noul", "noul": 0.5}}})
+
+    for cfg in ({**ollama_cfg(), "classifier_path": "/v2/decide"}, ollama_cfg()):
+        client, model = classifier(cfg)
+        client._http._transport = httpx.MockTransport(handler)
+        async with client:
+            await client.ask("text", {"t": {"type": "noul", "instructions": "?"}}, model)
+    assert paths == ["/v2/decide", "/v1/systemone"]
+
+
 def test_classifier_missing():
     assert classifier_missing(ollama_cfg()) is None
     assert classifier_missing({**ollama_cfg(), "classifier_url": ""})

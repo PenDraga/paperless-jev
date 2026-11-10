@@ -171,12 +171,18 @@ von Cloudflare (das Gratis-Kontingent von Workers AI gilt dafür nicht). Cloudfl
 bei TypeSafe lässt sie sich nicht pinnen, eine neue Version kann die Confidence-Werte verschieben. Im Blindtest mit
 30 abgelegten Dokumenten lieferten beide Wege identische Antworten (Confidence im Mittel 0.01 auseinander).
 
+Im selben Formular lassen sich als Modell auch Cloudflares eigene Entscheidungsmodelle `@cf/cloudflare/clef` (27B)
+und `@cf/cloudflare/clef-flash` (9B) wählen. Sie laufen über die normale Workers-AI-Abrechnung (0.24 bzw. 0.038 USD
+pro Mio. Input-Tokens) und brauchen kein Guthaben im AI Gateway. Clef wird wie das lokale clef behandelt: eigene
+Schwellwerte unter Regeln und einfache Kriterien ohne Beispiel-Titel und ähnliche Dokumente.
+
 ## Lokale Klassifizierung mit Ollama (clef)
 
 Statt TypeSafe Jev kann ein lokales Entscheidungsmodell klassifizieren, das den Endpunkt `/v1/systemone` von
 Ollama unterstützt (Fähigkeit «decision»), z. B. [clef](https://ollama.com/library/clef) von Cloudflare (27B,
 Apache 2.0, ~18 GB). Einrichten unter *Einstellungen → Verbindungen → Klassifizierung → Lokal über Ollama* mit URL und Modell.
 Dokumente verlassen dann das eigene Netz nicht.
+Nimmt der Server das System-One-Format unter einem anderen Pfad an, dort den Endpunkt ändern (Vorgabe `/v1/systemone`).
 Verlangt der Server eine Anmeldung, einen API-Key eintragen; er wird als Bearer-Token gesendet.
 
 paperless-jev berücksichtigt die Grenzen von clef automatisch: höchstens 64 Fragen pro Anfrage (wird aufgeteilt)

@@ -12,7 +12,7 @@ from .config import SINGLE_FIELDS, Config, Instance
 from .db import Database
 from .diagnostics import log_detail
 from .i18n import log_text
-from .jev import JevError, classifier, classifier_missing
+from .jev import JevError, classifier, classifier_missing, clef_like
 from .paperless import DocumentMissing, Metadata, PaperlessClient, PaperlessError, collect_examples
 from .llm import LLM, LLMError
 from .titles import generate_title
@@ -34,12 +34,12 @@ def job_config(job: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
     """Einstellungen für einen Job.
 
     - Neuprüfung per Tag lässt bestehende Titel stehen, ausser "+title" wurde gewählt.
-    - Lokale Modelle (clef) bekommen einfache Kriterien: Beispiel-Titel und ähnliche
-      Dokumente verschlechterten bei clef Treffer und Confidence deutlich.
+    - Lokale Modelle und Clef auf Cloudflare bekommen einfache Kriterien: Beispiel-Titel
+      und ähnliche Dokumente verschlechterten bei clef Treffer und Confidence deutlich.
     """
     if job["source"].startswith(TAG_RUN) and WITH_TITLE not in job["source"]:
         cfg = {**cfg, "title_mode": "off"}
-    if cfg.get("classifier") == "ollama":
+    if clef_like(cfg):
         cfg = {**cfg, "examples": 0, "similar_docs": 0}
     return cfg
 META_TTL = 300

@@ -31,7 +31,10 @@ from .db import Database
 from .diagnostics import diagnostic, log_detail
 from . import i18n
 from .i18n import gettext as _, log_text
-from .jev import CLASSIFIERS, USD_PER_MTOK, JevError, classifier, classifier_missing
+from .jev import (
+    CLASSIFIERS, CLOUDFLARE_MODEL, CLOUDFLARE_MODELS, CLOUDFLARE_USD_PER_MTOK, SYSTEMONE_PATH,
+    USD_PER_MTOK, JevError, classifier, classifier_missing,
+)
 from .paperless import TAG_SEP, DocumentMissing, Metadata, PaperlessClient, PaperlessError
 from .processor import DOC_MISSING, TAG_TEST, TEST, Processor
 from .llm import LLM, PROVIDERS, LLMError, list_models
@@ -329,8 +332,11 @@ async def dashboard(request: Request):
     cfg = _cfg(request).all()
     counts = {r["status"]: r["n"] for r in db.query("SELECT status, COUNT(*) AS n FROM jobs GROUP BY status")}
     tokens = db.one("SELECT COALESCE(SUM(input_tokens), 0) AS t FROM jobs")["t"]
-    # nur TypeSafe kostet; lokale Modelle (Ollama) nicht
+    # Jev und Clef auf Cloudflare kosten; lokale Modelle (Ollama) nicht
     paid = db.one("SELECT COALESCE(SUM(input_tokens), 0) AS t FROM jobs WHERE model IS NULL OR model LIKE 'jev%'")["t"]
+    cost = paid / 1_000_000 * USD_PER_MTOK
+    for row in db.query("SELECT model, SUM(input_tokens) AS t FROM jobs WHERE model LIKE '@cf/%' GROUP BY model"):
+        cost += (row["t"] or 0) / 1_000_000 * CLOUDFLARE_USD_PER_MTOK.get(row["model"], 0.0)
     corrections: dict[str, int] = {}
     reviewed = 0
     for row in db.query("SELECT applied FROM jobs WHERE source LIKE '%+review' AND applied IS NOT NULL"):
@@ -347,7 +353,7 @@ async def dashboard(request: Request):
         instances=_cfg(request).instances(),
         counts=counts,
         tokens=tokens,
-        cost=paid / 1_000_000 * USD_PER_MTOK,
+        cost=cost,
         auto_rate=(auto / finished) if finished else None,
         reviewed=reviewed,
         corrections=corrections,
@@ -924,6 +930,7 @@ async def setup_page(request: Request):
         has_key=bool(cfg["typesafe_api_key"]),
         has_classifier_key=bool(cfg["classifier_api_key"]),
         has_cloudflare_token=bool(cfg["cloudflare_api_token"]),
+        cloudflare_models=CLOUDFLARE_MODELS,
         cloudflare_env={
             "account": os.environ.get("CLOUDFLARE_ACCOUNT_ID", ""),
             "token_file": bool(os.environ.get("CLOUDFLARE_API_TOKEN_FILE")) and Path(os.environ["CLOUDFLARE_API_TOKEN_FILE"]).is_file(),
@@ -940,8 +947,10 @@ def _classifier_form(form: Any) -> dict[str, Any]:
         "model": get("model") or "jev-latest",
         "classifier": kind if (kind := get("classifier_kind", "typesafe")) in CLASSIFIERS else "typesafe",
         "classifier_url": get("classifier_url").rstrip("/"),
+        "classifier_path": f"/{path}" if (path := get("classifier_path").strip("/")) else SYSTEMONE_PATH,
         "classifier_model": get("classifier_model") or "clef",
         "cloudflare_account_id": get("cloudflare_account_id"),
+        "cloudflare_model": m if (m := get("cloudflare_model")) in CLOUDFLARE_MODELS else CLOUDFLARE_MODEL,
     }
     for key, field in (("typesafe_api_key", "api_key"), ("classifier_api_key", "classifier_api_key"),
                        ("cloudflare_api_token", "cloudflare_api_token")):
@@ -1092,8 +1101,8 @@ async def save_rules(request: Request):
         auto = min(max(num(f"{name}_auto", spec["auto"]), 0.0), 1.0)
         review = min(max(num(f"{name}_review", spec["review"]), 0.0), auto)
         fields[name] = {"enabled": f"{name}_enabled" in form, "auto": auto, "review": review}
-        if cfg["classifier"] == "ollama":
-            # Schwellen gehören dem lokalen Modell, die von Jev bleiben unverändert
+        if "jev_thresholds" in cfg:
+            # Schwellen gehören dem lokalen Modell (oder Clef auf Cloudflare), die von Jev bleiben unverändert
             local[name] = {"auto": auto, "review": review}
             fields[name].update(cfg["jev_thresholds"][name])
     if local:

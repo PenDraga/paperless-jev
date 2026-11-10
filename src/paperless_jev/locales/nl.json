@@ -455,7 +455,6 @@
  "Lokal über Ollama": "Lokaal via Ollama",
  "Ollama oder ein anderer System-One-kompatibler Server, z. B. clef oder Decision-1.0-Lux; Dokumente verlassen das Netz nicht, braucht eine starke GPU": "Ollama of een andere System-One-compatibele server, bijv. clef of Decision-1.0-Lux; documenten verlaten je netwerk nooit, vereist een sterke GPU",
  "Server-URL": "Server-URL",
- "Das Modell muss den Endpunkt /v1/systemone unterstützen (Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.": "Het model moet het endpoint /v1/systemone ondersteunen (capability \"decision\"). Lokale modellen melden andere zekerheidswaarden dan Jev – controleer de drempelwaarden onder Regels.",
  "Ollama-URL oder Modell fehlt": "Ollama-URL of model ontbreekt",
  "Schwellwerte für das lokale Modell «{model}» – lokale Modelle melden tiefere Confidence-Werte als Jev und haben darum eigene Schwellwerte. Die von Jev bleiben gespeichert. Beispiel-Titel und ähnliche Dokumente werden bei lokalen Modellen nicht mitgeschickt.": "Drempelwaarden voor het lokale model «{model}» – lokale modellen melden lagere zekerheidswaarden dan Jev en hebben daarom eigen drempelwaarden. Die van Jev blijven behouden. Voorbeeldtitels en vergelijkbare documenten worden niet naar lokale modellen gestuurd.",
  "Dokument gibt es in Paperless nicht mehr (gelöscht oder im Papierkorb)": "Het document bestaat niet meer in Paperless (verwijderd of in de prullenbak)",
@@ -478,8 +477,6 @@
  "Token-Datei aus der Umgebung gefunden.": "Tokenbestand gevonden in de omgeving.",
  "Keine Cloudflare-Konto-ID konfiguriert": "Geen Cloudflare-account-ID ingesteld",
  "Kein Cloudflare-API-Token konfiguriert": "Geen Cloudflare API-token ingesteld",
- "dasselbe Jev über das eigene Cloudflare-Konto, bezahlt mit Guthaben im AI Gateway": "dezelfde Jev via je eigen Cloudflare-account, betaald met tegoed in AI Gateway",
- "Modell <code>typesafe/jev</code> – Cloudflare wählt die Version, sie lässt sich nicht pinnen. Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Model <code>typesafe/jev</code> – Cloudflare kiest de versie, die kan niet worden vastgezet. Lege velden vallen terug op <code>CLOUDFLARE_ACCOUNT_ID</code> en <code>CLOUDFLARE_API_TOKEN_FILE</code> uit de omgeving.",
  "Kein Titel erzeugt – Sprachmodell unter Verbindungen prüfen": "Geen titel gemaakt – controleer het taalmodel onder Verbindingen",
  "Sprachmodell lieferte keinen brauchbaren Titel: {detail}": "Taalmodel heeft geen bruikbare titel teruggegeven: {detail}",
  "Sprachmodell nicht erreichbar ({url}): {detail}": "Taalmodel niet bereikbaar ({url}): {detail}",
@@ -509,5 +506,12 @@
  "Ungültiges Token": "Ongeldig token",
  "Unbekannte oder deaktivierte Instanz": "Onbekende of uitgeschakelde instantie",
  "doc_id fehlt": "doc_id ontbreekt",
- "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Verzoek van een andere oorsprong geweigerd: {method} {path} (Origin {origin})"
+ "Anfrage einer fremden Seite abgewiesen: {method} {path} (Origin {origin})": "Verzoek van een andere oorsprong geweigerd: {method} {path} (Origin {origin})",
+ "Endpunkt": "Endpoint",
+ "Der Server muss unter diesem Endpunkt das System-One-Format annehmen (Vorgabe /v1/systemone, Fähigkeit «decision»). Lokale Modelle melden andere Confidence-Werte als Jev – Schwellwerte unter Regeln prüfen.": "De server moet op dit endpoint het System-One-formaat accepteren (standaard /v1/systemone, capability \"decision\"). Lokale modellen melden andere zekerheidswaarden dan Jev – controleer de drempelwaarden onder Regels.",
+ "Jev oder Cloudflares Clef über das eigene Cloudflare-Konto; Jev braucht Guthaben im AI Gateway": "Jev of Cloudflares Clef via je eigen Cloudflare-account; Jev vereist AI Gateway-tegoed",
+ "Vorgabe <code>typesafe/jev</code>, Cloudflare wählt die Version. Andere Entscheidungsmodelle wie <code>@cf/cloudflare/clef</code> melden andere Confidence-Werte – Schwellwerte unter Regeln prüfen.": "Standaard <code>typesafe/jev</code>, Cloudflare kiest de versie. Andere beslismodellen zoals <code>@cf/cloudflare/clef</code> melden andere zekerheidswaarden – controleer de drempelwaarden onder Regels.",
+ "Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Lege velden vallen terug op <code>CLOUDFLARE_ACCOUNT_ID</code> en <code>CLOUDFLARE_API_TOKEN_FILE</code> uit de omgeving.",
+ "Schwellwerte für Clef «{model}» auf Cloudflare – Clef meldet tiefere Confidence-Werte als Jev und nutzt darum dieselben Schwellwerte wie lokale Modelle. Die von Jev bleiben gespeichert.": "Drempelwaarden voor Clef «{model}» op Cloudflare – Clef meldt lagere zekerheidswaarden dan Jev en gebruikt daarom dezelfde drempelwaarden als lokale modellen. Die van Jev blijven bewaard.",
+ "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Voorbeeldtitels en vergelijkbare documenten worden niet naar Clef gestuurd."
 }

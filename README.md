@@ -171,11 +171,17 @@ allowance does not cover it). Cloudflare picks the Jev version; unlike TypeSafe 
 version can shift the confidence values. In a blind test on 30 filed documents both routes gave identical answers
 (confidence on average 0.01 apart).
 
+The model field on the same form also offers Cloudflare's own decision models `@cf/cloudflare/clef` (27B) and
+`@cf/cloudflare/clef-flash` (9B). They are billed as regular Workers AI usage (USD 0.24 and 0.038 per million
+input tokens) and need no AI Gateway credits. Clef is treated like the local clef: its own thresholds under
+Rules and plain criteria without example titles and similar documents.
+
 ## Local classification with Ollama (clef)
 
 Instead of TypeSafe Jev, a local decision model that supports Ollama's `/v1/systemone` endpoint (capability
 "decision") can classify, e.g. [clef](https://ollama.com/library/clef) by Cloudflare (27B, Apache 2.0, ~18 GB).
 Set it up under *Settings → Connections → Classification → Local via Ollama* with URL and model. Documents then never leave your network.
+If your server accepts the System-One format at a different path, change the endpoint there (default `/v1/systemone`).
 If the server requires authentication, enter an API key; it is sent as a bearer token.
 
 paperless-jev handles clef's limits automatically: at most 64 questions per request (split up) and 26 candidates per
