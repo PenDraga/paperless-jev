@@ -513,5 +513,11 @@
  "Vorgabe <code>typesafe/jev</code>, Cloudflare wählt die Version. Andere Entscheidungsmodelle wie <code>@cf/cloudflare/clef</code> melden andere Confidence-Werte – Schwellwerte unter Regeln prüfen.": "Por defecto <code>typesafe/jev</code>, Cloudflare elige la versión. Otros modelos de decisión como <code>@cf/cloudflare/clef</code> dan valores de confianza distintos – comprueba los umbrales en Reglas.",
  "Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Los campos vacíos recurren a <code>CLOUDFLARE_ACCOUNT_ID</code> y <code>CLOUDFLARE_API_TOKEN_FILE</code> del entorno.",
  "Schwellwerte für Clef «{model}» auf Cloudflare – Clef meldet tiefere Confidence-Werte als Jev und nutzt darum dieselben Schwellwerte wie lokale Modelle. Die von Jev bleiben gespeichert.": "Umbrales para Clef «{model}» en Cloudflare – Clef da valores de confianza más bajos que Jev y por eso usa los mismos umbrales que los modelos locales. Los de Jev se conservan.",
- "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Los títulos de ejemplo y los documentos similares no se envían a Clef."
+ "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Los títulos de ejemplo y los documentos similares no se envían a Clef.",
+ "neue Korrespondenten vorschlagen, wenn Jev keinen vorhandenen sicher erkennt (das Sprachmodell liest den Absender, Jev prüft ihn gegen die vorhandenen; angelegt wird erst beim Übernehmen im Review)": "proponer interlocutores nuevos cuando Jev no reconoce con seguridad ninguno existente (el modelo de lenguaje lee el remitente, Jev lo compara con los existentes; solo se crea al aplicar en la revisión)",
+ "Braucht ein Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a>. Pro betroffenem Dokument kommt je eine Anfrage an Sprachmodell und Jev dazu.": "Requiere un modelo de lenguaje en <a href=\"/setup#language-model\">Conexiones</a>. Cada documento afectado supone una consulta adicional al modelo de lenguaje y otra a Jev.",
+ "neu: {name}": "nuevo: {name}",
+ "neu – wird erst beim Übernehmen in Paperless angelegt": "nuevo – solo se crea en Paperless al aplicar",
+ "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "No hay ningún interlocutor nuevo propuesto para este documento",
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "No se ha propuesto un interlocutor nuevo para el documento {id}: {detail}"
 }

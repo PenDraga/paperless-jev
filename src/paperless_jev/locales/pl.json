@@ -513,5 +513,11 @@
  "Vorgabe <code>typesafe/jev</code>, Cloudflare wählt die Version. Andere Entscheidungsmodelle wie <code>@cf/cloudflare/clef</code> melden andere Confidence-Werte – Schwellwerte unter Regeln prüfen.": "Domyślnie <code>typesafe/jev</code>, Cloudflare wybiera wersję. Inne modele decyzyjne, np. <code>@cf/cloudflare/clef</code>, zwracają inne wartości pewności – sprawdź progi w Regułach.",
  "Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Puste pola przechodzą na <code>CLOUDFLARE_ACCOUNT_ID</code> i <code>CLOUDFLARE_API_TOKEN_FILE</code> ze środowiska.",
  "Schwellwerte für Clef «{model}» auf Cloudflare – Clef meldet tiefere Confidence-Werte als Jev und nutzt darum dieselben Schwellwerte wie lokale Modelle. Die von Jev bleiben gespeichert.": "Progi dla Clef «{model}» w Cloudflare – Clef zwraca niższe wartości pewności niż Jev, dlatego używa tych samych progów co modele lokalne. Progi Jev pozostają zapisane.",
- "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Przykładowe tytuły i podobne dokumenty nie są wysyłane do Clef."
+ "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Przykładowe tytuły i podobne dokumenty nie są wysyłane do Clef.",
+ "neue Korrespondenten vorschlagen, wenn Jev keinen vorhandenen sicher erkennt (das Sprachmodell liest den Absender, Jev prüft ihn gegen die vorhandenen; angelegt wird erst beim Übernehmen im Review)": "proponuj nowych korespondentów, gdy Jev nie rozpoznaje pewnie żadnego istniejącego (model językowy odczytuje nadawcę, Jev porównuje go z istniejącymi; korespondent jest tworzony dopiero przy zastosowaniu w weryfikacji)",
+ "Braucht ein Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a>. Pro betroffenem Dokument kommt je eine Anfrage an Sprachmodell und Jev dazu.": "Wymaga modelu językowego w <a href=\"/setup#language-model\">Połączeniach</a>. Każdy taki dokument to jedno dodatkowe zapytanie do modelu językowego i jedno do Jev.",
+ "neu: {name}": "nowy: {name}",
+ "neu – wird erst beim Übernehmen in Paperless angelegt": "nowy – zostanie utworzony w Paperless dopiero przy zastosowaniu",
+ "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "Dla tego dokumentu nie zaproponowano nowego korespondenta",
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nie zaproponowano nowego korespondenta dla dokumentu {id}: {detail}"
 }

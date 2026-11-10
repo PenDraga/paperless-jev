@@ -513,5 +513,11 @@
  "Vorgabe <code>typesafe/jev</code>, Cloudflare wählt die Version. Andere Entscheidungsmodelle wie <code>@cf/cloudflare/clef</code> melden andere Confidence-Werte – Schwellwerte unter Regeln prüfen.": "Predefinito <code>typesafe/jev</code>, Cloudflare sceglie la versione. Altri modelli decisionali come <code>@cf/cloudflare/clef</code> riportano valori di confidenza diversi – controlla le soglie in Regole.",
  "Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "I campi vuoti ripiegano su <code>CLOUDFLARE_ACCOUNT_ID</code> e <code>CLOUDFLARE_API_TOKEN_FILE</code> dell’ambiente.",
  "Schwellwerte für Clef «{model}» auf Cloudflare – Clef meldet tiefere Confidence-Werte als Jev und nutzt darum dieselben Schwellwerte wie lokale Modelle. Die von Jev bleiben gespeichert.": "Soglie per Clef «{model}» su Cloudflare – Clef riporta valori di confidenza più bassi di Jev e usa quindi le stesse soglie dei modelli locali. Quelle di Jev restano salvate.",
- "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "I titoli di esempio e i documenti simili non vengono inviati a Clef."
+ "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "I titoli di esempio e i documenti simili non vengono inviati a Clef.",
+ "neue Korrespondenten vorschlagen, wenn Jev keinen vorhandenen sicher erkennt (das Sprachmodell liest den Absender, Jev prüft ihn gegen die vorhandenen; angelegt wird erst beim Übernehmen im Review)": "proporre nuovi corrispondenti quando Jev non ne riconosce con sicurezza uno esistente (il modello linguistico legge il mittente, Jev lo confronta con quelli esistenti; viene creato solo all’applicazione nella revisione)",
+ "Braucht ein Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a>. Pro betroffenem Dokument kommt je eine Anfrage an Sprachmodell und Jev dazu.": "Richiede un modello linguistico in <a href=\"/setup#language-model\">Connessioni</a>. Ogni documento interessato comporta una richiesta in più al modello linguistico e una a Jev.",
+ "neu: {name}": "nuovo: {name}",
+ "neu – wird erst beim Übernehmen in Paperless angelegt": "nuovo – viene creato in Paperless solo all’applicazione",
+ "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "Per questo documento non è proposto alcun nuovo corrispondente",
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nuovo corrispondente non proposto per il documento {id}: {detail}"
 }

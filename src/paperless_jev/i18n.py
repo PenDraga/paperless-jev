@@ -162,6 +162,8 @@ EN: dict[str, str] = {
     "Details →": "Details →",
     "Noch keine Einträge.": "No entries yet.",
     "keiner passt": "none fits",
+    "neu: {name}": "new: {name}",
+    "neu – wird erst beim Übernehmen in Paperless angelegt": "new – only created in Paperless when you apply",
     "Balken = Confidence: <span class=\"badge auto\">sicher</span> würde automatisch gesetzt · <span class=\"badge suggest\">unsicher</span> käme ins Review · grau = zu unsicher, wird ignoriert · ✓ = entspricht dem aktuellen Wert. Tags: Vorschläge mit Balken; schon gesetzte Tags umrandet – ✓ von Jev bestätigt, ? unsicher, ✗ laut Jev falsch. Genaue Werte beim Darüberfahren.":
         "Bar = confidence: <span class=\"badge auto\">confident</span> would be set automatically · <span class=\"badge suggest\">uncertain</span> would go to review · grey = too uncertain, ignored · ✓ = matches the current value. Tags: suggestions with a bar; tags already set are outlined – ✓ confirmed by Jev, ? uncertain, ✗ wrong according to Jev. Hover for exact values.",
     "Posteingang einreihen oder ein einzelnes Dokument testen.": "Queue the inbox or test a single document.",
@@ -171,6 +173,10 @@ EN: dict[str, str] = {
     "Filtern": "Filter",
     "Zur Übersicht": "To the overview",
     "Sammel-Korrespondent setzen, das Dokument aber ins Review schicken (so lässt sich ein passender Korrespondent zuweisen oder neu anlegen)": "Set the catch-all correspondent but send the document to review (so a matching correspondent can be chosen or created)",
+    "neue Korrespondenten vorschlagen, wenn Jev keinen vorhandenen sicher erkennt (das Sprachmodell liest den Absender, Jev prüft ihn gegen die vorhandenen; angelegt wird erst beim Übernehmen im Review)":
+        "propose new correspondents when Jev does not recognise an existing one with confidence (the language model reads the sender, Jev checks it against the existing ones; it is only created when you apply it in review)",
+    "Braucht ein Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a>. Pro betroffenem Dokument kommt je eine Anfrage an Sprachmodell und Jev dazu.":
+        "Needs a language model under <a href=\"/setup#language-model\">Connections</a>. Each affected document costs one extra request to the language model and one to Jev.",
     "kein passender gefunden – Sammel-Korrespondent; antippen, um einen anderen zu wählen oder neu anzulegen": "no match found – catch-all correspondent; tap to choose another or create one",
     "kein passender gefunden – antippen, um einen zu wählen oder neu anzulegen": "no match found – tap to choose or create one",
     "Sammel": "catch-all",
@@ -620,6 +626,7 @@ EN: dict[str, str] = {
     "Sprachmodell lieferte keinen brauchbaren Titel": "Language model returned no usable title",
     "Instanz nicht gefunden": "Instance not found",
     "Job oder Instanz nicht gefunden": "Job or instance not found",
+    "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "No new correspondent is proposed for this document",
     "Cloudflare: unvollständige Antwort": "Cloudflare: incomplete response",
     "Cloudflare: ungültige Tag-Wahrscheinlichkeit": "Cloudflare: invalid tag probability",
     "Anfrage einer fremden Seite abgewiesen": "Cross-origin request rejected",
@@ -636,6 +643,7 @@ EN: dict[str, str] = {
     "Job {id} fehlgeschlagen": "Job {id} failed",
     "Ähnliche Dokumente nicht verfügbar: {detail}": "Similar documents unavailable: {detail}",
     "Titel für Dokument {id} nicht erzeugt: {detail}": "Title not generated for document {id}: {detail}",
+    "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "New correspondent not proposed for document {id}: {detail}",
     "Review-Tag konnte nicht entfernt werden: {detail}": "Could not remove review tag: {detail}",
     "Ungültiges Token": "Invalid token",
     "Unbekannte oder deaktivierte Instanz": "Unknown or disabled instance",

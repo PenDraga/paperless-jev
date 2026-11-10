@@ -23,6 +23,7 @@ MESSAGES = (
     "Sprachmodell lieferte keinen brauchbaren Titel",
     "Instanz nicht gefunden",
     "Job oder Instanz nicht gefunden",
+    "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen",
     "Cloudflare: unvollständige Antwort",
     "Cloudflare: ungültige Tag-Wahrscheinlichkeit",
 )

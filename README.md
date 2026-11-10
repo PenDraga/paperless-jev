@@ -45,6 +45,9 @@ issue date and tags – or locally with [clef](https://ollama.com/library/clef) 
   straight to Paperless (see below).
 - **Titles** optionally by language model (in the style of documents already filed, with your own instructions and language, checked and shortened if
   needed) or by template – created during analysis and pre-filled in review.
+- **New correspondents** – optional: if Jev recognises none of the existing correspondents, the language model reads the
+  sender from the document and Jev checks that name against the existing ones. If it holds up, it is suggested in
+  review – it is only created in Paperless when you apply it.
 - **Manage metadata** without opening Paperless: create document types, correspondents and tags (also right in
   review), tag colours, delete with an assistant – move documents to another entry or just remove it.
 - **Filing conventions** – titles of documents already filed are sent to Jev as examples.
@@ -113,7 +116,7 @@ docker compose up -d --build
 ```
 
 1. **Settings → Connections** – enter your TypeSafe API key, add a Paperless instance with URL and API token, "Test connection".
-2. **Settings → Rules** – start in *dry run* mode, choose fields and thresholds. A language model for titles and descriptions is optional and set up under *Connections*.
+2. **Settings → Rules** – start in *dry run* mode, choose fields and thresholds. A language model for titles, descriptions and new correspondents is optional and set up under *Connections*.
 3. **Settings → Descriptions** – add a few keywords for document types and tags, especially to separate similar
    categories ("… – not: …").
 4. **Overview → Process inbox now** and check the log to see how good the suggestions are.

@@ -205,12 +205,17 @@ function option(id, name, extra = "", pct = null) {
     (pct !== null ? `<span class="rv-optbar"><span style="width:${Math.round(pct * 100)}%"></span></span><span class="rv-optpct">${Math.round(pct * 100)} %</span>` : "");
   b.querySelector(".rv-optname").textContent = name;
   if (extra) b.querySelector(".rv-optname").insertAdjacentHTML("beforeend", `<small>${extra}</small>`);
-  b.addEventListener("click", () => {
-    document.getElementById(`in-${sheetField}`).value = id ?? "";
-    document.getElementById(`lbl-${sheetField}`).textContent = id == null ? T.empty : name;
-    sheet.close();
-  });
+  b.addEventListener("click", () => choose(id, id == null ? T.empty : name));
   return b;
+}
+
+// Auswahl ins Formular schreiben; der Hinweis "neu" gilt nur dem vorgeschlagenen Korrespondenten
+function choose(id, name) {
+  document.getElementById(`in-${sheetField}`).value = id ?? "";
+  document.getElementById(`lbl-${sheetField}`).textContent = name;
+  const note = document.getElementById(`new-${sheetField}`);
+  if (note) note.hidden = id !== "new";
+  sheet.close();
 }
 
 function fillSheet() {
@@ -221,7 +226,7 @@ function fillSheet() {
     const shown = new Set();
     if (c.top.length) list.insertAdjacentHTML("beforeend", `<div class="rv-sheet-sec">${T.suggestions}</div>`);
     for (const t of c.top) {
-      list.append(option(t.id, t.name, t.id === c.current ? T.now : "", t.p));
+      list.append(option(t.id, t.name, t.id === c.current ? T.now : t.id === "new" ? T.fresh : "", t.p));
       shown.add(t.id);
     }
     if (c.current != null && !shown.has(c.current)) {
@@ -266,9 +271,7 @@ function createBox(name) {
       const obj = await createObject(sheetField, name, box.querySelector("input").value.trim());
       const c = data.choices[sheetField];
       c.options.push([obj.id, obj.name]);
-      document.getElementById(`in-${sheetField}`).value = obj.id;
-      document.getElementById(`lbl-${sheetField}`).textContent = obj.name;
-      sheet.close();
+      choose(obj.id, obj.name);
     } catch (err) {
       box.querySelector("small").textContent = err.message;
     }

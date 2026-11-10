@@ -27,6 +27,7 @@ from . import __version__
 from .auth import COOKIE as SESSION_COOKIE, MAX_AGE as SESSION_MAX_AGE, Auth
 from .classifier import excluded_tags
 from .config import FIELD_LABELS, SINGLE_FIELDS, Config, Instance
+from .correspondents import NEW, existing, proposed_name
 from .db import Database
 from .diagnostics import diagnostic, log_detail
 from . import i18n
@@ -408,8 +409,12 @@ def _view(row: dict[str, Any], meta: Metadata | None, hidden: set[int] | None = 
             view[name] = {"label": None, "current": cur_label} if cur_label else None
             continue
         label = f["value"] if name == "created" and f["value"] else f["label"]
+        if f.get("new_name"):
+            label = _("neu: {name}", name=f["new_name"])
+        elif f["value"] is None:
+            label = _("keiner passt")
         view[name] = {
-            "label": _("keiner passt") if f["value"] is None else label,
+            "label": label,
             "confidence": f["confidence"],
             "level": f["level"],
             "current": cur_label,
@@ -681,12 +686,12 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
     inst = _cfg(request).instance(job["instance_id"])
     job["instance"] = inst
     if not inst:
-        return {"meta": None}
+        return {"meta": None, "choices": None}
     try:
         async with _proc(request).client(inst) as pl:
             meta = await _proc(request).metadata(inst, pl)
     except PaperlessError as e:
-        return {"meta": None, "meta_error": diagnostic(e)}
+        return {"meta": None, "choices": None, "meta_error": diagnostic(e)}
     hidden = excluded_tags(meta, _cfg(request).all())
     return {
         "meta": meta,
@@ -695,6 +700,7 @@ async def _review_context(request: Request, job: dict[str, Any]) -> dict[str, An
         "tag_colors": meta.tag_colors,
         "tag_ancestors": {tid: meta.tag_ancestors(tid) for tid in meta.tag_parents},
         "title_mode": _cfg(request).all()["title_mode"],
+        "choices": _review_choices(job, meta),
     }
 
 
@@ -713,11 +719,20 @@ def _review_choices(job: dict[str, Any], meta: Metadata) -> dict[str, Any]:
             oid = int(m.group(1)) if m else by_name.get(label)
             if oid in names:
                 top.append({"id": oid, "name": names[oid], "p": p})
+        value = field.get("value") if field.get("value") is not None else current.get(name)
+        new = None
+        if name == "correspondent" and (proposed := proposed_name(result)) and not current.get(name):
+            # Vorschlag zuoberst - gibt es den Namen inzwischen, steht dort der vorhandene Eintrag
+            value = existing(names, proposed)
+            if value is None:
+                value = new = NEW
+            top.insert(0, {"id": value, "name": names.get(value, proposed), "p": field["confidence"]})
         choices[name] = {
             "options": sorted(([oid, n] for oid, n in names.items()), key=lambda o: o[1].lower()),
             "top": top,
             "current": current.get(name),
-            "value": field.get("value") if field.get("value") is not None else current.get(name),
+            "value": value,
+            "new": new and proposed,
         }
     return choices
 
@@ -745,7 +760,6 @@ async def review_queue(request: Request, job: int | None = None, after: int | No
         next_id=ids[(idx + 1) % len(ids)] if len(ids) > 1 else None,
         next_job=jobs[(idx + 1) % len(ids)] if len(ids) > 1 else None,
         prev_id=ids[idx - 1] if len(ids) > 1 else None,
-        choices=_review_choices(current, ctx["meta"]) if ctx.get("meta") else None,
         **ctx,
     )
 
@@ -866,6 +880,8 @@ async def apply_job(request: Request, job_id: int):
         if name == "created":
             if raw:
                 choice[name] = raw
+        elif raw == NEW and name == "correspondent":
+            choice[name] = NEW  # vorgeschlagenen Korrespondenten beim Übernehmen anlegen
         else:
             choice[name] = int(raw) if raw else None
     choice["tags_add"] = [int(t) for t in form.getlist("tags")]
@@ -1117,6 +1133,7 @@ async def save_rules(request: Request):
             "examples": max(int(num("examples", 5)), 0),
             "tags_force_review": "tags_force_review" in form,
             "correspondent_fallback": str(form.get("correspondent_fallback") or "").strip(),
+            "suggest_correspondents": "suggest_correspondents" in form,
             "fallback_review": "fallback_review" in form,
             "overwrite": "overwrite" in form,
             "review_conflicts": "review_conflicts" in form,

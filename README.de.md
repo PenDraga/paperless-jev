@@ -45,6 +45,9 @@ Ausstellungsdatum und Tags – oder lokal mit [clef](https://ollama.com/library/
   direkt nach Paperless (siehe unten).
 - **Titel** optional per Sprachmodell (Stil nach bereits abgelegten Dokumenten, eigene Anweisungen und Sprache wählbar, geprüft und bei Bedarf gekürzt)
   oder per Vorlage – entsteht schon bei der Analyse und ist im Review vorausgefüllt.
+- **Neue Korrespondenten** – optional: Erkennt Jev keinen der vorhandenen, liest das Sprachmodell den Absender aus dem
+  Dokument, und Jev prüft diesen Namen gegen die vorhandenen. Hält er stand, steht er als Vorschlag im Review –
+  angelegt wird er in Paperless erst beim Übernehmen.
 - **Stammdaten pflegen** ohne Paperless zu öffnen: Dokumenttypen, Korrespondenten und Tags anlegen (auch direkt im
   Review), Tag-Farben, Löschen mit Assistent – Dokumente auf einen anderen Eintrag übertragen oder nur entfernen.
 - **Ablage-Konventionen** – Titel bereits abgelegter Dokumente gehen als Beispiele an Jev.
@@ -113,7 +116,7 @@ docker compose up -d --build
 ```
 
 1. **Einstellungen → Verbindungen** – TypeSafe-API-Key eintragen, Paperless-Instanz mit URL und API-Token anlegen, „Verbindung testen“.
-2. **Einstellungen → Regeln** – im Modus *Probelauf* starten, Felder und Schwellwerte wählen. Ein Sprachmodell für Titel und Beschreibungen ist optional und wird unter *Verbindungen* eingerichtet.
+2. **Einstellungen → Regeln** – im Modus *Probelauf* starten, Felder und Schwellwerte wählen. Ein Sprachmodell für Titel, Beschreibungen und neue Korrespondenten ist optional und wird unter *Verbindungen* eingerichtet.
 3. **Einstellungen → Beschreibungen** – für Dokumenttypen und Tags ein paar Stichworte hinterlegen, vor allem zur Abgrenzung
    ähnlicher Kategorien („… – nicht: …“).
 4. **Übersicht → Posteingang jetzt verarbeiten** und im Protokoll prüfen, wie gut die Vorschläge sind.

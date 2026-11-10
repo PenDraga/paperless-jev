@@ -9,6 +9,7 @@ from typing import Any
 
 from .classifier import build_request, excluded_tags, interpret, plan, render_title
 from .config import SINGLE_FIELDS, Config, Instance
+from .correspondents import NEW, NO_PROPOSAL, accepted, existing, likely, propose, proposed_name, with_candidate
 from .db import Database
 from .diagnostics import log_detail
 from .i18n import log_text
@@ -268,8 +269,9 @@ class Processor:
                 client, model = classifier(cfg)
                 async with client as jev:
                     response = await jev.ask(req.state, req.questions, model)
+                    result = interpret(response, req, meta, cfg)
+                    await self.propose_correspondent(jev, model, doc, meta, req, result, cfg)
 
-                result = interpret(response, req, meta, cfg)
                 decision = plan(result, doc, cfg)
                 result["plan"] = decision
                 result["question_count"] = len(req.questions)
@@ -284,6 +286,7 @@ class Processor:
                         values = {**doc, **{k: v for k, v in decision["updates"].items() if k in SINGLE_FIELDS}}
                     else:
                         values = {**doc, **{k: f["value"] for k, f in result["fields"].items() if f.get("value") is not None}}
+                        values["new_correspondent"] = proposed_name(result)
                     result["title"] = await self.make_title(pl, meta, doc, values, cfg)
                 self.db.update_job(
                     job_id,
@@ -309,6 +312,53 @@ class Processor:
             self.mark_deleted(job["instance_id"], job["doc_id"])
         except (PaperlessError, JevError) as e:
             self.db.update_job(job_id, status="error", error=str(e))
+
+    async def propose_correspondent(
+        self,
+        jev: Any,
+        model: str,
+        doc: dict[str, Any],
+        meta: Metadata,
+        req: Any,
+        result: dict[str, Any],
+        cfg: dict[str, Any],
+    ) -> None:
+        """Neuen Korrespondenten vorschlagen, wenn Jev keinen vorhandenen sicher erkennt.
+
+        Das Sprachmodell nennt den Absender, Jev prüft ihn in einer zweiten Anfrage gegen
+        die vorhandenen. Nur wenn er sich durchsetzt, ersetzt er das bisherige Ergebnis.
+        """
+        question = req.questions.get("correspondent")
+        llm = LLM.from_config(cfg)
+        if not cfg.get("suggest_correspondents") or not llm or not question or doc.get("correspondent"):
+            return
+        found = result["fields"].get("correspondent")
+        if found and found["level"] == "auto" and not found.get("fallback"):
+            return
+        try:
+            name = await propose(llm, doc.get("content", ""), likely(found))
+            if not name or name in question["criteria"] or existing(meta.correspondents, name) is not None:
+                return
+            response = await jev.ask(req.state, {"correspondent": with_candidate(question, name)}, model)
+        except (LLMError, JevError) as e:
+            # Das Ergebnis der ersten Anfrage bleibt gültig
+            log.warning(log_text("Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}", id=doc.get("id"), detail=log_detail(e)))
+            return
+        usage = result["usage"]
+        usage["input_tokens"] = (usage.get("input_tokens") or 0) + (response.get("usage", {}).get("input_tokens") or 0)
+        answer = response.get("answers", {}).get("correspondent") or {}
+        if field := accepted(answer, name, cfg["fields"]["correspondent"]):
+            result["fields"]["correspondent"] = field
+
+    async def create_correspondent(self, pl: PaperlessClient, meta: Metadata, name: str | None) -> int:
+        """Vorgeschlagenen Korrespondenten anlegen - oder den gleichnamigen nehmen, den es inzwischen gibt."""
+        if not name:
+            raise PaperlessError(NO_PROPOSAL)
+        oid = existing(meta.correspondents, name)
+        if oid is None:
+            oid = await pl.create_object("correspondent", name)
+            meta.correspondents[oid] = name
+        return oid
 
     async def _tag(self, inst: Instance, pl: PaperlessClient, meta: Metadata, name: str) -> int:
         tid = meta.tag_id(name)
@@ -382,7 +432,8 @@ class Processor:
         """Titel nach Einstellung; bei Fehlern bleibt der bisherige Titel (strict: Fehler weitergeben)."""
         values = {
             "document_type": meta.document_types.get(merged.get("document_type")),
-            "correspondent": meta.correspondents.get(merged.get("correspondent")),
+            # ein vorgeschlagener neuer Korrespondent hat noch keine ID
+            "correspondent": merged.get("new_correspondent") or meta.correspondents.get(merged.get("correspondent")),
             "storage_path": meta.storage_paths.get(merged.get("storage_path")),
             "created": merged.get("created"),
             "title": doc.get("title"),
@@ -430,6 +481,8 @@ class Processor:
             doc = await pl.document(job["doc_id"])
             meta = await self.metadata(inst, pl)
             suggested = {k: f["value"] for k, f in fields.items() if f.get("value") is not None}
+            if "correspondent" not in (overrides or {}):
+                suggested["new_correspondent"] = proposed_name(job.get("result"))
             return await self.make_title(pl, meta, doc, {**doc, **suggested, **(overrides or {})}, cfg, strict=True)
 
     async def apply_review(self, job_id: int, choice: dict[str, Any]) -> dict[str, Any]:
@@ -439,15 +492,20 @@ class Processor:
         if not job or not inst:
             raise PaperlessError("Job oder Instanz nicht gefunden")
         cfg = job_config(job, self.config.all())
+        # Vorschlag angenommen: Korrespondent jetzt anlegen (mit frischen Stammdaten, falls es ihn inzwischen gibt)
+        new = choice.get("correspondent") == NEW
         async with self.client(inst) as pl:
             doc = await pl.document(job["doc_id"])
-            meta = await self.metadata(inst, pl)
+            meta = await self.metadata(inst, pl, fresh=new)
+            if new:
+                choice = {**choice, "correspondent": await self.create_correspondent(pl, meta, proposed_name(job.get("result")))}
             applied = await self.apply(inst, pl, meta, doc, choice, cfg, finished=True)
         suggested = (job.get("result") or {}).get("fields", {})
         corrections = {
             name: {"suggested": suggested.get(name, {}).get("value"), "chosen": choice.get(name)}
             for name in ("document_type", "correspondent", "storage_path", "created")
             if name in choice and suggested.get(name, {}).get("value") != choice.get(name)
+            and not (new and name == "correspondent")  # angenommener Vorschlag ist keine Korrektur
         }
         self.db.update_job(
             job_id, status="done", source=f"{job['source']}+review", error=None,

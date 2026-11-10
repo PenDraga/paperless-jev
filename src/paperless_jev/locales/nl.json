@@ -513,5 +513,11 @@
  "Vorgabe <code>typesafe/jev</code>, Cloudflare wählt die Version. Andere Entscheidungsmodelle wie <code>@cf/cloudflare/clef</code> melden andere Confidence-Werte – Schwellwerte unter Regeln prüfen.": "Standaard <code>typesafe/jev</code>, Cloudflare kiest de versie. Andere beslismodellen zoals <code>@cf/cloudflare/clef</code> melden andere zekerheidswaarden – controleer de drempelwaarden onder Regels.",
  "Leere Felder fallen auf <code>CLOUDFLARE_ACCOUNT_ID</code> und <code>CLOUDFLARE_API_TOKEN_FILE</code> aus der Umgebung zurück.": "Lege velden vallen terug op <code>CLOUDFLARE_ACCOUNT_ID</code> en <code>CLOUDFLARE_API_TOKEN_FILE</code> uit de omgeving.",
  "Schwellwerte für Clef «{model}» auf Cloudflare – Clef meldet tiefere Confidence-Werte als Jev und nutzt darum dieselben Schwellwerte wie lokale Modelle. Die von Jev bleiben gespeichert.": "Drempelwaarden voor Clef «{model}» op Cloudflare – Clef meldt lagere zekerheidswaarden dan Jev en gebruikt daarom dezelfde drempelwaarden als lokale modellen. Die van Jev blijven bewaard.",
- "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Voorbeeldtitels en vergelijkbare documenten worden niet naar Clef gestuurd."
+ "Beispiel-Titel und ähnliche Dokumente werden bei Clef nicht mitgeschickt.": "Voorbeeldtitels en vergelijkbare documenten worden niet naar Clef gestuurd.",
+ "neue Korrespondenten vorschlagen, wenn Jev keinen vorhandenen sicher erkennt (das Sprachmodell liest den Absender, Jev prüft ihn gegen die vorhandenen; angelegt wird erst beim Übernehmen im Review)": "nieuwe correspondenten voorstellen wanneer Jev geen bestaande met zekerheid herkent (het taalmodel leest de afzender, Jev vergelijkt die met de bestaande; pas bij het toepassen in de controle wordt hij aangemaakt)",
+ "Braucht ein Sprachmodell unter <a href=\"/setup#language-model\">Verbindungen</a>. Pro betroffenem Dokument kommt je eine Anfrage an Sprachmodell und Jev dazu.": "Vereist een taalmodel onder <a href=\"/setup#language-model\">Verbindingen</a>. Elk betrokken document kost één extra verzoek aan het taalmodel en één aan Jev.",
+ "neu: {name}": "nieuw: {name}",
+ "neu – wird erst beim Übernehmen in Paperless angelegt": "nieuw – wordt pas bij het toepassen in Paperless aangemaakt",
+ "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "Voor dit document is geen nieuwe correspondent voorgesteld",
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nieuwe correspondent voor document {id} niet voorgesteld: {detail}"
 }
