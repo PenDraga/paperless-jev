@@ -10,14 +10,18 @@ Paperless-ngx ──webhook "document added"──▶ paperless-jev ──POST /
       └────────── REST: GET document, PATCH ─────┘
 ```
 
+Instead of TypeSafe, the same request can go to Cloudflare Workers AI (Jev or Clef) or to a server of your own
+(Ollama, clef) – see *Cloudflare Workers AI* and *Local models*.
+
 | Module | Purpose |
 |---|---|
 | `app.py` | FastAPI: web UI, `/hook/{instance}`, `/health`, starts background processing |
 | `processor.py` | queue (asyncio), polling, processing, writing back to Paperless |
 | `classifier.py` | builds the Jev request and interprets the answer (pure functions, tested) |
 | `candidates.py` | finds dates and correspondent candidates in code |
-| `llm.py` / `titles.py` | optional: local language model (Ollama or OpenAI-compatible, e.g. SGLang/vLLM) for titles and for descriptions from keywords |
-| `paperless.py` / `jev.py` | thin HTTP clients (Paperless-ngx 2.x and 3.x, TypeSafe System One) |
+| `llm.py` / `titles.py` | optional: local language model (Ollama or OpenAI-compatible, e.g. SGLang/vLLM) for titles, for descriptions from keywords and for new correspondents |
+| `correspondents.py` | optional: suggest a new correspondent – the language model reads the sender, Jev checks it against the existing ones |
+| `paperless.py` / `jev.py` | thin HTTP clients (Paperless-ngx 2.x and 3.x; System One at TypeSafe, Cloudflare Workers AI or a local server) |
 | `config.py` / `db.py` / `vault.py` | settings, instances, descriptions, jobs in SQLite; tokens encrypted with Fernet |
 | `static/review.js` / `static/scan.js` | review with pdf.js, scanner with OpenCV.js and jsPDF (in the browser) |
 
@@ -34,7 +38,9 @@ Everything persistent lives in `/data`: `paperless-jev.db` and – without `PJ_S
      per option the description and (type, storage path) titles of documents already filed as examples
    - `choice` issue date – options = dates found by regex, with context
    - one `noul` per tag ("does tag X apply?") – for new tags and, as a **double-check**, for tags already set
-5. Decision by mode:
+5. Optionally: if Jev does not confidently recognise an existing correspondent, a second, small request follows with
+   only the correspondent question and a new name as an extra option (see *New correspondents*).
+6. Decision by mode:
    - **Dry run**: log only.
    - **Suggestions only**: set tag *ai-review*, review queue.
    - **Automatic**: apply confident values. If a field is still empty without a confident value → *ai-review*,
@@ -43,7 +49,7 @@ Everything persistent lives in `/data`: `paperless-jev.db` and – without `PJ_S
    - **Contradictions**: if Jev confidently disagrees with an existing value, the document goes to review; above the
      *replace existing value* threshold (e.g. 0.98) Jev corrects it itself. A tag already set that Jev confidently
      considers wrong also sends the document to review – nothing is ever removed automatically.
-6. Values confirmed or corrected in the review are written; corrections are counted (overview) and help to
+7. Values confirmed or corrected in the review are written; corrections are counted (overview) and help to
    fine-tune descriptions and thresholds.
 
 ## Review
@@ -111,6 +117,40 @@ field) and the text for Jev (shown below with "→"). Invented exclusions are re
 The Paperless matching rules (search term and algorithm) are shown in grey next to each entry. Under *Rules* they can
 additionally be passed to Jev as a hint (default: off, see *Measurements*).
 
+## New correspondents
+
+Jev only chooses from what exists: a sender that is not in Paperless yet ends up as "none of these". With
+*suggest new correspondents* (Rules, off by default; needs the language model from *Connections*), a second step
+follows for documents without a correspondent where Jev does not confidently recognise an existing one:
+
+1. The language model reads the sender from at most 4000 characters (beginning and end of the text: letterhead and
+   footer) and names it as printed. It is also given the correspondents Jev considers most likely and says
+   separately (`same_as`) whether one of them is the same sender – then there is nothing to suggest.
+2. Jev gets the correspondent question a second time, with the new name as an extra option.
+3. Only if the new name wins and reaches the correspondent's review threshold does it show up as a suggestion in the
+   review.
+
+The decisions behind it (measured with clef-flash on Cloudflare, archives with 47 and with 7 correspondents):
+
+- **Always review, never automatic.** The suggestion never counts as confident. The correspondent is only created in
+  Paperless when the review is applied – if one with the same name exists by then, that one is used. Discarding
+  leaves nothing behind, and applying is not counted as a correction.
+- **The name is part of the criterion** ("The document was sent or issued by ‹name›, a sender that is not among the
+  other options."). With a generic criterion ("a new correspondent named after the sender") the model also accepted
+  the invoice recipient as a new sender (0.83) and a made-up name (0.54). With the name in the criterion both lose to
+  "none of these"; real new senders reach 0.77–0.82 (47 correspondents) and 0.92–0.95 (7).
+- **`same_as` against spelling variants.** With the name in the criterion, a different spelling can beat the existing
+  entry ("Swisscom (Schweiz) AG" 0.68 against "Swisscom" 0.28 in the small archive). That is why the language model
+  first compares with Jev's most likely correspondents. `qwen3.8-flash-next` matched every variant tested correctly;
+  `ornith-ice` once took two different companies for the same one ("Migros-Genossenschafts-Bund" and "Migros Bank") –
+  then only the suggestion is dropped.
+- **Failures change nothing.** If the language model does not answer or answers unusably, or the second Jev request
+  fails, the result of the first one stands (warning in the log).
+
+The suggested name goes into the title suggestion; the tokens of the second request count towards the run.
+Known limit: for a letter the user wrote themselves, the language model named the writer and the decision model
+agreed (0.83) – one more reason why it stays in review.
+
 ## Cleaning up and re-checking tags
 
 - **Deactivated tags** (under Descriptions) are never suggested. If one is on a document, the document goes to review;
@@ -123,8 +163,8 @@ additionally be passed to Jev as a hint (default: off, see *Measurements*).
 
 ## Local models (Ollama, clef)
 
-Besides TypeSafe, `jev.py` also talks to Ollama's `/v1/systemone` – same format (`state`, `questions` with
-`choice`/`noul`), but with limits the client works around:
+Besides TypeSafe, `jev.py` also talks to Ollama's `/v1/systemone` (path changeable under *Connections*, API key
+optional) – same format (`state`, `questions` with `choice`/`noul`), but with limits the client works around:
 
 - at most **64 questions** per request → questions are split, answers merged;
 - **2–26 candidates** per choice question (clef) → paperless-jev first asks without a limit; if the server rejects
@@ -142,6 +182,22 @@ The questions stay in English for clef too: with German questions, confidence on
 everywhere – for wrong answers as well (correspondent 36 instead of 38 right, 2 wrongly auto-set values instead
 of 0, 46 instead of 34 wrong tag suggestions). clef's confidence depends on the wording; don't set its thresholds
 too tight.
+
+## Cloudflare Workers AI
+
+With the classifier *Cloudflare Workers AI* the request goes to `api.cloudflare.com` (account ID and API token from
+*Connections*, otherwise from `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN_FILE`). Two model families, two formats:
+
+- **Jev** (`typesafe/jev`): the same System One request, wrapped as `{"model", "input"}` and sent to `/ai/run`; the
+  answer comes back in an envelope. Criteria and thresholds as with TypeSafe. Jev is a partner model and needs credits
+  in the AI Gateway; Cloudflare picks the version, it cannot be pinned.
+- **Clef** (`@cf/cloudflare/clef`, `@cf/cloudflare/clef-flash`): the native format on the model path
+  (`/ai/run/<model>`). At most 64 questions per request (split), but no candidate limit – no tournament needed.
+  Otherwise treated like the local clef: its own thresholds (`local_thresholds`), no example titles, no similar
+  documents. Cloudflare reports the model only as `clef`; the log and the cost use the full name.
+
+Incomplete answers (a question is missing, a tag probability is invalid) count as errors and never complete a
+document.
 
 ## Log
 
@@ -166,6 +222,7 @@ Two identical runs differ by ±2 hits – smaller differences are chance.
 | clef instead of Jev (43 real documents checked in review)? | Type 38 vs. 43, correspondent 38 vs. 43, date 32 vs. 33; new tags 0 right / 34 wrong vs. 18 / 41. Jev's values were the starting point of the review – a slight advantage for Jev. |
 | Decision-1.0-Lux-9B (43 real documents, no tournament)? | Type 41/43 (with example titles 42), correspondent 37, date 32/38. Confidence right/wrong for type 0.90/0.19 (clef 0.66/0.39) – with the local thresholds 31/30/30 auto-set without errors (clef 30/28/17). New tags 0 right / 54–67 wrong. Example titles don't hurt Lux, but hardly help. |
 | Double-check existing tags? | 70 tags on 60 documents: 64 confirmed, 6 uncertain, 0 confidently wrong – no false alarms, about +20 % tokens. On by default. |
+| New correspondent: criterion with or without the name (clef-flash on Cloudflare)? | Without the name the invoice recipient passed as a new sender at 0.83, with the name it lost to "none of these"; real new senders 0.77–0.95. Details under *New correspondents*. |
 
 ## Document viewer
 
@@ -203,12 +260,17 @@ only processes inbox documents that have never been evaluated (errors: up to 3 a
 ## Privacy
 
 The shortened OCR text and the names of the metadata are sent to `api.typesafe.ai`. According to its documentation,
-TypeSafe does not train on customer data; zero data retention is only available in the Enterprise plan. Tag sensitive
-documents with *ai-ignorieren* (e.g. via a Paperless workflow by storage path or correspondent) – or use a local
-model via Ollama, then nothing leaves your network.
+TypeSafe does not train on customer data; zero data retention is only available in the Enterprise plan. With
+Cloudflare Workers AI the same data goes to Cloudflare instead (zero data retention according to Cloudflare). Tag
+sensitive documents with *ai-ignorieren* (e.g. via a Paperless workflow by storage path or correspondent) – or use a
+local model via Ollama, then nothing leaves your network.
+
+The optional language model runs on your own hardware. For titles it receives the beginning of the document text,
+for new correspondents the beginning and the end plus the names of the most likely existing ones.
 
 ## Cost
 
-jev-1.13: USD 0.042 per million input tokens, output free. Measured: on average about 10k tokens per document (text
-up to 12,000 characters, ~50 tag questions, example titles), i.e. about USD 0.0004. The overview shows the total
-(TypeSafe tokens only; local models cost nothing).
+Jev (jev-1.13 and jev-1.14): USD 0.042 per million input tokens, output free. Measured: on average about 10k tokens per document (text
+up to 12,000 characters, ~50 tag questions, example titles), i.e. about USD 0.0004. Jev costs the same via
+Cloudflare; Clef on Workers AI costs USD 0.24 (`clef`) and USD 0.038 (`clef-flash`) per million input tokens. The
+overview shows the total across all runs, priced per model; local models cost nothing.

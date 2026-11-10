@@ -87,7 +87,8 @@ Paperless-ngx ──Webhook "Dokument hinzugefügt"──▶ paperless-jev ─�
 ```
 
 Jev erzeugt keinen Text, es **wählt aus**: aus deinen Stammdaten bzw. aus Datumsangaben, die der Code
-vorher im OCR-Text gefunden hat. Pro Dokument geht **eine** Anfrage mit allen Fragen an Jev.
+vorher im OCR-Text gefunden hat. Pro Dokument geht **eine** Anfrage mit allen Fragen an Jev; nur wenn ein
+neuer Korrespondent zu prüfen ist, kommt eine zweite, kleine dazu.
 
 | Confidence | Aktion (Modus *Automatisch*) |
 |---|---|
@@ -210,8 +211,9 @@ Eigene Messung: `python -m bench.run --jev --ollama http://<host>:11434` (siehe 
   Doku nicht auf Kundendaten. Dokumente mit dem Tag `ai-ignorieren` werden nie gesendet.
 - Mit Cloudflare Workers AI gehen dieselben Daten stattdessen an Cloudflare (laut Cloudflare ohne Speicherung).
 - Mit einem lokalen Modell über Ollama (z. B. clef) bleibt alles im eigenen Netz.
-- Das optionale Sprachmodell läuft bei dir (Ollama, SGLang, vLLM, LM Studio …).
-- jev-1.13 kostet 0.042 USD pro Mio. Input-Tokens. Ein Dokument liegt je nach Anzahl Tags und Beispielen
+- Das optionale Sprachmodell läuft bei dir (Ollama, SGLang, vLLM, LM Studio …). Für Titel und neue Korrespondenten
+  bekommt es einen Auszug des Dokumenttexts.
+- Jev kostet 0.042 USD pro Mio. Input-Tokens (jev-1.13 und jev-1.14). Ein Dokument liegt je nach Anzahl Tags und Beispielen
   bei grob 5–15k Tokens, also unter 0.001 USD. Die Übersicht zeigt die Summe.
 
 ## Probelauf auf der Kommandozeile
@@ -242,7 +244,9 @@ Architektur, Designentscheidungen und Messungen: [DOKUMENTATION.md](DOKUMENTATIO
 ## Mitwirken
 
 Ideen, Wünsche und Fehlermeldungen sind willkommen – bitte als
-[Issue](https://github.com/PenDraga/paperless-jev/issues) erfassen. Pull Requests werden vorerst nicht angenommen.
+[Issue](https://github.com/PenDraga/paperless-jev/issues) erfassen. Pull Requests sind ebenfalls willkommen: gegen
+`main`, einer pro Thema. Übernommen wird, was passt, in der Regel neu geschrieben im Stil des Projekts und mit dir als
+Mitautor – ein Pull Request wird deshalb oft mit Verweis auf den Commit geschlossen statt gemergt.
 
 ## Lizenz
 

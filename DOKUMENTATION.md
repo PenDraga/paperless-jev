@@ -10,14 +10,18 @@ Paperless NGX ──Webhook "Dokument hinzugefügt"──▶ paperless-jev ─�
       └──────────── REST: GET Dokument, PATCH ───────┘
 ```
 
+Statt an TypeSafe kann dieselbe Anfrage an Cloudflare Workers AI (Jev oder Clef) oder an einen eigenen Server
+(Ollama, clef) gehen – siehe *Cloudflare Workers AI* und *Lokale Modelle*.
+
 | Modul | Aufgabe |
 |---|---|
 | `app.py` | FastAPI: Web-UI, `/hook/{instanz}`, `/health`, Start der Hintergrundverarbeitung |
 | `processor.py` | Warteschlange (asyncio), Polling, Verarbeitung, Zurückschreiben nach Paperless |
 | `classifier.py` | baut die Jev-Anfrage und wertet sie aus (reine Funktionen, getestet) |
 | `candidates.py` | findet Datumsangaben und Korrespondenten-Kandidaten per Code |
-| `llm.py` / `titles.py` | optional: lokales Sprachmodell (Ollama oder OpenAI-kompatibel, z. B. SGLang/vLLM) für Titel und für Beschreibungen aus Stichworten |
-| `paperless.py` / `jev.py` | schlanke HTTP-Clients (Paperless-ngx 2.x und 3.x, TypeSafe System One) |
+| `llm.py` / `titles.py` | optional: lokales Sprachmodell (Ollama oder OpenAI-kompatibel, z. B. SGLang/vLLM) für Titel, für Beschreibungen aus Stichworten und für neue Korrespondenten |
+| `correspondents.py` | optional: neuen Korrespondenten vorschlagen – das Sprachmodell liest den Absender, Jev prüft ihn gegen die vorhandenen |
+| `paperless.py` / `jev.py` | schlanke HTTP-Clients (Paperless-ngx 2.x und 3.x; System One bei TypeSafe, Cloudflare Workers AI oder einem lokalen Server) |
 | `config.py` / `db.py` / `vault.py` | Einstellungen, Instanzen, Beschreibungen, Jobs in SQLite; Tokens mit Fernet verschlüsselt |
 | `static/review.js` / `static/scan.js` | Review mit pdf.js, Scanner mit OpenCV.js und jsPDF (im Browser) |
 
@@ -34,7 +38,9 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
      pro Option die Beschreibung und (Typ, Speicherpfad) Titel bereits abgelegter Dokumente als Beispiele
    - `choice` Ausstellungsdatum – Optionen = per Regex gefundene Datumsangaben inkl. Kontext
    - je Tag ein `noul` („trifft Tag X zu?“) – für neue Tags und, zur **Gegenprüfung**, für die schon gesetzten
-5. Entscheidung nach Modus:
+5. Optional: Erkennt Jev keinen vorhandenen Korrespondenten sicher, folgt eine zweite, kleine Anfrage nur mit der
+   Korrespondenten-Frage und einem neuen Namen als zusätzlicher Option (siehe *Neue Korrespondenten*).
+6. Entscheidung nach Modus:
    - **Probelauf**: nur protokollieren.
    - **Nur Vorschläge**: Tag *ai-review* setzen, Review-Queue.
    - **Automatisch**: sichere Werte setzen. Ist noch ein Feld leer, ohne sicheren Wert → *ai-review*,
@@ -43,7 +49,7 @@ Alles Persistente liegt in `/data`: `paperless-jev.db` und – ohne `PJ_SECRET_K
    - **Widersprüche**: Widerspricht Jev einem vorhandenen Wert sicher, kommt das Dokument ins Review; ab der
      Schwelle *Vorhandenen Wert ersetzen* (z. B. 0.98) korrigiert Jev ihn selbst. Ein schon gesetzter Tag, den
      Jev sicher für falsch hält, schickt das Dokument ebenfalls ins Review – entfernt wird nie automatisch.
-6. Im Review bestätigte/korrigierte Werte werden geschrieben; Korrekturen werden gezählt
+7. Im Review bestätigte/korrigierte Werte werden geschrieben; Korrekturen werden gezählt
    (Übersicht) und dienen zum Nachjustieren von Beschreibungen und Schwellen.
 
 ## Review
@@ -111,6 +117,42 @@ Ein Eintrag wird nur neu ausformuliert, wenn sich seine Stichworte ändern.
 Die Zuweisungsregeln aus Paperless (Suchbegriff und Algorithmus) stehen grau beim Eintrag. Unter *Regeln*
 lassen sie sich zusätzlich als Hinweis an Jev mitgeben (Standard: aus, siehe *Messungen*).
 
+## Neue Korrespondenten
+
+Jev wählt nur aus Vorhandenem: Ein Absender, den es in Paperless noch nicht gibt, endet bei „none of these“. Mit
+*neue Korrespondenten vorschlagen* (Regeln, Standard: aus; braucht das Sprachmodell aus *Verbindungen*) folgt für
+Dokumente ohne Korrespondent, bei denen Jev keinen vorhandenen sicher erkennt, ein zweiter Schritt:
+
+1. Das Sprachmodell liest den Absender aus höchstens 4000 Zeichen (Anfang und Ende des Texts: Briefkopf und
+   Fusszeile) und nennt ihn so, wie er gedruckt ist. Es bekommt dazu die Korrespondenten, die Jev am ehesten für
+   den Absender hält, und sagt getrennt davon (`same_as`), ob einer davon derselbe ist – dann gibt es nichts
+   vorzuschlagen.
+2. Jev bekommt die Korrespondenten-Frage ein zweites Mal, mit dem neuen Namen als zusätzlicher Option.
+3. Nur wenn der neue Name gewinnt und die Review-Schwelle des Korrespondenten erreicht, steht er als Vorschlag im
+   Review.
+
+Die Entscheidungen dahinter (gemessen mit clef-flash auf Cloudflare, Archive mit 47 und mit 7 Korrespondenten):
+
+- **Immer Review, nie automatisch.** Der Vorschlag gilt nie als sicher. Angelegt wird in Paperless erst beim
+  Übernehmen – gibt es inzwischen einen gleichnamigen Korrespondenten, wird der genommen. Verwerfen hinterlässt
+  nichts, und das Übernehmen zählt nicht als Korrektur.
+- **Der Name steht im Kriterium** („The document was sent or issued by ‹Name›, a sender that is not among the other
+  options.“). Mit einem allgemeinen Kriterium („ein neuer Korrespondent, benannt nach dem Absender“) akzeptierte
+  das Modell auch den Rechnungsempfänger als neuen Absender (0.83) und einen erfundenen Namen (0.54). Mit dem Namen
+  im Kriterium verlieren beide gegen „none of these“; echte neue Absender erreichen 0.77–0.82 (47 Korrespondenten)
+  und 0.92–0.95 (7).
+- **`same_as` gegen Schreibvarianten.** Mit dem Namen im Kriterium kann eine andere Schreibweise den vorhandenen
+  Eintrag schlagen („Swisscom (Schweiz) AG“ 0.68 gegen „Swisscom“ 0.28 im kleinen Archiv). Darum gleicht das
+  Sprachmodell vorher mit Jevs wahrscheinlichsten Korrespondenten ab. `qwen3.8-flash-next` ordnete alle getesteten
+  Varianten richtig zu; `ornith-ice` hielt einmal zwei verschiedene Firmen für dieselbe
+  („Migros-Genossenschafts-Bund“ und „Migros Bank“) – dann entfällt nur der Vorschlag.
+- **Fehler ändern nichts.** Antwortet das Sprachmodell nicht oder unbrauchbar, oder scheitert die zweite
+  Jev-Anfrage, bleibt das Ergebnis der ersten gültig (Warnung im Log).
+
+Der vorgeschlagene Name fliesst in den Titelvorschlag ein; die Tokens der zweiten Anfrage zählen zum Lauf.
+Bekannte Grenze: Bei einem selbst verfassten Brief nannte das Sprachmodell den Verfasser, und das
+Entscheidungsmodell stimmte zu (0.83) – ein Grund mehr, warum es beim Review bleibt.
+
 ## Tags ausmisten und neu prüfen
 
 - **Deaktivierte Tags** (unter Beschreibungen) schlägt Jev nie vor. Steht einer auf einem Dokument, kommt es ins
@@ -124,8 +166,8 @@ lassen sie sich zusätzlich als Hinweis an Jev mitgeben (Standard: aus, siehe *M
 
 ## Lokale Modelle (Ollama, clef)
 
-`jev.py` spricht neben TypeSafe auch Ollamas `/v1/systemone` an – gleiches Format (`state`, `questions` mit
-`choice`/`noul`), aber mit Grenzen, die der Client ausgleicht:
+`jev.py` spricht neben TypeSafe auch Ollamas `/v1/systemone` an (Pfad unter *Verbindungen* änderbar, API-Schlüssel
+optional) – gleiches Format (`state`, `questions` mit `choice`/`noul`), aber mit Grenzen, die der Client ausgleicht:
 
 - höchstens **64 Fragen** pro Anfrage → Fragen werden aufgeteilt, Antworten zusammengeführt;
 - **2–26 Kandidaten** pro Auswahlfrage (clef) → paperless-jev fragt zuerst ohne Limit; lehnt der Server ab
@@ -143,6 +185,23 @@ Die Fragen bleiben auch für clef englisch: Mit deutschen Fragen stieg die Confi
 überall – auch bei falschen Antworten (Korrespondent 36 statt 38 richtig, 2 falsch automatisch gesetzte Werte
 statt 0, 46 statt 34 falsche Tag-Vorschläge). clefs Confidence hängt also an der Formulierung; die Schwellen nicht
 zu knapp setzen.
+
+## Cloudflare Workers AI
+
+Mit dem Klassifizierer *Cloudflare Workers AI* geht die Anfrage an `api.cloudflare.com` (Konto-ID und API-Token aus
+*Verbindungen*, sonst aus `CLOUDFLARE_ACCOUNT_ID` und `CLOUDFLARE_API_TOKEN_FILE`). Zwei Modellfamilien, zwei Formate:
+
+- **Jev** (`typesafe/jev`): dieselbe System-One-Anfrage, verpackt als `{"model", "input"}` an `/ai/run`; die Antwort
+  kommt in einer Hülle zurück. Kriterien und Schwellwerte wie bei TypeSafe. Jev ist ein Partnermodell und braucht
+  Guthaben im AI Gateway; die Version wählt Cloudflare, sie lässt sich nicht pinnen.
+- **Clef** (`@cf/cloudflare/clef`, `@cf/cloudflare/clef-flash`): das native Format auf dem Modellpfad
+  (`/ai/run/<modell>`). Höchstens 64 Fragen pro Anfrage (wird aufgeteilt), aber kein Kandidatenlimit – das Turnier
+  entfällt. Sonst wie das lokale clef behandelt: eigene Schwellwerte (`local_thresholds`), keine Beispiel-Titel,
+  keine ähnlichen Dokumente. Cloudflare meldet als Modell nur `clef`; im Protokoll und für die Kosten steht der
+  volle Name.
+
+Unvollständige Antworten (eine Frage fehlt, eine Tag-Wahrscheinlichkeit ist ungültig) gelten als Fehler und
+schliessen kein Dokument ab.
 
 ## Protokoll
 
@@ -168,6 +227,7 @@ mit ihr). Zwei identische Läufe unterscheiden sich um ±2 Treffer – kleinere 
 | clef statt Jev (43 echte, im Review geprüfte Dokumente)? | Typ 38 vs. 43, Korrespondent 38 vs. 43, Datum 32 vs. 33; neue Tags 0 richtig / 34 falsch vs. 18 / 41. Jevs Werte waren Ausgangspunkt des Reviews – leichter Vorteil für Jev. |
 | Decision-1.0-Lux-9B (43 echte Dokumente, ohne Turnier)? | Typ 41/43 (mit Beispiel-Titeln 42), Korrespondent 37, Datum 32/38. Confidence richtig/falsch beim Typ 0.90/0.19 (clef 0.66/0.39) – mit den lokalen Schwellen automatisch gesetzt 31/30/30 ohne Fehler (clef 30/28/17). Neue Tags 0 richtig / 54–67 falsch. Beispiel-Titel schaden Lux nicht, helfen aber kaum. |
 | Gegenprüfung vorhandener Tags? | 70 gesetzte Tags an 60 Dokumenten: 64 bestätigt, 6 unsicher, 0 als sicher falsch – keine Fehlalarme, rund +20 % Tokens. Standardmässig an. |
+| Neuer Korrespondent: Kriterium mit oder ohne Namen (clef-flash auf Cloudflare)? | Ohne Namen galt der Rechnungsempfänger mit 0.83 als neuer Absender, mit Namen verlor er gegen „none of these“; echte neue Absender 0.77–0.95. Details unter *Neue Korrespondenten*. |
 
 ## Dokument-Viewer
 
@@ -206,12 +266,17 @@ und verarbeitet nur Dokumente im Posteingang, die noch nie bewertet wurden (Fehl
 ## Datenschutz
 
 Der OCR-Text (gekürzt) und die Namen der Stammdaten gehen an `api.typesafe.ai`. TypeSafe trainiert laut
-Doku nicht auf Kundendaten; Zero Data Retention gibt es nur im Enterprise-Plan. Sensible Dokumente mit
+Doku nicht auf Kundendaten; Zero Data Retention gibt es nur im Enterprise-Plan. Mit Cloudflare Workers AI gehen
+dieselben Daten stattdessen an Cloudflare (laut Cloudflare ohne Speicherung). Sensible Dokumente mit
 dem Tag *ai-ignorieren* versehen (z. B. per Paperless-Workflow nach Speicherpfad oder Korrespondent) – oder ein
 lokales Modell über Ollama verwenden, dann verlässt nichts das eigene Netz.
 
+Das optionale Sprachmodell läuft bei dir. Für Titel bekommt es den Anfang des Dokumenttexts, für neue
+Korrespondenten Anfang und Ende sowie die Namen der wahrscheinlichsten vorhandenen.
+
 ## Kosten
 
-jev-1.13: 0.042 USD pro Mio. Input-Tokens, Output kostenlos. Gemessen: im Schnitt rund 10k Tokens pro
-Dokument (Text bis 12'000 Zeichen, ~50 Tag-Fragen, Beispieltitel), also rund 0.0004 USD. Die Übersicht zeigt die Summe
-(nur TypeSafe-Tokens; lokale Modelle kosten nichts).
+Jev (jev-1.13 und jev-1.14): 0.042 USD pro Mio. Input-Tokens, Output kostenlos. Gemessen: im Schnitt rund 10k Tokens pro
+Dokument (Text bis 12'000 Zeichen, ~50 Tag-Fragen, Beispieltitel), also rund 0.0004 USD. Über Cloudflare kostet Jev
+gleich viel; Clef auf Workers AI 0.24 USD (`clef`) und 0.038 USD (`clef-flash`) pro Mio. Input-Tokens. Die Übersicht
+zeigt die Summe über alle Läufe, je nach Modell gerechnet; lokale Modelle kosten nichts.

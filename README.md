@@ -87,7 +87,8 @@ Paperless-ngx ──webhook "document added"──▶ paperless-jev ──▶ Ty
 ```
 
 Jev does not generate text, it **chooses**: from your metadata, or from dates that the code found in the
-OCR text beforehand. Each document is sent to Jev as **one** request containing all questions.
+OCR text beforehand. Each document is sent to Jev as **one** request containing all questions; only when a new
+correspondent has to be checked, a second, small one follows.
 
 | Confidence | Action (*automatic* mode) |
 |---|---|
@@ -209,8 +210,9 @@ Run your own: `python -m bench.run --jev --ollama http://<host>:11434` (see [`be
   documentation, TypeSafe does not train on customer data. Documents tagged `ai-ignorieren` are never sent.
 - With Cloudflare Workers AI the same data goes to Cloudflare instead (zero data retention according to Cloudflare).
 - With a local model via Ollama (e.g. clef) everything stays in your own network.
-- The optional language model runs on your own hardware (Ollama, SGLang, vLLM, LM Studio …).
-- jev-1.13 costs USD 0.042 per million input tokens. A document takes roughly 5–15k tokens, depending on
+- The optional language model runs on your own hardware (Ollama, SGLang, vLLM, LM Studio …). For titles and new
+  correspondents it receives an excerpt of the document text.
+- Jev costs USD 0.042 per million input tokens (jev-1.13 and jev-1.14). A document takes roughly 5–15k tokens, depending on
   the number of tags and examples, i.e. less than USD 0.001. The overview shows the total.
 
 ## Command-line dry run
@@ -241,7 +243,9 @@ Architecture, design decisions and measurements: [DOCUMENTATION.md](DOCUMENTATIO
 ## Contributing
 
 Ideas, wishes and bug reports are welcome – please open an
-[issue](https://github.com/PenDraga/paperless-jev/issues). Pull requests are not accepted for now.
+[issue](https://github.com/PenDraga/paperless-jev/issues). Pull requests are welcome too: against `main`, one per
+topic. What fits is taken over, usually rewritten in the style of the project and with you as co-author – so a pull
+request is often closed with a link to the commit instead of merged.
 
 ## License
 
