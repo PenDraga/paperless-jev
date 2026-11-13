@@ -585,6 +585,20 @@ def test_create_delete_and_color_metadata(client):
     assert "err=" in r.headers["location"] and FakePaperless.objects[-1][0] == "delete" and FakePaperless.objects[-1][2] == oid
 
 
+def test_descriptions_form_of_a_large_archive(client):
+    # vier Felder pro Eintrag: ab 250 Einträgen mehr als Starlettes Vorgabe von 1000 Feldern
+    FakePaperless.objects.clear()
+    form = {"instance_id": "1", "kind": "correspondent", "ids": [str(i) for i in range(1, 401)]}
+    for i in range(1, 401):
+        form |= {f"name_{i}": f"Absender {i}", f"text_{i}": f"Notiz {i}", f"active_{i}": "on"}
+    r = client.post("/descriptions", data=form, follow_redirects=False)
+    assert r.status_code == 303 and "msg=" in r.headers["location"]
+    assert client.app.state.config.descriptions(1)[("correspondent", 400)]["text"] == "Notiz 400"
+    # der Löschknopf in der Tabelle schickt dasselbe Formular
+    r = client.post("/meta/delete", data=form | {"delete_id": "20"}, follow_redirects=False)
+    assert r.status_code == 303 and FakePaperless.objects[-1] == ("delete", "correspondent", 20)
+
+
 def test_create_metadata_as_json_and_from_job_page(client):
     FakePaperless.objects.clear()
     r = client.post("/meta/create", data={"instance_id": "1", "kind": "correspondent", "name": "Neuer Absender", "format": "json"})

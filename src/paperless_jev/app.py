@@ -1159,6 +1159,9 @@ async def save_rules(request: Request):
 
 # --- Beschreibungen ------------------------------------------------------
 
+# Die Tabelle schickt vier Felder pro Eintrag; Starlettes Vorgabe (1000) reicht nur für 249 Einträge.
+MAX_FORM_FIELDS = 100_000
+
 KINDS = {
     "document_type": "Dokumenttypen",
     "correspondent": "Korrespondenten",
@@ -1393,7 +1396,7 @@ async def delete_assistant(request: Request, instance_id: int, kind: str, id: in
 
 @app.post("/meta/delete")
 async def delete_meta(request: Request):
-    form = await request.form()
+    form = await request.form(max_fields=MAX_FORM_FIELDS)  # der Löschknopf steht im Formular der Tabelle
     inst = _cfg(request).instance(int(str(form.get("instance_id") or 0)))
     kind = str(form.get("kind"))
     oid = int(str(form.get("delete_id") or 0))
@@ -1434,7 +1437,7 @@ async def delete_meta(request: Request):
 
 @app.post("/descriptions")
 async def save_descriptions(request: Request):
-    form = await request.form()
+    form = await request.form(max_fields=MAX_FORM_FIELDS)
     instance_id = int(str(form["instance_id"]))
     kind = str(form["kind"])
     cfg = _cfg(request).all()
