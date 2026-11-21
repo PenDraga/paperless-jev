@@ -8,7 +8,7 @@
 {% else %}
 <div class="sc">
   <!-- Übersicht: Seiten, Ziel, Hochladen -->
-  <section class="sc-view" id="sc-overview">
+  <section class="sc-view" id="sc-overview" data-drop="{{ _('Dateien hier ablegen') }}">
     <div class="sc-head"><a href="/" class="rv-close" aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</a>
       <div class="rv-headtext"><strong>{{ _("Neuer Beleg") }}</strong><small id="sc-count">{{ _("noch keine Seiten") }}</small></div></div>
     <div class="sc-body">
@@ -16,6 +16,7 @@
         <button type="button" class="sc-big" data-go="capture">{{ icon("camera") }}<span>{{ _("Kamera starten") }}</span><small>{{ _("Seiten nacheinander fotografieren – der Rand wird automatisch erkannt") }}</small></button>
         <label class="sc-big secondary">{{ icon("upload") }}<span>{{ _("Dateien wählen") }}</span><small>{{ _("PDF oder Bilder, z. B. aus «Dokumente scannen» auf dem iPhone") }}</small>
           <input type="file" id="sc-files" accept="application/pdf,image/*" multiple hidden></label>
+        <small class="sc-drophint">{{ _("oder Dateien hierher ziehen") }}</small>
       </div>
       <div id="sc-pages-wrap" hidden>
         <div class="rv-lbl">{{ _("Seiten") }} <span>{{ _("– antippen zum Bearbeiten, ‹ › zum Sortieren") }}</span></div>
@@ -76,7 +77,7 @@
   </section>
 
   <!-- Status -->
-  <section class="sc-view" id="sc-status" hidden>
+  <section class="sc-view" id="sc-status" data-drop="{{ _('Dateien hier ablegen') }}" hidden>
     <div class="sc-head"><a href="/" class="rv-close" aria-label="{{ _('Schliessen') }}">{{ icon("x") }}</a>
       <div class="rv-headtext"><strong>{{ _("Hochgeladen") }}</strong><small id="sc-status-sub"></small></div></div>
     <div class="sc-body">
@@ -98,7 +99,7 @@
   "t": {"pages": _("{n} Seite(n)"), "none": _("noch keine Seiten"), "upload": _("Als PDF hochladen ({n} Seiten)"), "uploadFiles": _("{n} Datei(en) hochladen"),
         "page": _("Seite {n}"), "detected": _("Beleg erkannt – ruhig halten"), "search": _("Beleg ins Bild halten"), "loadingCv": _("Randerkennung wird geladen …"),
         "nocam": _("Keine Kamera verfügbar – Foto mit der Kamera-App aufnehmen"), "uploading": _("wird hochgeladen …"), "sent": _("{size} gesendet"),
-        "ocr": _("läuft in Paperless …"), "docid": _("Dokument #{id}"), "jev": _("läuft …"), "failed": _("Fehler: {error}"), "requestFailed": _("Anfrage fehlgeschlagen"),
+        "ocr": _("läuft in Paperless …"), "docid": _("Dokument #{id}"), "jev": _("läuft …"), "failed": _("Fehler: {error}"), "requestFailed": _("Anfrage fehlgeschlagen"), "unsupported": _("Dateityp nicht unterstützt: {type}"),
         "view": _("Dokument ansehen"), "job": _("Details"), "overview": _("zur Übersicht"), "status": _("Status: {status}"), "more": _("+ weitere")}
 }|tojson }}</script>
 <script src="/static/vendor/jspdf.umd.min.js" defer></script>

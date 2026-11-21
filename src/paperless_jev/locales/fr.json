@@ -519,5 +519,7 @@
  "neu: {name}": "nouveau : {name}",
  "neu – wird erst beim Übernehmen in Paperless angelegt": "nouveau – créé dans Paperless seulement à l’application",
  "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "Aucun nouveau correspondant n’est proposé pour ce document",
- "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Aucun nouveau correspondant proposé pour le document {id} : {detail}"
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Aucun nouveau correspondant proposé pour le document {id} : {detail}",
+ "Dateien hier ablegen": "Déposez les fichiers ici",
+ "oder Dateien hierher ziehen": "ou faites glisser des fichiers ici"
 }

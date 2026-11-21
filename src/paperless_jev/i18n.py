@@ -222,6 +222,8 @@ EN: dict[str, str] = {
     "Datei oder Instanz fehlt": "File or instance missing",
     "Datei zu gross (max. 60 MB)": "File too large (max. 60 MB)",
     "Dateien wählen": "Choose files",
+    "Dateien hier ablegen": "Drop files here",
+    "oder Dateien hierher ziehen": "or drag files here",
     "Dateityp nicht unterstützt: {type}": "File type not supported: {type}",
     "Dokument #{id}": "Document #{id}",
     "Drehen": "Rotate",

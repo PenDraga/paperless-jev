@@ -238,7 +238,9 @@ document edges live, straightens the page in perspective and offers the filters 
 (lighting evened out, high contrast). Several pages are combined into one PDF in the browser with jsPDF and sent via
 paperless-jev to `POST /api/documents/post_document/`; the API token stays on the server. The page follows the
 Paperless task and queues the new document for classification right away, without waiting for webhook or polling.
-Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded on the same page. A `Permissions-Policy` header from the
+Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded on the same page. On a computer the page also
+takes files dragged in from the file manager: PDFs go to Paperless unchanged, images become pages like
+photographed ones. A `Permissions-Policy` header from the
 reverse proxy must not block the camera (`camera=(self)`).
 
 All libraries are served by paperless-jev itself – no CDN, no requests to third-party servers, works with ad

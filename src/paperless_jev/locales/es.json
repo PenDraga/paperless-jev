@@ -519,5 +519,7 @@
  "neu: {name}": "nuevo: {name}",
  "neu – wird erst beim Übernehmen in Paperless angelegt": "nuevo – solo se crea en Paperless al aplicar",
  "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "No hay ningún interlocutor nuevo propuesto para este documento",
- "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "No se ha propuesto un interlocutor nuevo para el documento {id}: {detail}"
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "No se ha propuesto un interlocutor nuevo para el documento {id}: {detail}",
+ "Dateien hier ablegen": "Suelta los archivos aquí",
+ "oder Dateien hierher ziehen": "o arrastra archivos aquí"
 }

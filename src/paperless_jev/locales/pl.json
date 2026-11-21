@@ -519,5 +519,7 @@
  "neu: {name}": "nowy: {name}",
  "neu – wird erst beim Übernehmen in Paperless angelegt": "nowy – zostanie utworzony w Paperless dopiero przy zastosowaniu",
  "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "Dla tego dokumentu nie zaproponowano nowego korespondenta",
- "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nie zaproponowano nowego korespondenta dla dokumentu {id}: {detail}"
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nie zaproponowano nowego korespondenta dla dokumentu {id}: {detail}",
+ "Dateien hier ablegen": "Upuść pliki tutaj",
+ "oder Dateien hierher ziehen": "lub przeciągnij pliki tutaj"
 }

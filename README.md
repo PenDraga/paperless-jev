@@ -71,7 +71,8 @@ right in the browser, multi-page ones included:
 2. **Check edges** – the page is straightened in perspective; move the corners if needed, rotate, choose the
    filter *Original*, *Greyscale* or *Scan* (shadows evened out, high contrast for text recognition).
 3. **Upload** – reorder pages, pick the instance, optionally title and tags; all pages go to Paperless as **one PDF**.
-   Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded too.
+   Ready-made PDFs (e.g. iOS "Scan Documents") can be uploaded too – on a computer, simply drag PDFs or
+   images onto the page.
 4. **Status** – text recognition in Paperless, then paperless-jev classifies right away; the result appears directly.
 
 Requirements: the page is served over **HTTPS** (camera in the browser), and a `Permissions-Policy` header from the

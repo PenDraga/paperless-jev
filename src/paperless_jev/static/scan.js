@@ -11,7 +11,7 @@ const $ = (id) => document.getElementById(id);
 const fmt = (s, v) => Object.entries(v).reduce((a, [k, x]) => a.replace(`{${k}}`, x), s);
 
 const pages = []; // {img, quad, rotation, filter, out, thumb}
-let files = []; // direkt gewählte PDFs
+let files = []; // gehen unverändert an Paperless: PDFs und Bilder, die der Browser nicht darstellen kann (z. B. TIFF)
 let editIndex = -1;
 let editQuad = null;
 let retakeIndex = -1;
@@ -411,20 +411,60 @@ function renderThumbs() {
     `<div style="background-image:url(${p.thumb})">${i === a.length - 1 ? `<span>${pages.length}</span>` : ""}</div>`).join("");
 }
 
-// --- Dateien wählen (PDF direkt, Bilder als Seiten) ---------------------------------------------------
-async function onFiles(e) {
-  const chosen = [...e.target.files];
-  e.target.value = "";
+// --- Dateien wählen oder hineinziehen (PDF direkt, Bilder als Seiten) ---------------------------------
+async function addFiles(chosen) {
   const images = chosen.filter((f) => f.type.startsWith("image/"));
+  const other = chosen.filter((f) => !f.type.startsWith("image/") && f.type !== "application/pdf");
   files = files.concat(chosen.filter((f) => f.type === "application/pdf"));
   if (images.length) {
     await loadCv();
-    for (const f of images) addPage(await imageFromFile(f));
+    for (const f of images) {
+      const img = await imageFromFile(f).catch(() => null);
+      if (img) addPage(img); else files.push(f);
+    }
   }
   renderPages();
+  if (other.length) alert(fmt(T.unsupported, { type: other.map((f) => f.name).join(", ") }));
+}
+function onFiles(e) {
+  const chosen = [...e.target.files];
+  e.target.value = "";
+  addFiles(chosen);
 }
 $("sc-files").addEventListener("change", onFiles);
 $("sc-files2").addEventListener("change", onFiles);
+
+// Dateien aus dem Explorer auf die Seite ziehen. Ohne preventDefault öffnet der Browser die Datei anstelle der Seite.
+const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+const canDrop = () => !$("sc-overview").hidden || !$("sc-status").hidden;
+let dragDepth = 0; // dragenter und dragleave kommen für jedes Element unter dem Zeiger
+function dropping(on) {
+  if (!on) dragDepth = 0;
+  document.body.classList.toggle("sc-dropping", on && canDrop());
+}
+window.addEventListener("dragenter", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth++;
+  dropping(true);
+});
+window.addEventListener("dragover", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = canDrop() ? "copy" : "none";
+});
+window.addEventListener("dragleave", (e) => {
+  if (hasFiles(e) && --dragDepth <= 0) dropping(false);
+});
+window.addEventListener("drop", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  const ok = canDrop();
+  dropping(false);
+  if (!ok) return;
+  if ($("sc-overview").hidden) show("overview"); // nach einem Upload: gleich der nächste Beleg
+  addFiles([...e.dataTransfer.files]);
+});
 
 // --- Übersicht ------------------------------------------------------------------------------------------
 function renderPages() {
@@ -448,8 +488,9 @@ function renderPages() {
   files.forEach((f, i) => {
     const el = document.createElement("div");
     el.className = "sc-page sc-file";
-    el.innerHTML = `<span class="sc-fname"></span><b>PDF</b><button type="button" class="sc-x">✕</button>`;
+    el.innerHTML = `<span class="sc-fname"></span><b></b><button type="button" class="sc-x">✕</button>`;
     el.querySelector(".sc-fname").textContent = f.name;
+    el.querySelector("b").textContent = f.type === "application/pdf" ? "PDF" : f.type.split("/").pop().toUpperCase();
     el.querySelector(".sc-x").addEventListener("click", () => { files.splice(i, 1); renderPages(); });
     grid.append(el);
   });

@@ -244,7 +244,9 @@ Belegrand live, entzerrt die Seite perspektivisch und bietet die Filter Original
 (Beleuchtung ausgeglichen, kontrastreich). Mehrere Seiten werden im Browser mit jsPDF zu einem PDF und über
 paperless-jev an `POST /api/documents/post_document/` geschickt; das API-Token bleibt auf dem Server. Die Seite
 verfolgt den Paperless-Task und reiht das neue Dokument sofort zur Klassifizierung ein, ohne auf Webhook oder
-Polling zu warten. Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich auf derselben Seite hochladen.
+Polling zu warten. Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich auf derselben Seite hochladen. Am Computer
+nimmt die Seite auch Dateien an, die man aus dem Explorer hineinzieht: PDFs gehen unverändert an Paperless,
+Bilder werden zu Seiten wie fotografierte.
 Ein `Permissions-Policy`-Header des Reverse Proxys darf die Kamera nicht sperren (`camera=(self)`).
 
 Alle Bibliotheken liefert paperless-jev selbst aus – kein CDN, keine Anfragen an fremde Server, funktioniert mit

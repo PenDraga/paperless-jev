@@ -71,7 +71,8 @@ Belege direkt im Browser, auch mehrseitige:
 2. **Rand prüfen** – die Seite wird perspektivisch gerade gerückt; Ecken bei Bedarf verschieben, drehen,
    Filter *Original*, *Graustufen* oder *Scan* (Schatten ausgeglichen, kontrastreich für die Texterkennung).
 3. **Hochladen** – Seiten sortieren, Instanz, optional Titel und Tags; alle Seiten gehen als **ein PDF** an Paperless.
-   Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich ebenfalls hochladen.
+   Fertige PDFs (z. B. iOS «Dokumente scannen») lassen sich ebenfalls hochladen – am Computer genügt es,
+   PDFs oder Bilder auf die Seite zu ziehen.
 4. **Status** – Texterkennung in Paperless, danach klassifiziert paperless-jev sofort; das Ergebnis erscheint direkt.
 
 Voraussetzungen: Die Seite läuft über **HTTPS** (Kamera im Browser), und ein `Permissions-Policy`-Header des

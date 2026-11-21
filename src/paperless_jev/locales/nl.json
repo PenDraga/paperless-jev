@@ -519,5 +519,7 @@
  "neu: {name}": "nieuw: {name}",
  "neu – wird erst beim Übernehmen in Paperless angelegt": "nieuw – wordt pas bij het toepassen in Paperless aangemaakt",
  "Für dieses Dokument ist kein neuer Korrespondent vorgeschlagen": "Voor dit document is geen nieuwe correspondent voorgesteld",
- "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nieuwe correspondent voor document {id} niet voorgesteld: {detail}"
+ "Neuer Korrespondent für Dokument {id} nicht vorgeschlagen: {detail}": "Nieuwe correspondent voor document {id} niet voorgesteld: {detail}",
+ "Dateien hier ablegen": "Zet bestanden hier neer",
+ "oder Dateien hierher ziehen": "of sleep bestanden hierheen"
 }
